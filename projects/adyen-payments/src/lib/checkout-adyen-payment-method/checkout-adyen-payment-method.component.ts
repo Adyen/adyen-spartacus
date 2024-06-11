@@ -1,11 +1,11 @@
 import {
   ChangeDetectionStrategy,
-  Component,
+  Component, ElementRef,
   OnDestroy,
-  OnInit,
+  OnInit, ViewChild,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { ActiveCartFacade } from '@spartacus/cart/base/root';
+import {ActivatedRoute} from '@angular/router';
+import {ActiveCartFacade} from '@spartacus/cart/base/root';
 import {
   CheckoutDeliveryAddressFacade,
   CheckoutPaymentFacade,
@@ -19,7 +19,7 @@ import {
   TranslationService,
   UserPaymentService,
 } from '@spartacus/core';
-import { Card, ICON_TYPE } from '@spartacus/storefront';
+import {Card, ICON_TYPE} from '@spartacus/storefront';
 import {
   BehaviorSubject,
   combineLatest,
@@ -36,17 +36,33 @@ import {
   tap,
 } from 'rxjs/operators';
 import {CheckoutStepService} from "@spartacus/checkout/base/components";
-
+import AdyenCheckout from '@adyen/adyen-web';
+import {CheckoutAdyenConfigurationService} from "../service/checkout-adyen-configuration.service";
+import {AdyenConfigData} from "../core/models/occ.config.models";
+import DropinElement from "@adyen/adyen-web/dist/types/components/Dropin";
+import {CoreOptions} from "@adyen/adyen-web/dist/types/core/types";
+import {ActionHandledReturnObject, OnPaymentCompletedData} from "@adyen/adyen-web/dist/types/components/types";
+import UIElement from "@adyen/adyen-web/dist/types/components/UIElement";
+import AdyenCheckoutError from "@adyen/adyen-web/dist/types/core/Errors/AdyenCheckoutError";
 
 @Component({
   selector: 'cx-payment-method',
   templateUrl: './checkout-adyen-payment-method.component.html',
+  styleUrls: ['./checkout-adyen-payment-method.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   protected subscriptions = new Subscription();
   protected deliveryAddress: Address | undefined;
   protected busy$ = new BehaviorSubject<boolean>(false);
+
+  protected adyenConfigurations: AdyenConfigData;
+
+  //Adyen properties
+  @ViewChild('hook', {static: true}) hook: ElementRef;
+  sessionId: string = '';
+  redirectResult: string = '';
+  dropIn: DropinElement;
 
   cards$: Observable<{ content: Card; paymentMethod: PaymentDetails }[]>;
   iconTypes = ICON_TYPE;
@@ -93,10 +109,14 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected translationService: TranslationService,
     protected activeCartFacade: ActiveCartFacade,
     protected checkoutStepService: CheckoutStepService,
-    protected globalMessageService: GlobalMessageService
-  ) {}
+    protected globalMessageService: GlobalMessageService,
+    protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
+  ) {
+  }
 
   ngOnInit(): void {
+    this.sessionId = this.activatedRoute.snapshot.queryParamMap.get('sessionId') || '';
+
     if (!getLastValueSync(this.activeCartFacade.isGuestCart())) {
       this.userPaymentService.loadPaymentMethods();
     } else {
@@ -114,60 +134,58 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         this.deliveryAddress = address;
       });
 
-    this.cards$ = combineLatest([
-      this.existingPaymentMethods$.pipe(
-        switchMap((methods) => {
-          return !methods?.length
-            ? of([])
-            : combineLatest(
-              methods.map((method) =>
-                combineLatest([
-                  of(method),
-                  this.translationService.translate('paymentCard.expires', {
-                    month: method.expiryMonth,
-                    year: method.expiryYear,
-                  }),
-                ]).pipe(
-                  map(([payment, translation]) => ({
-                    payment,
-                    expiryTranslation: translation,
-                  }))
-                )
-              )
-            );
-        })
-      ),
-      this.selectedMethod$,
-      this.translationService.translate('paymentForm.useThisPayment'),
-      this.translationService.translate('paymentCard.defaultPaymentMethod'),
-      this.translationService.translate('paymentCard.selected'),
-    ]).pipe(
-      tap(([paymentMethods, selectedMethod]) =>
-        this.selectDefaultPaymentMethod(paymentMethods, selectedMethod)
-      ),
-      map(
-        ([
-           paymentMethods,
-           selectedMethod,
-           textUseThisPayment,
-           textDefaultPaymentMethod,
-           textSelected,
-         ]) =>
-          paymentMethods.map((payment) => ({
-            content: this.createCard(
-              payment.payment,
-              {
-                textExpires: payment.expiryTranslation,
-                textUseThisPayment,
-                textDefaultPaymentMethod,
-                textSelected,
-              },
-              selectedMethod
-            ),
-            paymentMethod: payment.payment,
-          }))
-      )
+
+    this.checkoutAdyenConfigurationService.getCheckoutConfigurationState()
+      .pipe(
+        filter((state) => !state.loading),
+        take(1),
+        map((state) => state.data)
+      ).subscribe((async config => {
+        if (config) {
+          const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
+          adyenCheckout.create("dropin").mount(this.hook.nativeElement);
+        }
+      })
     );
+
+  }
+
+  private getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreOptions {
+    return {
+      paymentMethodsConfiguration: {
+        card: {
+          type: 'card',
+          hasHolderName: true,
+          holderNameRequired: adyenConfig.cardHolderNameRequired,
+          enableStoreDetails: adyenConfig.showRememberTheseDetails
+        }
+      },
+      paymentMethodsResponse: {
+        paymentMethods: adyenConfig.paymentMethods,
+        storedPaymentMethods: adyenConfig.storedPaymentMethodList
+      },
+      locale: adyenConfig.shopperLocale,
+      environment: adyenConfig.environmentMode,
+      clientKey: adyenConfig.adyenClientKey,
+      session: {
+        id: adyenConfig.sessionData.id,
+        sessionData: adyenConfig.sessionData.sessionData
+      },
+      analytics: {
+        enabled: false
+      },
+      onPaymentCompleted(data: OnPaymentCompletedData, element?: UIElement) {
+        console.info(data, element);
+      },
+      onError(error: AdyenCheckoutError, element?: UIElement) {
+        console.error(error.name, error.message, error.stack, element);
+      },
+      //onSubmit: (state: any, element: UIElement) => this.handlePayment(state.data),
+      //onAdditionalDetails: (state: any, element?: UIElement) => this.handleAdditionalDetails(state.data),
+      onActionHandled(data: ActionHandledReturnObject) {
+        console.log("onActionHandled", data);
+      }
+    }
   }
 
   selectDefaultPaymentMethod(
@@ -222,7 +240,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }): void {
     this.paymentDetails = paymentDetails;
 
-    const details: PaymentDetails = { ...paymentDetails };
+    const details: PaymentDetails = {...paymentDetails};
     details.billingAddress = billingAddress ?? this.deliveryAddress;
     this.busy$.next(true);
     this.subscriptions.add(
@@ -291,7 +309,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       textBold: paymentDetails.accountHolderName,
       text: [paymentDetails.cardNumber ?? '', cardLabels.textExpires],
       img: this.getCardIcon(paymentDetails.cardType?.code as string),
-      actions: [{ name: cardLabels.textUseThisPayment, event: 'send' }],
+      actions: [{name: cardLabels.textUseThisPayment, event: 'send'}],
       header:
         selected?.id === paymentDetails.id
           ? cardLabels.textSelected
