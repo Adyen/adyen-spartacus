@@ -44,6 +44,7 @@ import {CoreOptions} from "@adyen/adyen-web/dist/types/core/types";
 import {ActionHandledReturnObject, OnPaymentCompletedData} from "@adyen/adyen-web/dist/types/components/types";
 import UIElement from "@adyen/adyen-web/dist/types/components/UIElement";
 import AdyenCheckoutError from "@adyen/adyen-web/dist/types/core/Errors/AdyenCheckoutError";
+import {PlaceOrderAdyenService} from "../service/placeorder-adyen.service";
 
 @Component({
   selector: 'cx-payment-method',
@@ -111,6 +112,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected checkoutStepService: CheckoutStepService,
     protected globalMessageService: GlobalMessageService,
     protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
+    protected placeOrderAdyenService: PlaceOrderAdyenService
   ) {
   }
 
@@ -180,7 +182,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       onError(error: AdyenCheckoutError, element?: UIElement) {
         console.error(error.name, error.message, error.stack, element);
       },
-      //onSubmit: (state: any, element: UIElement) => this.handlePayment(state.data),
+      onSubmit: (state: any, element: UIElement) => this.handlePayment(state.data),
       //onAdditionalDetails: (state: any, element?: UIElement) => this.handleAdditionalDetails(state.data),
       onActionHandled(data: ActionHandledReturnObject) {
         console.log("onActionHandled", data);
@@ -330,5 +332,19 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+  }
+
+  private handlePayment(paymentData: any) {
+    console.log("handlePayment", paymentData);
+
+    this.placeOrderAdyenService.placeOrder(paymentData).subscribe(
+      result => {
+        console.log('Order placed successfully', result);
+      },
+      error => {
+        console.error('Error placing order', error);
+      }
+    );
+
   }
 }

@@ -6,16 +6,19 @@ import {filter, map, take} from "rxjs/operators";
 import {ActiveCartFacade} from "@spartacus/cart/base/root";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
 import {CheckoutConfigurationConnector} from "../core/connectors/checkout-configuration.connector";
+import {AdyenBaseService} from "./adyen-base.service";
 
 
 @Injectable()
-export class CheckoutAdyenConfigurationService {
+export class CheckoutAdyenConfigurationService extends AdyenBaseService {
   constructor(
-    protected activeCartFacade: ActiveCartFacade,
-    protected userIdService: UserIdService,
+    protected override activeCartFacade: ActiveCartFacade,
+    protected override userIdService: UserIdService,
     protected queryService: QueryService,
     protected checkoutConfigurationConnector: CheckoutConfigurationConnector,
-  ) {}
+  ) {
+    super(userIdService, activeCartFacade);
+  }
 
   protected checkoutConfiguration: Query<AdyenConfigData> = this.queryService.create(
     () => this.checkoutPreconditions().pipe(
@@ -27,26 +30,6 @@ export class CheckoutAdyenConfigurationService {
 
   protected getCheckoutAdyenConfigurationLoadedEvents(): QueryNotifier[] {
     return [CheckoutAdyenConfigurationReloadEvent];
-  }
-
-  protected checkoutPreconditions(): Observable<[string, string]> {
-    return combineLatest([
-      this.userIdService.takeUserId(),
-      this.activeCartFacade.takeActiveCartId(),
-      this.activeCartFacade.isGuestCart(),
-    ]).pipe(
-      take(1),
-      map(([userId, cartId, isGuestCart]) => {
-        if (
-          !userId ||
-          !cartId ||
-          (userId === OCC_USER_ID_ANONYMOUS && !isGuestCart)
-        ) {
-          throw new Error('Checkout conditions not met');
-        }
-        return [userId, cartId];
-      })
-    );
   }
 
   getCheckoutConfigurationState(): Observable<QueryState<AdyenConfigData>> {

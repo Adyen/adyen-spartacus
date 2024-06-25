@@ -7,6 +7,9 @@ import {CheckoutAdyenConfigurationService} from "./service/checkout-adyen-config
 import {CheckoutConfigurationConnector} from "./core/connectors/checkout-configuration.connector";
 import {OccCheckoutConfigAdapter} from "./core/occ/adapters/occ-checkout-config.adapter";
 import {CheckoutAdyenEventListener} from "./events/checkout-adyen-event.listener";
+import {PlaceOrderAdyenService} from "./service/placeorder-adyen.service";
+import {PlaceOrderConnector} from "./core/connectors/placeorder.connector";
+import {OccPlaceOrderAdapter} from "./core/occ/adapters/occ-placeorder.adapter";
 
 
 
@@ -18,6 +21,9 @@ import {CheckoutAdyenEventListener} from "./events/checkout-adyen-event.listener
     CheckoutAdyenRootModule
   ],
   providers: [CheckoutAdyenConfigurationService,
+    PlaceOrderAdyenService,
+    PlaceOrderConnector,
+    OccPlaceOrderAdapter,
     OccCheckoutConfigAdapter,
     CheckoutAdyenEventListener,
     CheckoutConfigurationConnector],
