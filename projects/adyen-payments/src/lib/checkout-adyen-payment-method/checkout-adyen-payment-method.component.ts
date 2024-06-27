@@ -1,40 +1,18 @@
-import {
-  ChangeDetectionStrategy,
-  Component, ElementRef,
-  OnDestroy,
-  OnInit, ViewChild,
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild,} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {ActiveCartFacade} from '@spartacus/cart/base/root';
-import {
-  CheckoutDeliveryAddressFacade,
-  CheckoutPaymentFacade,
-} from '@spartacus/checkout/base/root';
+import {CheckoutDeliveryAddressFacade, CheckoutPaymentFacade,} from '@spartacus/checkout/base/root';
 import {
   Address,
   getLastValueSync,
   GlobalMessageService,
-  GlobalMessageType,
   PaymentDetails,
+  RoutingService,
   TranslationService,
   UserPaymentService,
 } from '@spartacus/core';
-import {Card, ICON_TYPE} from '@spartacus/storefront';
-import {
-  BehaviorSubject,
-  combineLatest,
-  Observable,
-  of,
-  Subscription,
-} from 'rxjs';
-import {
-  distinctUntilChanged,
-  filter,
-  map,
-  switchMap,
-  take,
-  tap,
-} from 'rxjs/operators';
+import {BehaviorSubject, Subscription,} from 'rxjs';
+import {filter, map, take,} from 'rxjs/operators';
 import {CheckoutStepService} from "@spartacus/checkout/base/components";
 import AdyenCheckout from '@adyen/adyen-web';
 import {CheckoutAdyenConfigurationService} from "../service/checkout-adyen-configuration.service";
@@ -45,6 +23,7 @@ import {ActionHandledReturnObject, OnPaymentCompletedData} from "@adyen/adyen-we
 import UIElement from "@adyen/adyen-web/dist/types/components/UIElement";
 import AdyenCheckoutError from "@adyen/adyen-web/dist/types/core/Errors/AdyenCheckoutError";
 import {PlaceOrderAdyenService} from "../service/placeorder-adyen.service";
+import {PlaceOrderResponse} from "../core/models/occ.order.models";
 
 @Component({
   selector: 'cx-payment-method',
@@ -57,50 +36,20 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   protected deliveryAddress: Address | undefined;
   protected busy$ = new BehaviorSubject<boolean>(false);
 
-  protected adyenConfigurations: AdyenConfigData;
-
   //Adyen properties
   @ViewChild('hook', {static: true}) hook: ElementRef;
   sessionId: string = '';
   redirectResult: string = '';
   dropIn: DropinElement;
 
-  cards$: Observable<{ content: Card; paymentMethod: PaymentDetails }[]>;
-  iconTypes = ICON_TYPE;
   isGuestCheckout = false;
-  newPaymentFormManuallyOpened = false;
-  doneAutoSelect = false;
   paymentDetails?: PaymentDetails;
 
-  isUpdating$: Observable<boolean> = combineLatest([
-    this.busy$,
-    this.userPaymentService.getPaymentMethodsLoading(),
-    this.checkoutPaymentFacade
-      .getPaymentDetailsState()
-      .pipe(map((state) => state.loading)),
-  ]).pipe(
-    map(
-      ([busy, userPaymentLoading, paymentMethodLoading]) =>
-        busy || userPaymentLoading || paymentMethodLoading
-    ),
-    distinctUntilChanged()
-  );
 
   get backBtnText() {
     return this.checkoutStepService.getBackBntText(this.activatedRoute);
   }
 
-  get existingPaymentMethods$(): Observable<PaymentDetails[]> {
-    return this.userPaymentService.getPaymentMethods();
-  }
-
-  get selectedMethod$(): Observable<PaymentDetails | undefined> {
-    return this.checkoutPaymentFacade.getPaymentDetailsState().pipe(
-      filter((state) => !state.loading),
-      map((state) => state.data),
-      distinctUntilChanged((prev, curr) => prev?.id === curr?.id)
-    );
-  }
 
   constructor(
     protected userPaymentService: UserPaymentService,
@@ -108,6 +57,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected checkoutPaymentFacade: CheckoutPaymentFacade,
     protected activatedRoute: ActivatedRoute,
     protected translationService: TranslationService,
+    protected routingService: RoutingService,
     protected activeCartFacade: ActiveCartFacade,
     protected checkoutStepService: CheckoutStepService,
     protected globalMessageService: GlobalMessageService,
@@ -190,73 +140,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     }
   }
 
-  selectDefaultPaymentMethod(
-    paymentMethods: { payment: PaymentDetails; expiryTranslation: string }[],
-    selectedMethod: PaymentDetails | undefined
-  ) {
-    if (
-      !this.doneAutoSelect &&
-      paymentMethods?.length &&
-      (!selectedMethod || Object.keys(selectedMethod).length === 0)
-    ) {
-      const defaultPaymentMethod = paymentMethods.find(
-        (paymentMethod) => paymentMethod.payment.defaultPayment
-      );
-      if (defaultPaymentMethod) {
-        selectedMethod = defaultPaymentMethod.payment;
-        this.savePaymentMethod(selectedMethod);
-      }
-      this.doneAutoSelect = true;
-    }
-  }
-
-  selectPaymentMethod(paymentDetails: PaymentDetails): void {
-    if (paymentDetails?.id === getLastValueSync(this.selectedMethod$)?.id) {
-      return;
-    }
-
-    this.globalMessageService.add(
-      {
-        key: 'paymentMethods.paymentMethodSelected',
-      },
-      GlobalMessageType.MSG_TYPE_INFO
-    );
-
-    this.savePaymentMethod(paymentDetails);
-  }
-
-  showNewPaymentForm(): void {
-    this.newPaymentFormManuallyOpened = true;
-  }
-
-  hideNewPaymentForm(): void {
-    this.newPaymentFormManuallyOpened = false;
-  }
-
-  setPaymentDetails({
-                      paymentDetails,
-                      billingAddress,
-                    }: {
-    paymentDetails: PaymentDetails;
-    billingAddress?: Address;
-  }): void {
-    this.paymentDetails = paymentDetails;
-
-    const details: PaymentDetails = {...paymentDetails};
-    details.billingAddress = billingAddress ?? this.deliveryAddress;
-    this.busy$.next(true);
-    this.subscriptions.add(
-      this.checkoutPaymentFacade.createPaymentDetails(details).subscribe({
-        complete: () => {
-          // we don't call onSuccess here, because it can cause a spinner flickering
-          this.next();
-        },
-        error: () => {
-          this.onError();
-        },
-      })
-    );
-  }
 
   next(): void {
     this.checkoutStepService.next(this.activatedRoute);
@@ -266,64 +149,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.checkoutStepService.back(this.activatedRoute);
   }
 
-  protected savePaymentMethod(paymentDetails: PaymentDetails): void {
-    this.busy$.next(true);
-    this.subscriptions.add(
-      this.checkoutPaymentFacade.setPaymentDetails(paymentDetails).subscribe({
-        complete: () => this.onSuccess(),
-        error: () => this.onError(),
-      })
-    );
-  }
-
-  protected getCardIcon(code: string): string {
-    let ccIcon: string;
-    if (code === 'visa') {
-      ccIcon = this.iconTypes.VISA;
-    } else if (code === 'master' || code === 'mastercard_eurocard') {
-      ccIcon = this.iconTypes.MASTER_CARD;
-    } else if (code === 'diners') {
-      ccIcon = this.iconTypes.DINERS_CLUB;
-    } else if (code === 'amex') {
-      ccIcon = this.iconTypes.AMEX;
-    } else {
-      ccIcon = this.iconTypes.CREDIT_CARD;
-    }
-
-    return ccIcon;
-  }
-
-  protected createCard(
-    paymentDetails: PaymentDetails,
-    cardLabels: {
-      textDefaultPaymentMethod: string;
-      textExpires: string;
-      textUseThisPayment: string;
-      textSelected: string;
-    },
-    selected: PaymentDetails | undefined
-  ): Card {
-    return {
-      role: 'region',
-      title: paymentDetails.defaultPayment
-        ? cardLabels.textDefaultPaymentMethod
-        : '',
-      textBold: paymentDetails.accountHolderName,
-      text: [paymentDetails.cardNumber ?? '', cardLabels.textExpires],
-      img: this.getCardIcon(paymentDetails.cardType?.code as string),
-      actions: [{name: cardLabels.textUseThisPayment, event: 'send'}],
-      header:
-        selected?.id === paymentDetails.id
-          ? cardLabels.textSelected
-          : undefined,
-      label: paymentDetails.defaultPayment
-        ? 'paymentCard.defaultPaymentLabel'
-        : 'paymentCard.additionalPaymentLabel',
-    };
-  }
-
-  protected onSuccess(): void {
-    this.busy$.next(false);
+  onSuccess(): void {
+    console.log("Redirect to orderConfirmation..");
+    this.routingService.go({cxRoute: 'orderConfirmation'});
   }
 
   protected onError(): void {
@@ -335,11 +163,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handlePayment(paymentData: any) {
-    console.log("handlePayment", paymentData);
-
     this.placeOrderAdyenService.placeOrder(paymentData).subscribe(
       result => {
-        console.log('Order placed successfully', result);
+        this.handleResponse(result);
       },
       error => {
         console.error('Error placing order', error);
@@ -347,4 +173,25 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     );
 
   }
+
+  private async handleResponse(response: Promise<void | PlaceOrderResponse>) {
+    let responseData = await response;
+    if (!!responseData) {
+      if (!responseData.error) {
+        if (responseData.executeAction && responseData.paymentsAction !== undefined) {
+          this.dropIn.handleAction(responseData.paymentsAction)
+        } else {
+          this.onSuccess();
+        }
+      } else {
+        this.resetDropInComponent()
+      }
+    }
+  }
+
+  private resetDropInComponent() {
+    this.dropIn.unmount();
+    this.dropIn.mount(this.hook.nativeElement)
+  }
+
 }
