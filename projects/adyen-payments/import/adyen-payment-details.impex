@@ -1,0 +1,16 @@
+$contentCatalog=electronics-spaContentCatalog
+$contentCV=catalogVersion(CatalogVersion.catalog(Catalog.id[default=$contentCatalog]),CatalogVersion.version[default=Staged])[default=$contentCatalog:Staged]
+
+INSERT_UPDATE ContentPage;$contentCV[unique=true];uid[unique=true];name;masterTemplate(uid,$contentCV);label;defaultPage[default='true'];approvalStatus(code)[default='approved'];homepage[default='false']
+;;CheckoutAdyenPaymentDetails;Checkout Adyen Payment Details Page;MultiStepCheckoutSummaryPageTemplate;/checkout/adyen-payment-details
+
+INSERT_UPDATE ContentSlot;$contentCV[unique=true];uid[unique=true];name;cmsComponents(uid, $contentCV)
+;;BodyContentSlot-CheckoutAdyenPaymentDetails;Checkout Payment Details Slot;CheckoutProgressComponent,CheckoutProgressMobileTopComponent,CheckoutAdyenPaymentDetailsComponent,CheckoutProgressMobileBottomComponent
+;;SideContentSlot-CheckoutAdyenPaymentDetails;Order Summary Slot;CheckoutOrderSummaryComponent
+
+INSERT_UPDATE ContentSlotForPage;$contentCV[unique=true];uid[unique=true];position[unique=true];page(uid,$contentCV)[unique=true];contentSlot(uid,$contentCV)[unique=true]
+;;BodyContent-CheckoutAdyenPaymentDetails;BodyContent;CheckoutAdyenPaymentDetails;BodyContentSlot-CheckoutAdyenPaymentDetails
+;;SideContent-CheckoutAdyenPaymentDetails;SideContent;CheckoutAdyenPaymentDetails;SideContentSlot-CheckoutAdyenPaymentDetails
+
+INSERT_UPDATE CMSFlexComponent;$contentCV[unique=true];uid[unique=true];name;flexType
+;;CheckoutAdyenPaymentDetailsComponent;CheckoutAdyenPaymentDetailsComponent;CheckoutAdyenPaymentDetails

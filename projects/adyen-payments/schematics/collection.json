@@ -1,0 +1,15 @@
+{
+    "$schema": "../../../node_modules/@angular-devkit/schematics/collection-schema.json",
+    "schematics": {
+      "ng-add": {
+        "description": "Add Adyen Payments to the Spartacus checkout.",
+        "factory": "./ng-add/index#ngAdd",
+        "schema": "./ng-add/schema.json"
+      },
+      "payemnt-step": {
+        "description": "Generate a service in the project.",
+        "factory": "./payment-step/index#myService",
+        "schema": "./payment-step/schema.json"
+      }
+    }
+  }
