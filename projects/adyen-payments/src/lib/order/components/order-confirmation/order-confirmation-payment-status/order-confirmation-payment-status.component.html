@@ -1,0 +1,17 @@
+<div class="order-confirmation-status">
+  @if ((paymentStatus$ | async) === 'waiting') {
+    <cx-order-confirmation-status-pending/>
+  }
+  @if ((paymentStatus$ | async) === 'completed') {
+    <cx-order-confirmation-status-success/>
+  }
+  @if ((paymentStatus$ | async) === 'error') {
+    <cx-order-confirmation-status-failed/>
+  }
+  @if ((paymentStatus$ | async) === 'rejected') {
+    <cx-order-confirmation-status-rejected/>
+  }
+  @if ((paymentStatus$ | async) === 'timeout' || (paymentStatus$ | async) === 'unknown') {
+    <cx-order-confirmation-status-timeout/>
+  }
+</div>
