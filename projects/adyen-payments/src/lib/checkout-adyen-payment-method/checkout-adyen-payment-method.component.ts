@@ -22,8 +22,8 @@ import {CoreOptions} from "@adyen/adyen-web/dist/types/core/types";
 import {ActionHandledReturnObject, OnPaymentCompletedData} from "@adyen/adyen-web/dist/types/components/types";
 import UIElement from "@adyen/adyen-web/dist/types/components/UIElement";
 import AdyenCheckoutError from "@adyen/adyen-web/dist/types/core/Errors/AdyenCheckoutError";
-import {PlaceOrderAdyenService} from "../service/placeorder-adyen.service";
 import {PlaceOrderResponse} from "../core/models/occ.order.models";
+import {AdyenOrderService} from "../service/adyen-order.service";
 
 @Component({
   selector: 'cx-payment-method',
@@ -62,7 +62,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected checkoutStepService: CheckoutStepService,
     protected globalMessageService: GlobalMessageService,
     protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
-    protected placeOrderAdyenService: PlaceOrderAdyenService
+    protected adyenOrderService: AdyenOrderService
   ) {
   }
 
@@ -163,7 +163,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handlePayment(paymentData: any) {
-    this.placeOrderAdyenService.placeOrder(paymentData).subscribe(
+    this.adyenOrderService.adyenPlaceOrder(paymentData).subscribe(
       result => {
         this.handleResponse(result);
       },
@@ -171,11 +171,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         console.error('Error placing order', error);
       }
     );
-
   }
 
-  private async handleResponse(response: Promise<void | PlaceOrderResponse>) {
-    let responseData = await response;
+  private async handleResponse(responseData: PlaceOrderResponse) {
     if (!!responseData) {
       if (!responseData.error) {
         if (responseData.executeAction && responseData.paymentsAction !== undefined) {

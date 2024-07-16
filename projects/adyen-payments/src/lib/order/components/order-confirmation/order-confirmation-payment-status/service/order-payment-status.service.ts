@@ -18,7 +18,6 @@ export class OrderPaymentStatusService {
     let subject = new Subject<string>;
 
     userId.subscribe((userId) => {
-      console.log(userId, orderCode)
       let orderStatus$ = this.orderPaymentStatusConnector.getOrderStatus(userId, orderCode);
       orderStatus$.subscribe((orderStatus) => {
         subject.next(orderStatus)

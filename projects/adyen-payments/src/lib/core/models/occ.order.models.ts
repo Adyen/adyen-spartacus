@@ -1,4 +1,5 @@
 import { PaymentAction } from "@adyen/adyen-web/dist/types/types";
+import { Order } from '@spartacus/order/root';
 
 export interface PlaceOrderRequest {
   paymentRequest: any;
@@ -14,7 +15,8 @@ export interface PlaceOrderResponse {
   paymentsAction?: PaymentAction,
   error?: string,
   errorFieldCodes?: string[]
-  orderNumber?: string
+  orderNumber?: string,
+  orderData?: Order
 }
 
 export interface AddressData {
