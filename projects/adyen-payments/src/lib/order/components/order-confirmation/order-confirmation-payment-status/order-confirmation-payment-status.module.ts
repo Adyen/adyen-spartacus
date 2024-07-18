@@ -27,13 +27,6 @@ import {OrderPaymentStatusService} from "./service/order-payment-status.service"
       }
     })],
   providers: [
-    // provideDefaultConfig(<CmsConfig>{
-    //   cmsComponents: {
-    //     OrderConfirmationPaymentStatus: {
-    //       component: OrderConfirmationPaymentStatusComponent,
-    //     },
-    //   },
-    // }),
     OccOrderStatusAdapter,
     OrderPaymentStatusConnector,
     OrderPaymentStatusService
