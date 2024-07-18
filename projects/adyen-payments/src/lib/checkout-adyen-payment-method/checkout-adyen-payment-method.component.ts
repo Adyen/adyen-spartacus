@@ -95,7 +95,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       ).subscribe((async config => {
         if (config) {
           const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-          adyenCheckout.create("dropin").mount(this.hook.nativeElement);
+          this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
         }
       })
     );
@@ -166,20 +166,16 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.placeOrderAdyenService.placeOrder(paymentData).subscribe(
       result => {
         this.handleResponse(result);
-      },
-      error => {
-        console.error('Error placing order', error);
       }
     );
 
   }
 
-  private async handleResponse(response: Promise<void | PlaceOrderResponse>) {
-    let responseData = await response;
-    if (!!responseData) {
-      if (!responseData.error) {
-        if (responseData.executeAction && responseData.paymentsAction !== undefined) {
-          this.dropIn.handleAction(responseData.paymentsAction)
+  private handleResponse(response: PlaceOrderResponse | void) {
+    if (!!response) {
+      if (response.success) {
+        if (response.executeAction && response.paymentsAction !== undefined) {
+          this.dropIn.handleAction(response.paymentsAction)
         } else {
           this.onSuccess();
         }
