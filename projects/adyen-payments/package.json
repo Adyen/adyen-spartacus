@@ -1,6 +1,6 @@
 {
   "name": "adyen-payments",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "scripts": {
     "build": "tsc -p tsconfig.schematics.json",
     "postbuild": "copyfiles schematics/*/schema.json schematics/*/files/** schematics/collection.json ../../dist/adyen-payments/"
@@ -9,7 +9,7 @@
   "peerDependencies": {
     "@angular/common": "^17.3.0",
     "@angular/core": "^17.3.0",
-    "@adyen/adyen-web": "^5.40.0"
+    "@adyen/adyen-web": "5.57.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
