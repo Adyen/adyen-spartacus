@@ -12,7 +12,7 @@ import {
   UserPaymentService,
 } from '@spartacus/core';
 import {BehaviorSubject, Subscription,} from 'rxjs';
-import {filter, map, take,} from 'rxjs/operators';
+import {filter, map, take,switchMap,} from 'rxjs/operators';
 import {CheckoutStepService} from "@spartacus/checkout/base/components";
 import AdyenCheckout from '@adyen/adyen-web';
 import {CheckoutAdyenConfigurationService} from "../service/checkout-adyen-configuration.service";
@@ -24,6 +24,8 @@ import UIElement from "@adyen/adyen-web/dist/types/components/UIElement";
 import AdyenCheckoutError from "@adyen/adyen-web/dist/types/core/Errors/AdyenCheckoutError";
 import {PlaceOrderResponse} from "../core/models/occ.order.models";
 import {AdyenOrderService} from "../service/adyen-order.service";
+import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
+import { UserIdService } from '@spartacus/core';
 
 @Component({
   selector: 'cx-payment-method',
@@ -62,7 +64,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected checkoutStepService: CheckoutStepService,
     protected globalMessageService: GlobalMessageService,
     protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
-    protected adyenOrderService: AdyenOrderService
+    protected adyenOrderService: AdyenOrderService,
+    private userIdService: UserIdService
   ) {
   }
 
@@ -86,20 +89,20 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         this.deliveryAddress = address;
       });
 
+    this.loadAdyenConfiguration();
+  }
 
-    this.checkoutAdyenConfigurationService.getCheckoutConfigurationState()
-      .pipe(
-        filter((state) => !state.loading),
-        take(1),
-        map((state) => state.data)
-      ).subscribe((async config => {
-        if (config) {
-          const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-          this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
-        }
-      })
-    );
-
+  private loadAdyenConfiguration(): void {
+    this.activeCartFacade.getActiveCartId().pipe(
+      switchMap(cartId => this.userIdService.takeUserId().pipe(
+        switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(userId, cartId))
+      ))
+    ).subscribe(async config => {
+      if (config) {
+        const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
+        this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
+      }
+    });
   }
 
   private getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreOptions {
