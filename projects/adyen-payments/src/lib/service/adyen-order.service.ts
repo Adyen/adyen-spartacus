@@ -15,7 +15,7 @@ export class AdyenOrderService extends OrderService {
   private messageTimeout: number = 20000;
 
   constructor(protected placeOrderConnector: PlaceOrderConnector,
-              protected sendAdditionalDetailsConnector: AdditionalDetailsConnector,
+              protected additionalDetailsConnector: AdditionalDetailsConnector,
               protected override activeCartFacade: ActiveCartFacade,
               protected override userIdService: UserIdService,
               protected override commandService: CommandService,
@@ -77,7 +77,7 @@ export class AdyenOrderService extends OrderService {
       (details) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            this.sendAdditionalDetailsConnector.sendAdditionalDetails(userId, cartId, details).pipe(
+            this.additionalDetailsConnector.sendAdditionalDetails(userId, cartId, details).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
                 this.eventService.dispatch(
