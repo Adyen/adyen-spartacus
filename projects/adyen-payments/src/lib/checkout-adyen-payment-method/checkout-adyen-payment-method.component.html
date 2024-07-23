@@ -2,6 +2,8 @@
   {{ 'paymentForm.payment' | cxTranslate }}
 </h2>
 
+<cx-adyen-delivery-address (setBillingAddress)="setBillingAddress($event)"/>
+
 <div class="payment-container">
   <div #hook id="dropin" class="payment"></div>
 </div>

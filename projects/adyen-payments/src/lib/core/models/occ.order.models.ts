@@ -25,11 +25,11 @@ export interface AddressData {
   firstName: string;
   lastName: string;
   line1: string;
-  line2: string;
+  line2?: string;
   townCity: string;
   regionIso?: string;
   postcode: string;
   countryIso: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   saveInAddressBook: boolean;
 }

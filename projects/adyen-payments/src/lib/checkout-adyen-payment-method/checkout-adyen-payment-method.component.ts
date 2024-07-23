@@ -44,6 +44,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
 
   isGuestCheckout = false;
   paymentDetails?: PaymentDetails;
+  billingAddress?: Address = undefined;
 
 
   get backBtnText() {
@@ -162,8 +163,12 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  setBillingAddress(address?: Address) {
+    this.billingAddress = address;
+  }
+
   private handlePayment(paymentData: any) {
-    this.adyenOrderService.adyenPlaceOrder(paymentData).subscribe(
+    this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress).subscribe(
       result => {
         this.handleResponse(result);
       }
