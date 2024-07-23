@@ -1,11 +1,20 @@
 import {Injectable} from "@angular/core";
-import {Command, CommandService, CommandStrategy, EventService, GlobalMessageService, GlobalMessageType, UserIdService} from "@spartacus/core";
+import {
+  Address,
+  Command,
+  CommandService,
+  CommandStrategy,
+  EventService,
+  GlobalMessageService,
+  GlobalMessageType,
+  UserIdService
+} from "@spartacus/core";
 import {OrderConnector, OrderService} from '@spartacus/order/core';
 import {catchError, map, Observable, of, switchMap, tap} from "rxjs";
 import {OrderPlacedEvent} from '@spartacus/order/root';
 import {PlaceOrderConnector} from "../core/connectors/placeorder.connector";
 import {ActiveCartFacade} from '@spartacus/cart/base/root';
-import {PlaceOrderRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
+import {AddressData, PlaceOrderRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
 
@@ -22,7 +31,6 @@ export class AdyenOrderService extends OrderService {
               protected override orderConnector: OrderConnector,
               protected override eventService: EventService,
               protected globalMessageService: GlobalMessageService
-
   ) {
     super(activeCartFacade, userIdService, commandService, orderConnector, eventService)
   }
@@ -30,10 +38,10 @@ export class AdyenOrderService extends OrderService {
 
   protected adyenPlaceOrderCommand: Command<any, PlaceOrderResponse> =
     this.commandService.create<any, PlaceOrderResponse>(
-      (paymentData) =>
+      ({paymentData, billingAddress}) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            this.placeOrderConnector.placeOrder(userId, cartId, AdyenOrderService.preparePlaceOrderRequest(paymentData)).pipe(
+            this.placeOrderConnector.placeOrder(userId, cartId, AdyenOrderService.preparePlaceOrderRequest(paymentData, billingAddress)).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
                 this.eventService.dispatch(
@@ -67,8 +75,8 @@ export class AdyenOrderService extends OrderService {
       }
     );
 
-  adyenPlaceOrder(paymentData: any): Observable<PlaceOrderResponse> {
-    return this.adyenPlaceOrderCommand.execute(paymentData);
+  adyenPlaceOrder(paymentData: any, billingAddress?: Address): Observable<PlaceOrderResponse> {
+    return this.adyenPlaceOrderCommand.execute({paymentData, billingAddress});
   }
 
 
@@ -116,13 +124,32 @@ export class AdyenOrderService extends OrderService {
     return this.sendAdditionalDetailsCommand.execute(details);
   }
 
-
-  static preparePlaceOrderRequest(paymentData: any): PlaceOrderRequest {
+  static preparePlaceOrderRequest(paymentData: any, billingAddress?: Address): PlaceOrderRequest {
     return {
       paymentRequest: paymentData,
-      useAdyenDeliveryAddress: true,
-      billingAddress: undefined,
+      useAdyenDeliveryAddress: billingAddress === undefined,
+      billingAddress: this.mapBillingAddress(billingAddress),
     }
+  }
+
+  static mapBillingAddress(billingAddress?: Address): AddressData | undefined {
+    if (billingAddress) {
+      return {
+        addressId: billingAddress.id!,
+        countryIso: billingAddress.country!.isocode!,
+        firstName: billingAddress.firstName!,
+        lastName: billingAddress.lastName!,
+        line1: billingAddress.line1!,
+        line2: billingAddress.line2!,
+        phoneNumber: billingAddress.phone,
+        postcode: billingAddress.postalCode!,
+        regionIso: billingAddress.region ? billingAddress.region.isocode : undefined,
+        saveInAddressBook: false,
+        titleCode: billingAddress.titleCode!,
+        townCity: billingAddress.town!
+      }
+    }
+    return undefined;
   }
 
 }
