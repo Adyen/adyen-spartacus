@@ -12,6 +12,8 @@ import {OccPlaceOrderAdapter} from "./core/occ/adapters/occ-placeorder.adapter";
 import {AdyenOrderService} from "./service/adyen-order.service";
 import {OrderAdapter, OrderConnector} from "@spartacus/order/core"
 import {OccOrderAdapter} from "@spartacus/order/occ"
+import {AdditionalDetailsConnector} from "./core/connectors/additional-details.connector";
+import {OccAdditionalDetailsAdapter} from "./core/occ/adapters/occ-additionaldetails.adapter";
 
 
 @NgModule({
@@ -24,12 +26,14 @@ import {OccOrderAdapter} from "@spartacus/order/occ"
   providers: [CheckoutAdyenConfigurationService,
     AdyenOrderService,
     PlaceOrderConnector,
+    AdditionalDetailsConnector,
     OrderConnector,
     {
       provide: OrderAdapter,
       useClass: OccOrderAdapter,
     },
     OccPlaceOrderAdapter,
+    OccAdditionalDetailsAdapter,
     OccCheckoutConfigAdapter,
     CheckoutAdyenEventListener,
     CheckoutConfigurationConnector],

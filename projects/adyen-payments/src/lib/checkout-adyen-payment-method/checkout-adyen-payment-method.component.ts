@@ -105,7 +105,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     });
   }
 
-  private getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreOptions {
+  protected getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreOptions {
     return {
       paymentMethodsConfiguration: {
         card: {
@@ -113,6 +113,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
           hasHolderName: true,
           holderNameRequired: adyenConfig.cardHolderNameRequired,
           enableStoreDetails: adyenConfig.showRememberTheseDetails
+        },
+        paypal:  {
+          intent: "authorize"
         }
       },
       paymentMethodsResponse: {
@@ -136,7 +139,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         console.error(error.name, error.message, error.stack, element);
       },
       onSubmit: (state: any, element: UIElement) => this.handlePayment(state.data),
-      //onAdditionalDetails: (state: any, element?: UIElement) => this.handleAdditionalDetails(state.data),
+      onAdditionalDetails: (state: any, element?: UIElement) => this.handleAdditionalDetails(state.data),
       onActionHandled(data: ActionHandledReturnObject) {
         console.log("onActionHandled", data);
       }
@@ -167,6 +170,14 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
 
   private handlePayment(paymentData: any) {
     this.adyenOrderService.adyenPlaceOrder(paymentData).subscribe(
+      result => {
+        this.handleResponse(result);
+      }
+    );
+  }
+
+  private handleAdditionalDetails(details: any) {
+    this.adyenOrderService.sendAdditionalDetails(details).subscribe(
       result => {
         this.handleResponse(result);
       }
