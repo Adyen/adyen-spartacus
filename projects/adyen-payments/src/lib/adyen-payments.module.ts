@@ -13,6 +13,8 @@ import {AdyenOrderService} from "./service/adyen-order.service";
 import {OrderAdapter, OrderConnector} from "@spartacus/order/core"
 import {OccOrderAdapter} from "@spartacus/order/occ"
 import {AdyenAddressService} from "./service/adyen-address.service";
+import {AdditionalDetailsConnector} from "./core/connectors/additional-details.connector";
+import {OccAdditionalDetailsAdapter} from "./core/occ/adapters/occ-additionaldetails.adapter";
 
 
 @NgModule({
@@ -26,12 +28,14 @@ import {AdyenAddressService} from "./service/adyen-address.service";
     AdyenOrderService,
     AdyenAddressService,
     PlaceOrderConnector,
+    AdditionalDetailsConnector,
     OrderConnector,
     {
       provide: OrderAdapter,
       useClass: OccOrderAdapter,
     },
     OccPlaceOrderAdapter,
+    OccAdditionalDetailsAdapter,
     OccCheckoutConfigAdapter,
     CheckoutAdyenEventListener,
     CheckoutConfigurationConnector],

@@ -36,6 +36,10 @@ export class CheckoutAdyenConfigurationService extends AdyenBaseService {
     return this.checkoutConfiguration.getState();
   }
 
+  fetchCheckoutConfiguration(userId: string, cartId: string): Observable<AdyenConfigData> {
+    return this.checkoutConfigurationConnector.getCheckoutConfiguration(userId, cartId);
+  }
+
   getCheckoutConfiguration(): Observable<AdyenConfigData | undefined> {
     return this.getCheckoutConfigurationState().pipe(
       filter((state) => !state.loading),
