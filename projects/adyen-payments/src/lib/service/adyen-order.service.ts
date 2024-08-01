@@ -9,7 +9,7 @@ import {
   GlobalMessageType,
   UserIdService
 } from "@spartacus/core";
-import {OrderConnector, OrderService} from '@spartacus/order/core';
+import {OrderConnector, OrderHistoryConnector, OrderService} from '@spartacus/order/core';
 import {catchError, map, Observable, of, switchMap, tap} from "rxjs";
 import {OrderPlacedEvent} from '@spartacus/order/root';
 import {PlaceOrderConnector} from "../core/connectors/placeorder.connector";
@@ -30,7 +30,8 @@ export class AdyenOrderService extends OrderService {
               protected override commandService: CommandService,
               protected override orderConnector: OrderConnector,
               protected override eventService: EventService,
-              protected globalMessageService: GlobalMessageService
+              protected globalMessageService: GlobalMessageService,
+              protected orderHistoryConnector: OrderHistoryConnector
   ) {
     super(activeCartFacade, userIdService, commandService, orderConnector, eventService)
   }
@@ -123,6 +124,17 @@ export class AdyenOrderService extends OrderService {
   sendAdditionalDetails(details: any): Observable<PlaceOrderResponse> {
     return this.sendAdditionalDetailsCommand.execute(details);
   }
+
+  loadOrderDetails(orderCode: string): void {
+    this.userIdService.takeUserId().subscribe(
+      (userId) => {
+        return this.orderHistoryConnector.get(userId, orderCode).subscribe((order) => {
+          this.placedOrder$.next(order);
+        })
+      }
+    );
+  }
+
 
   static preparePlaceOrderRequest(paymentData: any, billingAddress?: Address): PlaceOrderRequest {
     return {
