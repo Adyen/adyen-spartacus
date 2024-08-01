@@ -10,11 +10,13 @@ import {CheckoutAdyenEventListener} from "./events/checkout-adyen-event.listener
 import {PlaceOrderConnector} from "./core/connectors/placeorder.connector";
 import {OccPlaceOrderAdapter} from "./core/occ/adapters/occ-placeorder.adapter";
 import {AdyenOrderService} from "./service/adyen-order.service";
-import {OrderAdapter, OrderConnector} from "@spartacus/order/core"
-import {OccOrderAdapter} from "@spartacus/order/occ"
+import {OrderAdapter, OrderConnector, OrderHistoryConnector, OrderHistoryAdapter} from "@spartacus/order/core"
+import {OccOrderAdapter, OccOrderHistoryAdapter} from "@spartacus/order/occ"
 import {AdyenAddressService} from "./service/adyen-address.service";
 import {AdditionalDetailsConnector} from "./core/connectors/additional-details.connector";
 import {OccAdditionalDetailsAdapter} from "./core/occ/adapters/occ-additionaldetails.adapter";
+import {AdyenRedirectModule} from "./adyen-redirect/adyen-redirect.module";
+import { provideDefaultConfig } from '@spartacus/core';
 
 
 @NgModule({
@@ -22,7 +24,8 @@ import {OccAdditionalDetailsAdapter} from "./core/occ/adapters/occ-additionaldet
     CommonModule,
     CheckoutAdyenPaymentMethodModule,
     CheckoutAdyenEventModule,
-    CheckoutAdyenRootModule
+    CheckoutAdyenRootModule,
+    AdyenRedirectModule
   ],
   providers: [CheckoutAdyenConfigurationService,
     AdyenOrderService,
@@ -34,10 +37,25 @@ import {OccAdditionalDetailsAdapter} from "./core/occ/adapters/occ-additionaldet
       provide: OrderAdapter,
       useClass: OccOrderAdapter,
     },
+    provideDefaultConfig({
+      backend: {
+        occ: {
+          endpoints: {
+            orderDetail: 'users/${userId}/orders/${orderId}?fields=FULL'
+          }
+        }
+      }
+    }),
+    {
+      provide: OrderHistoryAdapter,
+      useClass: OccOrderHistoryAdapter
+    },
     OccPlaceOrderAdapter,
     OccAdditionalDetailsAdapter,
     OccCheckoutConfigAdapter,
     CheckoutAdyenEventListener,
-    CheckoutConfigurationConnector],
+    CheckoutConfigurationConnector,
+    OrderHistoryConnector],
 })
-export class AdyenPaymentsModule { }
+export class AdyenPaymentsModule {
+}
