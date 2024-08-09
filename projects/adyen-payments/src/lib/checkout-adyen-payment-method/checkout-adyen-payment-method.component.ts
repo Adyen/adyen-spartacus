@@ -26,6 +26,7 @@ import {PlaceOrderResponse} from "../core/models/occ.order.models";
 import {AdyenOrderService} from "../service/adyen-order.service";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
 import { UserIdService } from '@spartacus/core';
+import { EventService } from '@spartacus/core';
 
 @Component({
   selector: 'cx-payment-method',
@@ -66,6 +67,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected globalMessageService: GlobalMessageService,
     protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
     protected adyenOrderService: AdyenOrderService,
+    protected eventService: EventService,
     private userIdService: UserIdService
   ) {
   }
@@ -90,11 +92,31 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         this.deliveryAddress = address;
       });
 
-    this.loadAdyenConfiguration();
+    this.subscriptions.add(
+      this.eventService.get(CheckoutAdyenConfigurationReloadEvent).subscribe(event => {
+        this.handleConfigurationReload(event);
+      })
+    );
+
+    this.checkoutAdyenConfigurationService.getCheckoutConfigurationState()
+      .pipe(
+        filter((state) => !state.loading),
+        take(1),
+        map((state) => state.data)
+      ).subscribe((async config => {
+        if (config) {
+          const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
+          this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
+        }
+      })
+    );
+
   }
 
-  private loadAdyenConfiguration(): void {
+  protected handleConfigurationReload(event: CheckoutAdyenConfigurationReloadEvent): void {
+    this.dropIn.unmount();
     this.activeCartFacade.getActiveCartId().pipe(
+      filter(cartId => !!cartId),
       switchMap(cartId => this.userIdService.takeUserId().pipe(
         switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(userId, cartId))
       ))
