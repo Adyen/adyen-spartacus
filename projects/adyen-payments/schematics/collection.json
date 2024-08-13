@@ -3,13 +3,11 @@
     "schematics": {
       "ng-add": {
         "description": "Add Adyen Payments to the Spartacus checkout.",
-        "factory": "./ng-add/index#ngAdd",
-        "schema": "./ng-add/schema.json"
+        "factory": "./ng-add/index#ngAdd"
       },
-      "payemnt-step": {
-        "description": "Generate a service in the project.",
-        "factory": "./payment-step/index#myService",
-        "schema": "./payment-step/schema.json"
+      "adyen-payment-step": {
+        "description": "Modify the payment step to use Adyen.",
+        "factory": "./adyen-payment-step/index#adyenPaymentStep"
       }
     }
   }
