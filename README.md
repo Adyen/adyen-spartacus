@@ -1,27 +1,51 @@
-# AdyenSpartacus
+# SAP Composable Storefront - Adyen Payments Library ( 0.3 Alpha)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.6.
+This repository contains an Angular library that integrates Adyen payments into the SAP Composable Storefront, specifically designed for the Spartacus framework. Please note that this is an **unstable alpha version**, and it is still under development. Use it at your own risk and in testing environments only.
 
-## Development server
+## Requirements
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- Angular version: `17.3.0`
+- Spartacus version: `2211.23.0-1`
 
-## Code scaffolding
+## Installation
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### Prerequisites
 
-## Build
+Before installing the Adyen Payments library, ensure that you have a local npm registry running. If not, you can start one with [Verdaccio](https://verdaccio.org/).
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+### Build and Publish the Library
 
-## Running unit tests
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Adyen/adyen-spartacus/
+   cd adyen-spartacus/projects/adyen-payments
+   ```
+2. **Build the package**:
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+    ```bash
+    npm run build
+    ```
+3. **Publish the package to the local npm registry**:
 
-## Running end-to-end tests
+    ```bash
+    npm --registry http://localhost:4873 publish --access public
+    ```
+### Installation on SAP Composable Storefront
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+**Install the Adyen Payments library**:
 
-## Further help
+    ng add adyen-payments --registry http://localhost:4873
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+This will automatically configure your storefront to include Adyen Payments functionality if it is a clean installation.
+
+### Manual Configuration (Non-clean Installations):
+
+If your Spartacus storefront already has modifications, you might need to manually update the **checkout-feature.module.ts** and **order-feature.module.ts** files.
+Refer to the templates provided in the schematics directory of the Adyen Payments library for the correct configurations.
+
+## Known Issues
+This is an alpha release and may contain bugs. Please report any issues you encounter.
+The library has been tested with the specified versions of Angular and Spartacus only. Compatibility with other versions is not guaranteed.
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
