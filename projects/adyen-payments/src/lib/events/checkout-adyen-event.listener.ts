@@ -20,7 +20,6 @@ export class CheckoutAdyenEventListener implements OnDestroy{
         this.eventService.get(LanguageSetEvent),
         this.eventService.get(CurrencySetEvent)
       ).subscribe(() => {
-        console.log('CheckoutAdyenConfigurationReloadEvent');
         this.eventService.dispatch(
           new CheckoutAdyenConfigurationReloadEvent()
         );
