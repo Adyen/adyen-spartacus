@@ -138,9 +138,7 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
       this.selectedAddress$,
     ]);
     const translations$ = combineLatest([
-
-      //TODO: translations
-      of("Select address"),
+      this.translationService.translate('adyenCheckout.selectAddress'),
       this.translationService.translate('addressCard.selected'),
       this.translationService.translate('addressCard.phoneNumber'),
       this.translationService.translate('addressCard.mobileNumber'),

@@ -7,6 +7,7 @@ import {
   EventService,
   GlobalMessageService,
   GlobalMessageType,
+  TranslationService,
   UserIdService
 } from "@spartacus/core";
 import {OrderConnector, OrderHistoryConnector, OrderService} from '@spartacus/order/core';
@@ -31,7 +32,8 @@ export class AdyenOrderService extends OrderService {
               protected override orderConnector: OrderConnector,
               protected override eventService: EventService,
               protected globalMessageService: GlobalMessageService,
-              protected orderHistoryConnector: OrderHistoryConnector
+              protected orderHistoryConnector: OrderHistoryConnector,
+              protected translationService: TranslationService
   ) {
     super(activeCartFacade, userIdService, commandService, orderConnector, eventService)
   }
@@ -59,7 +61,10 @@ export class AdyenOrderService extends OrderService {
                 return {...response, success: true}
               }),
               catchError((error: HttpErrorResponse) => {
-                  this.globalMessageService.add(error.error.errorCode, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
+                  this.translationService.translate(error.error.errorCode).subscribe((message) => {
+                    this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
+                  })
+
                   let response: PlaceOrderResponse = {
                     success: false,
                     error: error.error.errorCode,
@@ -103,7 +108,10 @@ export class AdyenOrderService extends OrderService {
                 return {...response, success: true}
               }),
               catchError((error: HttpErrorResponse) => {
-                  this.globalMessageService.add(error.error.errorCode, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
+                  this.translationService.translate(error.error.errorCode).subscribe((message) => {
+                    this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
+                  })
+
                   let response: PlaceOrderResponse = {
                     success: false,
                     error: error.error.errorCode,

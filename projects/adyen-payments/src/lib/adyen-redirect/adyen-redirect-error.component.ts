@@ -5,6 +5,7 @@ import {
   GlobalMessageType,
   OCC_CART_ID_CURRENT,
   RoutingService,
+  TranslationService,
   UserIdService
 } from '@spartacus/core';
 
@@ -18,7 +19,8 @@ export class AdyenRedirectErrorComponent implements OnInit {
   constructor(protected routingService: RoutingService,
               protected globalMessageService: GlobalMessageService,
               protected multiCartFacade: MultiCartFacade,
-              protected userIdService: UserIdService
+              protected userIdService: UserIdService,
+              protected translationService: TranslationService,
   ) {
   }
 
@@ -28,8 +30,11 @@ export class AdyenRedirectErrorComponent implements OnInit {
 
       if (errorCode) {
         let decodedError = atob(errorCode);
-        
-        this.globalMessageService.add(decodedError, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
+
+        this.translationService.translate(decodedError).subscribe(message => {
+          this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
+        })
+
         this.multiCartFacade.reloadCart(OCC_CART_ID_CURRENT)
 
         this.userIdService.takeUserId().subscribe((userId) => {
