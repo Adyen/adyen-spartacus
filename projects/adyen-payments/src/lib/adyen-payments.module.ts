@@ -16,7 +16,9 @@ import {AdyenAddressService} from "./service/adyen-address.service";
 import {AdditionalDetailsConnector} from "./core/connectors/additional-details.connector";
 import {OccAdditionalDetailsAdapter} from "./core/occ/adapters/occ-additionaldetails.adapter";
 import {AdyenRedirectModule} from "./adyen-redirect/adyen-redirect.module";
-import { provideDefaultConfig } from '@spartacus/core';
+import {I18nConfig, provideConfig, provideDefaultConfig} from '@spartacus/core';
+import {adyenCheckoutTranslationChunksConfig, adyenCheckoutTranslations} from "./assets/translations/translations";
+
 
 
 @NgModule({
@@ -55,7 +57,13 @@ import { provideDefaultConfig } from '@spartacus/core';
     OccCheckoutConfigAdapter,
     CheckoutAdyenEventListener,
     CheckoutConfigurationConnector,
-    OrderHistoryConnector],
+    OrderHistoryConnector,
+    provideConfig(<I18nConfig>{
+      i18n: {
+        resources: adyenCheckoutTranslations,
+        chunks: adyenCheckoutTranslationChunksConfig,
+      },
+    })],
 })
 export class AdyenPaymentsModule {
 }
