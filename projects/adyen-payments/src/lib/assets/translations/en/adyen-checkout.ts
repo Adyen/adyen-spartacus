@@ -1,4 +1,4 @@
-{
+export const adyenCheckout = {
   "adyenCheckout": {
     "selectBillingAddress": "Select your billing address",
     "selectAddress": "Select address",

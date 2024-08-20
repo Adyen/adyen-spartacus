@@ -1,7 +1,6 @@
-// @ts-ignore
-import adyenCheckout from './adyen-checkout.json';
-// @ts-ignore
-import paymentErrors from './payment-errors.json';
+import {adyenCheckout} from "./adyen-checkout";
+import {paymentErrors} from "./payment-errors";
+
 
 export const en = {
   adyenCheckout,
