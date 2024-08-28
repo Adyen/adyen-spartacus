@@ -155,6 +155,10 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       analytics: {
         enabled: false
       },
+      //@ts-ignore
+      risk: {
+        enabled: true
+      },
       onPaymentCompleted(data: OnPaymentCompletedData, element?: UIElement) {
         console.info(data, element);
       },
