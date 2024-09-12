@@ -1,7 +1,7 @@
 import {Injectable} from "@angular/core";
 import {combineLatest, Observable, switchMap} from "rxjs";
 import {AdyenConfigData} from "../core/models/occ.config.models";
-import {OCC_USER_ID_ANONYMOUS, Query, QueryNotifier, QueryService, QueryState, UserIdService} from "@spartacus/core";
+import {LoginEvent, LogoutEvent, OCC_USER_ID_ANONYMOUS, Query, QueryNotifier, QueryService, QueryState, UserIdService} from "@spartacus/core";
 import {filter, map, take} from "rxjs/operators";
 import {ActiveCartFacade} from "@spartacus/cart/base/root";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
@@ -25,6 +25,7 @@ export class CheckoutAdyenConfigurationService extends AdyenBaseService {
       switchMap(([userId, cartId]) => this.checkoutConfigurationConnector.getCheckoutConfiguration(userId, cartId))
     ), {
       reloadOn: this.getCheckoutAdyenConfigurationLoadedEvents(),
+      resetOn: [LoginEvent, LogoutEvent]
     }
   );
 
@@ -39,11 +40,5 @@ export class CheckoutAdyenConfigurationService extends AdyenBaseService {
   fetchCheckoutConfiguration(userId: string, cartId: string): Observable<AdyenConfigData> {
     return this.checkoutConfigurationConnector.getCheckoutConfiguration(userId, cartId);
   }
-
-  getCheckoutConfiguration(): Observable<AdyenConfigData | undefined> {
-    return this.getCheckoutConfigurationState().pipe(
-      filter((state) => !state.loading),
-      map((state) => state.data)
-    );
-  }
+  
 }
