@@ -75,6 +75,10 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.sessionId = this.activatedRoute.snapshot.queryParamMap.get('sessionId') || '';
 
+    this.eventService.dispatch(
+      new CheckoutAdyenConfigurationReloadEvent()
+    );
+
     if (!getLastValueSync(this.activeCartFacade.isGuestCart())) {
       this.userPaymentService.loadPaymentMethods();
     } else {
