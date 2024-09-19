@@ -18,11 +18,13 @@ import {ActiveCartFacade} from '@spartacus/cart/base/root';
 import {AddressData, PlaceOrderRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
+import {errorCodePrefix} from "../assets/translations/translations";
 
 
 @Injectable()
 export class AdyenOrderService extends OrderService {
   private messageTimeout: number = 20000;
+  private placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
 
   constructor(protected placeOrderConnector: PlaceOrderConnector,
               protected additionalDetailsConnector: AdditionalDetailsConnector,
@@ -61,7 +63,7 @@ export class AdyenOrderService extends OrderService {
                 return {...response, success: true}
               }),
               catchError((error: HttpErrorResponse) => {
-                  this.translationService.translate(error.error.errorCode).subscribe((message) => {
+                  this.translationService.translate(this.placeOrderErrorCodePrefix + error.error.errorCode).subscribe((message) => {
                     this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
                   })
 
@@ -108,7 +110,7 @@ export class AdyenOrderService extends OrderService {
                 return {...response, success: true}
               }),
               catchError((error: HttpErrorResponse) => {
-                  this.translationService.translate(error.error.errorCode).subscribe((message) => {
+                  this.translationService.translate(this.placeOrderErrorCodePrefix + error.error.errorCode).subscribe((message) => {
                     this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
                   })
 
