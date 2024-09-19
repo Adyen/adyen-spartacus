@@ -8,6 +8,7 @@ import {
   TranslationService,
   UserIdService
 } from '@spartacus/core';
+import {errorCodePrefix} from "../assets/translations/translations";
 
 @Component({
   selector: 'adyen-redirect-error',
@@ -15,6 +16,7 @@ import {
 })
 export class AdyenRedirectErrorComponent implements OnInit {
   private messageTimeout: number = 20000;
+  private placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
 
   constructor(protected routingService: RoutingService,
               protected globalMessageService: GlobalMessageService,
@@ -31,7 +33,7 @@ export class AdyenRedirectErrorComponent implements OnInit {
       if (errorCode) {
         let decodedError = atob(errorCode);
 
-        this.translationService.translate(decodedError).subscribe(message => {
+        this.translationService.translate(this.placeOrderErrorCodePrefix + decodedError).subscribe(message => {
           this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
         })
 
