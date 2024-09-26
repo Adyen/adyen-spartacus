@@ -1,18 +1,19 @@
 import {ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild,} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {ActiveCartFacade} from '@spartacus/cart/base/root';
-import {CheckoutDeliveryAddressFacade, CheckoutPaymentFacade,} from '@spartacus/checkout/base/root';
+import {ActiveCartFacade, CartType, MultiCartFacade} from '@spartacus/cart/base/root';
+import {CheckoutDeliveryAddressFacade,} from '@spartacus/checkout/base/root';
 import {
   Address,
+  EventService,
   getLastValueSync,
-  GlobalMessageService,
+  OCC_CART_ID_CURRENT,
   PaymentDetails,
   RoutingService,
-  TranslationService,
+  UserIdService,
   UserPaymentService,
 } from '@spartacus/core';
 import {BehaviorSubject, Subscription,} from 'rxjs';
-import {filter, map, take,switchMap,} from 'rxjs/operators';
+import {filter, map, switchMap, take,} from 'rxjs/operators';
 import {CheckoutStepService} from "@spartacus/checkout/base/components";
 import AdyenCheckout from '@adyen/adyen-web';
 import {CheckoutAdyenConfigurationService} from "../service/checkout-adyen-configuration.service";
@@ -25,8 +26,6 @@ import AdyenCheckoutError from "@adyen/adyen-web/dist/types/core/Errors/AdyenChe
 import {PlaceOrderResponse} from "../core/models/occ.order.models";
 import {AdyenOrderService} from "../service/adyen-order.service";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
-import { UserIdService } from '@spartacus/core';
-import { EventService } from '@spartacus/core';
 
 @Component({
   selector: 'cx-payment-method',
@@ -58,17 +57,15 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   constructor(
     protected userPaymentService: UserPaymentService,
     protected checkoutDeliveryAddressFacade: CheckoutDeliveryAddressFacade,
-    protected checkoutPaymentFacade: CheckoutPaymentFacade,
     protected activatedRoute: ActivatedRoute,
-    protected translationService: TranslationService,
     protected routingService: RoutingService,
     protected activeCartFacade: ActiveCartFacade,
     protected checkoutStepService: CheckoutStepService,
-    protected globalMessageService: GlobalMessageService,
     protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
     protected adyenOrderService: AdyenOrderService,
     protected eventService: EventService,
-    private userIdService: UserIdService
+    private userIdService: UserIdService,
+    protected multiCartFacade: MultiCartFacade,
   ) {
   }
 
@@ -141,7 +138,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
           holderNameRequired: adyenConfig.cardHolderNameRequired,
           enableStoreDetails: adyenConfig.showRememberTheseDetails
         },
-        paypal:  {
+        paypal: {
           intent: "authorize"
         }
       },
@@ -166,9 +163,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       onPaymentCompleted(data: OnPaymentCompletedData, element?: UIElement) {
         console.info(data, element);
       },
-      onError(error: AdyenCheckoutError, element?: UIElement) {
-        console.error(error.name, error.message, error.stack, element);
-      },
+      onError: (error: AdyenCheckoutError) => this.handleError(error),
       onSubmit: (state: any, element: UIElement) => this.handlePayment(state.data),
       onAdditionalDetails: (state: any, element?: UIElement) => this.handleAdditionalDetails(state.data),
       onActionHandled(data: ActionHandledReturnObject) {
@@ -231,6 +226,25 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         this.resetDropInComponent()
       }
     }
+  }
+
+  private handleError(error: AdyenCheckoutError) {
+    let subscribeCancel = this.adyenOrderService.sendPaymentCancelled().subscribe(() => {
+      this.multiCartFacade.reloadCart(OCC_CART_ID_CURRENT)
+
+      let subscribeUser = this.userIdService.takeUserId().subscribe((userId) => {
+        this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId})
+
+        let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId) => {
+          this.eventService.dispatch(
+            new CheckoutAdyenConfigurationReloadEvent()
+          );
+        });
+        subscribeCart.unsubscribe();
+      });
+      subscribeUser.unsubscribe();
+      subscribeCancel.unsubscribe();
+    });
   }
 
   private resetDropInComponent() {
