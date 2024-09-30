@@ -7,8 +7,6 @@ import {CheckoutAdyenConfigurationService} from "./service/checkout-adyen-config
 import {CheckoutConfigurationConnector} from "./core/connectors/checkout-configuration.connector";
 import {OccCheckoutConfigAdapter} from "./core/occ/adapters/occ-checkout-config.adapter";
 import {CheckoutAdyenEventListener} from "./events/checkout-adyen-event.listener";
-import {PlaceOrderConnector} from "./core/connectors/placeorder.connector";
-import {OccPlaceOrderAdapter} from "./core/occ/adapters/occ-placeorder.adapter";
 import {AdyenOrderService} from "./service/adyen-order.service";
 import {OrderAdapter, OrderConnector, OrderHistoryConnector, OrderHistoryAdapter} from "@spartacus/order/core"
 import {OccOrderAdapter, OccOrderHistoryAdapter} from "@spartacus/order/occ"
@@ -18,6 +16,8 @@ import {OccAdditionalDetailsAdapter} from "./core/occ/adapters/occ-additionaldet
 import {AdyenRedirectModule} from "./adyen-redirect/adyen-redirect.module";
 import {I18nConfig, provideConfig, provideDefaultConfig} from '@spartacus/core';
 import {adyenCheckoutTranslationChunksConfig, adyenCheckoutTranslations} from "./assets/translations/translations";
+import {AdyenOrderConnector} from "./core/connectors/adyen-order-connector.service";
+import {OccAdyenOrderAdapter} from "./core/occ/adapters/occ-adyen-order.adapter";
 
 
 
@@ -32,9 +32,9 @@ import {adyenCheckoutTranslationChunksConfig, adyenCheckoutTranslations} from ".
   providers: [CheckoutAdyenConfigurationService,
     AdyenOrderService,
     AdyenAddressService,
-    PlaceOrderConnector,
-    AdditionalDetailsConnector,
     OrderConnector,
+    AdditionalDetailsConnector,
+    AdyenOrderConnector,
     {
       provide: OrderAdapter,
       useClass: OccOrderAdapter,
@@ -52,7 +52,7 @@ import {adyenCheckoutTranslationChunksConfig, adyenCheckoutTranslations} from ".
       provide: OrderHistoryAdapter,
       useClass: OccOrderHistoryAdapter
     },
-    OccPlaceOrderAdapter,
+    OccAdyenOrderAdapter,
     OccAdditionalDetailsAdapter,
     OccCheckoutConfigAdapter,
     CheckoutAdyenEventListener,

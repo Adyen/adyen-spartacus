@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CartType, MultiCartFacade} from '@spartacus/cart/base/root';
 import {
   GlobalMessageService,
@@ -9,14 +9,16 @@ import {
   UserIdService
 } from '@spartacus/core';
 import {errorCodePrefix} from "../assets/translations/translations";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'adyen-redirect-error',
   templateUrl: './adyen-redirect.component.html',
 })
-export class AdyenRedirectErrorComponent implements OnInit {
+export class AdyenRedirectErrorComponent implements OnInit, OnDestroy {
   private messageTimeout: number = 20000;
   private placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
+  private subscriptions = new Subscription();
 
   constructor(protected routingService: RoutingService,
               protected globalMessageService: GlobalMessageService,
@@ -27,7 +29,7 @@ export class AdyenRedirectErrorComponent implements OnInit {
   }
 
   private addErrorMessage() {
-    this.routingService.getParams().subscribe(params => {
+    let subscribeRouting = this.routingService.getParams().subscribe(params => {
       let errorCode = params['errorCode'];
 
       if (errorCode) {
@@ -39,15 +41,19 @@ export class AdyenRedirectErrorComponent implements OnInit {
 
         this.multiCartFacade.reloadCart(OCC_CART_ID_CURRENT)
 
-        this.userIdService.takeUserId().subscribe((userId) => {
+        let subscribeUser = this.userIdService.takeUserId().subscribe((userId) => {
           this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId})
 
-          this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId) => {
+
+          let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId) => {
             this.routingService.go({cxRoute: "checkoutAdyenPaymentDetails"})
-          })
-        })
+          });
+          this.subscriptions.add(subscribeCart);
+        });
+        this.subscriptions.add(subscribeUser);
       }
-    })
+    });
+    this.subscriptions.add(subscribeRouting);
   }
 
 
@@ -55,4 +61,7 @@ export class AdyenRedirectErrorComponent implements OnInit {
     this.addErrorMessage();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
 }

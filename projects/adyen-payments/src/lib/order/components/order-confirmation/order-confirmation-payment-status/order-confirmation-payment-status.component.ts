@@ -14,7 +14,7 @@ export class OrderConfirmationPaymentStatusComponent implements OnInit, OnDestro
   constructor(protected orderPaymentStatusService: OrderPaymentStatusService,
               protected adyenOrderService: AdyenOrderService) {
     adyenOrderService.getOrderDetails().subscribe(orderData => {
-      this.orderCode = orderData!.code as string;
+      this.orderCode = orderData? orderData.code : undefined;
     })
   }
 
@@ -22,7 +22,7 @@ export class OrderConfirmationPaymentStatusComponent implements OnInit, OnDestro
   private numberOfRetries = 30;
   private currentRetry = 1;
 
-  private orderCode: string;
+  private orderCode?: string;
 
   paymentStatus$: BehaviorSubject<string | undefined>;
 
@@ -30,7 +30,7 @@ export class OrderConfirmationPaymentStatusComponent implements OnInit, OnDestro
 
 
   private timerCallback() {
-    if (this.currentRetry <= this.numberOfRetries) {
+    if (this.currentRetry <= this.numberOfRetries && this.orderCode) {
       this.orderPaymentStatusService.getOrderStatus(this.orderCode).subscribe((status) => {
         this.paymentStatus$.next(status);
         if (status !== 'waiting') {

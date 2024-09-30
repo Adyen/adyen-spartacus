@@ -11,9 +11,9 @@ import {
   UserIdService
 } from "@spartacus/core";
 import {OrderConnector, OrderHistoryConnector, OrderService} from '@spartacus/order/core';
-import {catchError, map, Observable, of, switchMap, tap} from "rxjs";
+import {BehaviorSubject, catchError, map, Observable, of, switchMap, tap} from "rxjs";
 import {OrderPlacedEvent} from '@spartacus/order/root';
-import {PlaceOrderConnector} from "../core/connectors/placeorder.connector";
+import {AdyenOrderConnector} from "../core/connectors/adyen-order-connector.service";
 import {ActiveCartFacade} from '@spartacus/cart/base/root';
 import {AddressData, PlaceOrderRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {HttpErrorResponse} from "@angular/common/http";
@@ -24,9 +24,10 @@ import {errorCodePrefix} from "../assets/translations/translations";
 @Injectable()
 export class AdyenOrderService extends OrderService {
   private messageTimeout: number = 20000;
+  private placedOrderNumber$ = new BehaviorSubject<string | undefined>(undefined);
   private placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
 
-  constructor(protected placeOrderConnector: PlaceOrderConnector,
+  constructor(protected placeOrderConnector: AdyenOrderConnector,
               protected additionalDetailsConnector: AdditionalDetailsConnector,
               protected override activeCartFacade: ActiveCartFacade,
               protected override userIdService: UserIdService,
@@ -49,6 +50,7 @@ export class AdyenOrderService extends OrderService {
             this.placeOrderConnector.placeOrder(userId, cartId, AdyenOrderService.preparePlaceOrderRequest(paymentData, billingAddress)).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
+                this.placedOrderNumber$.next(placeOrderResponse.orderNumber)
                 this.eventService.dispatch(
                   {
                     userId,
@@ -96,6 +98,7 @@ export class AdyenOrderService extends OrderService {
             this.additionalDetailsConnector.sendAdditionalDetails(userId, cartId, details).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
+                this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
                 this.eventService.dispatch(
                   {
                     userId,
@@ -130,9 +133,29 @@ export class AdyenOrderService extends OrderService {
       }
     );
 
-
   sendAdditionalDetails(details: any): Observable<PlaceOrderResponse> {
     return this.sendAdditionalDetailsCommand.execute(details);
+  }
+
+  protected sendCancelledPaymentCommand: Command<any, void> =
+    this.commandService.create<any, void>(
+      () =>
+        this.checkoutPreconditions().pipe(
+          switchMap(([userId, cartId]) => {
+               return this.placedOrderNumber$.pipe(
+                map((orderNumber) => {
+                  this.placeOrderConnector.paymentCanceled(userId, cartId, orderNumber!).subscribe()
+                }))
+            }
+          )
+        ),
+      {
+        strategy: CommandStrategy.CancelPrevious,
+      }
+    );
+
+  sendPaymentCancelled(): Observable<void> {
+    return this.sendCancelledPaymentCommand.execute({});
   }
 
   loadOrderDetails(orderCode: string): void {
