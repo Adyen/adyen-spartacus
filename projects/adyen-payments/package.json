@@ -1,6 +1,6 @@
 {
   "name": "adyen-payments",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "scripts": {
     "prebuild": "npm version patch -m \"Upgrade to %s for build\"",
     "build": "ng build && tsc -p tsconfig.schematics.json",
