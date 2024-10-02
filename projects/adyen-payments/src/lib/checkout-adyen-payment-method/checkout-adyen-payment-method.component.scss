@@ -1,5 +1,5 @@
 @import '@adyen/adyen-web/dist/adyen.css';
 
-.adyen-checkout__applepay__button {
-  -webkit-appearance:-apple-pay-button;
+.adyen-checkout__dropin .adyen-checkout__applepay__button {
+  -webkit-appearance: -apple-pay-button;
 }
