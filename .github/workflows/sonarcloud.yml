@@ -21,6 +21,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20.12.2'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       
       - name: Run SonarCloud scan
         env:
