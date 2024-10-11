@@ -1,0 +1,7 @@
+@import "bootstrap/scss/bootstrap";
+
+:host {
+  @include media-breakpoint-down(md) {
+    order: 6
+  }
+}

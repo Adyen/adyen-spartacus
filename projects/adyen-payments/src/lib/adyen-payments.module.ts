@@ -18,6 +18,10 @@ import {I18nConfig, provideConfig, provideDefaultConfig} from '@spartacus/core';
 import {adyenCheckoutTranslationChunksConfig, adyenCheckoutTranslations} from "./assets/translations/translations";
 import {AdyenOrderConnector} from "./core/connectors/adyen-order-connector.service";
 import {OccAdyenOrderAdapter} from "./core/occ/adapters/occ-adyen-order.adapter";
+import {
+  ExpressCheckoutProductModule
+} from "./product/components/express-checkout-product/express-checkout-product.module";
+import {ExpressCheckoutCartModule} from "./cart/components/express-checkout-cart/express-checkout-cart.module";
 
 
 
@@ -27,7 +31,9 @@ import {OccAdyenOrderAdapter} from "./core/occ/adapters/occ-adyen-order.adapter"
     CheckoutAdyenPaymentMethodModule,
     CheckoutAdyenEventModule,
     CheckoutAdyenRootModule,
-    AdyenRedirectModule
+    AdyenRedirectModule,
+    ExpressCheckoutProductModule,
+    ExpressCheckoutCartModule
   ],
   providers: [CheckoutAdyenConfigurationService,
     AdyenOrderService,
