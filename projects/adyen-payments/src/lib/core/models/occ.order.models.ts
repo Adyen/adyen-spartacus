@@ -1,4 +1,4 @@
-import { PaymentAction } from "@adyen/adyen-web/dist/types/types";
+import { PaymentAction } from "@adyen/adyen-web";
 import { Order } from '@spartacus/order/root';
 
 export interface PlaceOrderRequest {

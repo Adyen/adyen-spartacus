@@ -15,17 +15,14 @@ import {
 import {BehaviorSubject, Subscription,} from 'rxjs';
 import {filter, map, switchMap, take,} from 'rxjs/operators';
 import {CheckoutStepService} from "@spartacus/checkout/base/components";
-import AdyenCheckout from '@adyen/adyen-web';
 import {CheckoutAdyenConfigurationService} from "../service/checkout-adyen-configuration.service";
 import {AdyenConfigData} from "../core/models/occ.config.models";
-import DropinElement from "@adyen/adyen-web/dist/types/components/Dropin";
-import {CoreOptions} from "@adyen/adyen-web/dist/types/core/types";
-import {ActionHandledReturnObject, OnPaymentCompletedData} from "@adyen/adyen-web/dist/types/components/types";
-import UIElement from "@adyen/adyen-web/dist/types/components/UIElement";
-import AdyenCheckoutError from "@adyen/adyen-web/dist/types/core/Errors/AdyenCheckoutError";
+import {ActionHandledReturnObject} from "@adyen/adyen-web";
 import {PlaceOrderResponse} from "../core/models/occ.order.models";
 import {AdyenOrderService} from "../service/adyen-order.service";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
+import {CoreConfiguration, DropinConfiguration, UIElement} from "@adyen/adyen-web";
+import { AdyenCheckout, Dropin,AdyenCheckoutError } from '@adyen/adyen-web/auto'
 
 @Component({
   selector: 'cx-payment-method',
@@ -42,7 +39,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   @ViewChild('hook', {static: true}) hook: ElementRef;
   sessionId: string = '';
   redirectResult: string = '';
-  dropIn: DropinElement;
+  dropIn: Dropin;
 
   isGuestCheckout = false;
   paymentDetails?: PaymentDetails;
@@ -107,7 +104,11 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       ).subscribe((async config => {
         if (config) {
           const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-          this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
+          //this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
+
+          this.dropIn = new Dropin(adyenCheckout,  this.getDropinConfiguration(config)
+          ).mount(this.hook.nativeElement);
+
         }
       })
     );
@@ -124,30 +125,20 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     ).subscribe(async config => {
       if (config) {
         const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-        this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
+        this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)
+        ).mount(this.hook.nativeElement);
       }
     });
   }
 
-  protected getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreOptions {
+  protected getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreConfiguration {
     return {
-      paymentMethodsConfiguration: {
-        card: {
-          type: 'card',
-          hasHolderName: true,
-          holderNameRequired: adyenConfig.cardHolderNameRequired,
-          enableStoreDetails: adyenConfig.showRememberTheseDetails
-        },
-        paypal: {
-          intent: "authorize"
-        }
-      },
       paymentMethodsResponse: {
         paymentMethods: adyenConfig.paymentMethods,
         storedPaymentMethods: adyenConfig.storedPaymentMethodList
       },
       locale: adyenConfig.shopperLocale,
-      environment: adyenConfig.environmentMode,
+      environment: this.castToEnvironment(adyenConfig.environmentMode),
       clientKey: adyenConfig.adyenClientKey,
       session: {
         id: adyenConfig.sessionData.id,
@@ -160,9 +151,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       risk: {
         enabled: true
       },
-      onPaymentCompleted(data: OnPaymentCompletedData, element?: UIElement) {
-        console.info(data, element);
-      },
       onError: (error: AdyenCheckoutError) => this.handleError(error),
       onSubmit: (state: any, element: UIElement) => this.handlePayment(state.data),
       onAdditionalDetails: (state: any, element?: UIElement) => this.handleAdditionalDetails(state.data),
@@ -172,6 +160,29 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected castToEnvironment(env: string): CoreConfiguration['environment'] {
+    const validEnvironments: CoreConfiguration['environment'][] = ['test', 'live', 'live-us', 'live-au', 'live-apse', 'live-in'];
+    if (validEnvironments.includes(env as CoreConfiguration['environment'])) {
+      return env as CoreConfiguration['environment'];
+    }
+    throw new Error(`Invalid environment: ${env}`);
+  }
+
+  private getDropinConfiguration(adyenConfig: AdyenConfigData): DropinConfiguration {
+    return {
+      paymentMethodsConfiguration: {
+        card: {
+          type: 'card',
+          hasHolderName: true,
+          holderNameRequired: adyenConfig.cardHolderNameRequired,
+          enableStoreDetails: adyenConfig.showRememberTheseDetails
+        },
+        paypal: {
+          intent: "authorize"
+        }
+      },
+    }
+  }
 
   next(): void {
     this.checkoutStepService.next(this.activatedRoute);
