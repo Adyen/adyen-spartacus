@@ -1,14 +1,8 @@
 {
-  "name": "adyen-payments",
+  "name": "@adyen/spartacus-payments",
   "version": "1.0.0",
-  "scripts": {
-    "prebuild": "npm version patch -m \"Upgrade to %s for build\"",
-    "build": "ng build && tsc -p tsconfig.schematics.json",
-    "postbuild": "copyfiles schematics/*/files/** schematics/collection.json ../../dist/adyen-payments/"
-  },
   "schematics": "./schematics/collection.json",
   "peerDependencies": {
-    "@adyen/adyen-web": "6.3.0",
     "@angular/common": "^17.3.0",
     "@angular/core": "^17.3.0"
   },
