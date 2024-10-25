@@ -21,7 +21,7 @@ export class AdyenRedirectSuccessComponent implements OnInit {
     })
 
     this.adyenOrderService.getOrderDetails().subscribe((order) => {
-      if (order) {
+      if (order && order.code) {
         this.routingService.go({cxRoute: 'orderConfirmation'});
       }
     })

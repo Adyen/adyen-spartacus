@@ -4,8 +4,8 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@adyen/spartacus-payments/*": ["./../../dist/adyen/spartacus-payments/*"],
-      "@adyen/spartacus-payments": ["./../../dist/adyen/spartacus-payments"]
+      "@adyen/adyen-spartacus/*": ["./../../dist/adyen/adyen-spartacus/*"],
+      "@adyen/adyen-spartacus": ["./../../dist/adyen/adyen-spartacus"]
     },
     "outDir": "../../out-tsc/app",
     "types": []

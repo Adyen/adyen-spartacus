@@ -1,5 +1,5 @@
 {
-  "name": "@adyen/spartacus-payments",
+  "name": "@adyen/adyen-spartacus",
   "version": "1.0.0",
   "schematics": "./schematics/collection.json",
   "peerDependencies": {

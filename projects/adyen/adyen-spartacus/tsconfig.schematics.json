@@ -15,7 +15,7 @@
       "noUnusedParameters": true,
       "noUnusedLocals": true,
       "rootDir": "schematics",
-      "outDir": "../../../dist/adyen/spartacus-payments/schematics",
+      "outDir": "../../../dist/adyen/adyen-spartacus/schematics",
       "skipDefaultLibCheck": true,
       "skipLibCheck": true,
       "sourceMap": true,
