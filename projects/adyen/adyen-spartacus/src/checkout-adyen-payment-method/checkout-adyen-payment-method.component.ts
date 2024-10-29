@@ -104,8 +104,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       ).subscribe((async config => {
         if (config) {
           const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-          //this.dropIn = adyenCheckout.create("dropin").mount(this.hook.nativeElement);
-
           this.dropIn = new Dropin(adyenCheckout,  this.getDropinConfiguration(config)
           ).mount(this.hook.nativeElement);
 

@@ -22,6 +22,7 @@ import {
   ExpressCheckoutProductModule
 } from "./product/components/express-checkout-product/express-checkout-product.module";
 import {ExpressCheckoutCartModule} from "./cart/components/express-checkout-cart/express-checkout-cart.module";
+import {AdyenExpressOrderService} from "./service/adyen-express-order.service";
 
 
 
@@ -37,6 +38,7 @@ import {ExpressCheckoutCartModule} from "./cart/components/express-checkout-cart
   ],
   providers: [CheckoutAdyenConfigurationService,
     AdyenOrderService,
+    AdyenExpressOrderService,
     AdyenAddressService,
     OrderConnector,
     AdditionalDetailsConnector,

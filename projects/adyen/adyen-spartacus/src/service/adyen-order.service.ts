@@ -90,6 +90,7 @@ export class AdyenOrderService extends OrderService {
   }
 
 
+
   protected sendAdditionalDetailsCommand: Command<any, PlaceOrderResponse> =
     this.commandService.create<any, PlaceOrderResponse>(
       (details) =>

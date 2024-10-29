@@ -1,1 +1,4 @@
-<p>express-checkout-product works!</p>
+<br />
+<p *ngIf="product?.purchasable && (product?.price?.value > 0)">
+  <cx-google-express-payment  [product]="product"></cx-google-express-payment>
+</p>
