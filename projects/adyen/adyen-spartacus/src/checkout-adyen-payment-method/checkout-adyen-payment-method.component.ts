@@ -23,6 +23,7 @@ import {AdyenOrderService} from "../service/adyen-order.service";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
 import {CoreConfiguration, DropinConfiguration, UIElement} from "@adyen/adyen-web";
 import { AdyenCheckout, Dropin,AdyenCheckoutError } from '@adyen/adyen-web/auto'
+import {AdyenExpressOrderService} from "../service/adyen-express-order.service";
 
 @Component({
   selector: 'cx-payment-method',
@@ -59,7 +60,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected activeCartFacade: ActiveCartFacade,
     protected checkoutStepService: CheckoutStepService,
     protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
-    protected adyenOrderService: AdyenOrderService,
+    protected adyenOrderService: AdyenExpressOrderService,
     protected eventService: EventService,
     private userIdService: UserIdService,
     protected multiCartFacade: MultiCartFacade,

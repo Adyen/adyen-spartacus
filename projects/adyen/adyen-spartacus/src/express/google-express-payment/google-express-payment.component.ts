@@ -52,11 +52,6 @@ export class GoogleExpressPaymentComponent implements OnInit {
   private async setupAdyenCheckout(config: AdyenConfigData) {
     const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
 
-    if (this.product) {
-      console.log("Product: ", this.product.purchasable);
-      console.log("Product: ", this.product.code);
-    }
-
     this.googlePay = new GooglePay(adyenCheckout, {
       callbackIntents: ['SHIPPING_ADDRESS'],
       shippingAddressRequired: true,
@@ -92,7 +87,7 @@ export class GoogleExpressPaymentComponent implements OnInit {
   }
 
   private handleOnSubmit(state: any, actions: any) {
-    this.adyenOrderService.adyenPlaceOrder(state.data, this.authorizedPaymentData, this.product).subscribe(
+    this.adyenOrderService.adyenPlaceExpressOrder(state.data, this.authorizedPaymentData, this.product).subscribe(
       result => {
         if (result?.success) {
           if (result.executeAction && result.paymentsAction !== undefined) {
@@ -151,12 +146,9 @@ export class GoogleExpressPaymentComponent implements OnInit {
     throw new Error(`Invalid environment: ${env}`);
   }
 
-  handleError(error: AdyenCheckoutError) {
-    console.error("Something went wrong", error);
-  }
+  handleError(error: AdyenCheckoutError) {}
 
   onSuccess(): void {
-    console.log("Redirect to orderConfirmation..");
     this.routingService.go({ cxRoute: 'orderConfirmation' });
   }
 }

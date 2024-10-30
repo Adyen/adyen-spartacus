@@ -23,9 +23,9 @@ import {errorCodePrefix} from "../assets/translations/translations";
 
 @Injectable()
 export class AdyenOrderService extends OrderService {
-  private messageTimeout: number = 20000;
-  private placedOrderNumber$ = new BehaviorSubject<string | undefined>(undefined);
-  private placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
+  protected messageTimeout: number = 20000;
+  protected placedOrderNumber$ = new BehaviorSubject<string | undefined>(undefined);
+  protected placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
 
   constructor(protected placeOrderConnector: AdyenOrderConnector,
               protected additionalDetailsConnector: AdditionalDetailsConnector,
