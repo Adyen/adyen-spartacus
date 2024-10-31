@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit,OnDestroy, Input } from '@angular/core';
 import { filter, map, switchMap, take } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { GooglePayButtonModule } from '@google-pay/button-angular';
@@ -20,7 +20,7 @@ import {CheckoutAdyenConfigurationReloadEvent} from "../../events/checkout-adyen
   templateUrl: './google-express-payment.component.html',
   styleUrls: ['./google-express-payment.component.css']
 })
-export class GoogleExpressPaymentComponent implements OnInit {
+export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
 
   protected subscriptions = new Subscription();
 
@@ -53,6 +53,11 @@ export class GoogleExpressPaymentComponent implements OnInit {
     );
 
     this.initializeGooglePay();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    this.googlePay.unmount();
   }
 
   private initializeGooglePay() {
