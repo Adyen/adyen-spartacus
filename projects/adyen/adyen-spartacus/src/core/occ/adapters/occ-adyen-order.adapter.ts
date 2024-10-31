@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {OccEndpointsService} from '@spartacus/core';
 import {Observable} from 'rxjs';
-import {PlaceOrderRequest, PlaceOrderResponse} from "../../models/occ.order.models";
+import {GooglePayExpressCartRequest, PlaceOrderRequest, PlaceOrderResponse} from "../../models/occ.order.models";
 
 @Injectable()
 export class OccAdyenOrderAdapter {
@@ -36,6 +36,28 @@ export class OccAdyenOrderAdapter {
         userId,
         cartId,
         orderCode
+      }
+    });
+  }
+
+  public placeGoogleExpressOrderCart(userId: string, cartId: string, orderData: GooglePayExpressCartRequest): Observable<PlaceOrderResponse> {
+    return this.http.post<PlaceOrderResponse>(orderData.productCode  ? this.getPlaceGoogleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceGoogleExpressOrderEndpointCart(userId, cartId), orderData);
+  }
+
+  protected getPlaceGoogleExpressOrderEndpointCart(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/google/cart', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  protected getPlaceGoogleExpressOrderEndpointProduct(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/google/PDP', {
+      urlParams: {
+        userId,
+        cartId,
       }
     });
   }

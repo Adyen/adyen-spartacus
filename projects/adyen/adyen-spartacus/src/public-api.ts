@@ -8,4 +8,5 @@ export * from './checkout-adyen-payment-method/checkout-adyen-payment-method.com
 export * from './order/components/order-confirmation/order-confirmation-payment-status/order-confirmation-payment-status.module';
 export * from './order/components/order-confirmation/order-confirmation-payment-status/order-confirmation-payment-status.component';
 export * from './service/adyen-order.service';
+export * from './service/adyen-express-order.service';
 

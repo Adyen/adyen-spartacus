@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import {PlaceOrderRequest, PlaceOrderResponse} from "../models/occ.order.models";
+import {GooglePayExpressCartRequest, PlaceOrderRequest, PlaceOrderResponse} from "../models/occ.order.models";
 import {OccAdyenOrderAdapter} from "../occ/adapters/occ-adyen-order.adapter";
 
 @Injectable()
@@ -13,5 +13,9 @@ export class AdyenOrderConnector {
 
   paymentCanceled(userId: string, cartId: string, orderCode: string): Observable<void> {
     return this.adapter.cancelPayment(userId, cartId, orderCode);
+  }
+
+  placeGoogleExpressOrderCart(userId: string, cartId: string, request: GooglePayExpressCartRequest): Observable<PlaceOrderResponse> {
+    return this.adapter.placeGoogleExpressOrderCart(userId, cartId, request);
   }
 }

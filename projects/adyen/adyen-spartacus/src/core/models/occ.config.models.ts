@@ -8,6 +8,7 @@ export interface AdyenConfigData {
   creditCardLabel: string;
   allowedCards: AllowedCard[];
   amount: AmountData;
+  amountDecimal: number;
   adyenClientKey: string;
   adyenPaypalMerchantId: string;
   deviceFingerPrintUrl: string;
