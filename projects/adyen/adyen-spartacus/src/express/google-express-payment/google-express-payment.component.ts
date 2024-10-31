@@ -7,8 +7,11 @@ import { AdyenCheckout, AdyenCheckoutError, GooglePay } from '@adyen/adyen-web/a
 import { CheckoutAdyenConfigurationService } from "../../service/checkout-adyen-configuration.service";
 import { AdyenConfigData } from "../../core/models/occ.config.models";
 import { AdyenExpressOrderService } from "../../service/adyen-express-order.service";
-import { RoutingService, Product } from '@spartacus/core';
+import { RoutingService, Product,  EventService,  UserIdService, } from '@spartacus/core';
 import { of } from 'rxjs';
+import {BehaviorSubject, Subscription,} from 'rxjs';
+import {ActiveCartFacade, CartType, MultiCartFacade} from '@spartacus/cart/base/root';
+import {CheckoutAdyenConfigurationReloadEvent} from "../../events/checkout-adyen.events";
 
 @Component({
   selector: 'cx-google-express-payment',
@@ -18,6 +21,8 @@ import { of } from 'rxjs';
   styleUrls: ['./google-express-payment.component.css']
 })
 export class GoogleExpressPaymentComponent implements OnInit {
+
+  protected subscriptions = new Subscription();
 
   @Input()
   product: Product;
@@ -30,9 +35,23 @@ export class GoogleExpressPaymentComponent implements OnInit {
     protected checkoutAdyenConfigurationService: CheckoutAdyenConfigurationService,
     protected adyenOrderService: AdyenExpressOrderService,
     protected routingService: RoutingService,
+    protected eventService: EventService,
+    protected activeCartFacade: ActiveCartFacade,
+    private userIdService: UserIdService,
   ) {}
 
   ngOnInit(): void {
+
+    this.eventService.dispatch(
+      new CheckoutAdyenConfigurationReloadEvent()
+    );
+
+    this.subscriptions.add(
+      this.eventService.get(CheckoutAdyenConfigurationReloadEvent).subscribe(event => {
+        this.handleConfigurationReload(event);
+      })
+    );
+
     this.initializeGooglePay();
   }
 
@@ -65,7 +84,7 @@ export class GoogleExpressPaymentComponent implements OnInit {
       transactionInfo: {
         totalPriceStatus: 'FINAL',
         totalPriceLabel: 'Total',
-        totalPrice: this.product?.price?.value ? this.product.price.value.toString() : this.convertAmount(config.amount.value),
+        totalPrice: this.product?.price?.value ? this.product.price.value.toString() : config.amountDecimal.toString(),
         currencyCode: this.product?.price?.currencyIso ? this.product.price.currencyIso : config.amount.currency,
         countryCode: 'US'
       },
@@ -108,10 +127,18 @@ export class GoogleExpressPaymentComponent implements OnInit {
     );
   }
 
-  convertAmount(num: number): string {
-    const integerPart = Math.floor(num / 100).toString();
-    const decimalPart = (num % 100).toString().padStart(2, '0');
-    return `${integerPart}.${decimalPart}`;
+  protected handleConfigurationReload(event: CheckoutAdyenConfigurationReloadEvent): void {
+    this.googlePay.unmount();
+    this.activeCartFacade.getActiveCartId().pipe(
+      filter(cartId => !!cartId),
+      switchMap(cartId => this.userIdService.takeUserId().pipe(
+        switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(userId, cartId))
+      ))
+    ).subscribe(async config => {
+      if (config) {
+        await this.setupAdyenCheckout(config)
+      }
+    });
   }
 
   protected getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreConfiguration {
