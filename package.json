@@ -48,7 +48,6 @@
     "@spartacus/tracking": "~2211.23.0-1",
     "@spartacus/user": "~2211.23.0-1",
     "@types/googlepay": "^0.7.6",
-    "adyen-payments": "^1.0.6",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
