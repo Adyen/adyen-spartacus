@@ -82,7 +82,8 @@ describe('CheckoutAdyenConfigurationService', () => {
       immediateCapture: false,
       countryCode: 'US',
       cardHolderNameRequired: true,
-      sepaDirectDebit: false
+      sepaDirectDebit: false,
+      amountDecimal: 1000
     };
 
     checkoutConfigurationConnector.getCheckoutConfiguration.and.returnValue(of(mockConfigData));
