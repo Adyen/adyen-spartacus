@@ -88,10 +88,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
 
   prepareDataGoogle(paymentData: any, authorizedPaymentData: any, product: Product): GooglePayExpressCartRequest {
     const baseData = {
-      googlePayDetails: {
-        googlePayToken: paymentData.paymentMethod.googlePayToken,
-        googlePayCardNetwork: paymentData.paymentMethod.googlePayCardNetwork
-      },
+      googlePayDetails: paymentData.paymentMethod,
       addressData: {
         email: authorizedPaymentData.authorizedEvent.email,
         firstName: paymentData.deliveryAddress.firstName,
@@ -107,7 +104,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
         }
       }
     };
-
+    delete baseData.googlePayDetails.subtype;
     return product ? { productCode: product.code, ...baseData } : baseData;
   }
 }

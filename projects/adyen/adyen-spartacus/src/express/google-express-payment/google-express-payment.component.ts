@@ -57,7 +57,7 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
-    this.googlePay.unmount();
+    if(this.googlePay) this.googlePay.unmount();
   }
 
   private initializeGooglePay() {
