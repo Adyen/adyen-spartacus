@@ -104,7 +104,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
         }
       }
     };
-    delete baseData.googlePayDetails.type;
+    delete baseData.googlePayDetails.subtype;
     return product ? { productCode: product.code, ...baseData } : baseData;
   }
 }
