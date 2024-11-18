@@ -1,26 +1,32 @@
-import { Injectable } from "@angular/core";
+import {Injectable} from "@angular/core";
 import {
-  Address,
   Command,
   CommandService,
   CommandStrategy,
   EventService,
   GlobalMessageService,
   GlobalMessageType,
+  Product,
   TranslationService,
-  UserIdService,
-  Product
+  UserIdService
 } from "@spartacus/core";
-import { OrderConnector, OrderHistoryConnector, OrderService } from '@spartacus/order/core';
-import { BehaviorSubject, catchError, map, Observable, of, switchMap, tap } from "rxjs";
-import { OrderPlacedEvent } from '@spartacus/order/root';
-import { AdyenOrderConnector } from "../core/connectors/adyen-order-connector.service";
-import { ActiveCartFacade } from '@spartacus/cart/base/root';
-import { AddressData, GooglePayExpressCartRequest, PlaceOrderResponse } from "../core/models/occ.order.models";
-import { HttpErrorResponse } from "@angular/common/http";
-import { errorCodePrefix } from "../assets/translations/translations";
+import {OrderConnector, OrderHistoryConnector} from '@spartacus/order/core';
+import {catchError, map, Observable, of, switchMap, tap} from "rxjs";
+import {OrderPlacedEvent} from '@spartacus/order/root';
+import {AdyenOrderConnector} from "../core/connectors/adyen-order-connector.service";
+import {ActiveCartFacade} from '@spartacus/cart/base/root';
+import {ApplePayExpressRequest, GooglePayExpressCartRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
+import {HttpErrorResponse} from "@angular/common/http";
 import {AdyenOrderService} from "./adyen-order.service";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
+import {PaymentData} from "@adyen/adyen-web";
+
+type ExpressPaymentDataRequest = GooglePayExpressCartRequest | ApplePayExpressRequest;
+
+type ExpressCommand = {
+  paymentData: ExpressPaymentDataRequest,
+  connectorFunction: (userId: string, cartId: string, request: ExpressPaymentDataRequest) => Observable<PlaceOrderResponse>
+}
 
 @Injectable()
 export class AdyenExpressOrderService extends AdyenOrderService {
@@ -41,12 +47,13 @@ export class AdyenExpressOrderService extends AdyenOrderService {
     super(placeOrderConnector, additionalDetailsConnector, activeCartFacade, userIdService, commandService, orderConnector, eventService, globalMessageService, orderHistoryConnector, translationService);
   }
 
-  protected adyenPlaceExpressOrderCommand: Command<GooglePayExpressCartRequest, PlaceOrderResponse> =
-    this.commandService.create<GooglePayExpressCartRequest, PlaceOrderResponse>(
-      (paymentData) =>
+  protected adyenPlaceExpressOrderCommand: Command<ExpressCommand, PlaceOrderResponse> =
+    this.commandService.create<ExpressCommand, PlaceOrderResponse>(
+      (expressCommand) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, paymentData).pipe(
+            // this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, paymentData).pipe(
+            expressCommand.connectorFunction(userId, cartId, expressCommand.paymentData).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
@@ -70,8 +77,20 @@ export class AdyenExpressOrderService extends AdyenOrderService {
       }
     );
 
-  adyenPlaceExpressOrder(paymentData: any, authorizedPaymentData: any, product: Product): Observable<PlaceOrderResponse> {
-    return this.adyenPlaceExpressOrderCommand.execute(this.prepareDataGoogle(paymentData, authorizedPaymentData, product));
+  adyenPlaceGoogleExpressOrder(paymentData: any, authorizedPaymentData: any, product: Product): Observable<PlaceOrderResponse> {
+    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataGoogle(paymentData, authorizedPaymentData, product), connectorFunction: this.placeExpressGoogleOrderWrapper});
+  }
+
+  protected placeExpressGoogleOrderWrapper(userId: string, cartId: string, request: ExpressPaymentDataRequest): Observable<PlaceOrderResponse> {
+    return this.placeOrderConnector.placeGoogleExpressOrderCart(userId,cartId, request as GooglePayExpressCartRequest)
+  }
+
+  adyenPlaceAppleExpressOrder(paymentData: PaymentData, authorizedPaymentData: any, product: Product): Observable<PlaceOrderResponse> {
+    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataGoogle(paymentData, authorizedPaymentData, product), connectorFunction: this.placeExpressAppleOrderWrapper});
+  }
+
+  protected placeExpressAppleOrderWrapper(userId: string, cartId: string, request: ExpressPaymentDataRequest): Observable<PlaceOrderResponse> {
+    return this.placeOrderConnector.placeAppleExpressOrder(userId,cartId, request as ApplePayExpressRequest)
   }
 
   private handlePlaceOrderError(error: HttpErrorResponse): Observable<PlaceOrderResponse> {
@@ -105,6 +124,30 @@ export class AdyenExpressOrderService extends AdyenOrderService {
       }
     };
     delete baseData.googlePayDetails.subtype;
+    return product ? { productCode: product.code, ...baseData } : baseData;
+  }
+
+  prepareDataApple(paymentData: PaymentData, authorizedPaymentData: any, product: Product): ApplePayExpressRequest {
+    let event = authorizedPaymentData.authorizedEvent;
+
+    const baseData = {
+      applePayDetails: paymentData.paymentMethod,
+      addressData: {
+        email: event.payment.shippingContact?.emailAddress,
+        firstName: event.payment.shippingContact?.givenName,
+        lastName: event.payment.shippingContact?.familyName,
+        line1: event.payment.shippingContact?.addressLines ? event.payment.shippingContact?.addressLines[0] : "",
+        line2: event.payment.shippingContact?.addressLines ? event.payment.shippingContact?.addressLines[1] : "",
+        postalCode: event.payment.shippingContact?.postalCode,
+        town: event.payment.shippingContact?.locality,
+        country: {
+          isocode: event.payment.shippingContact?.countryCode,
+        },
+        region: {
+          isocode: event.payment.shippingContact?.administrativeArea
+        }
+      }
+    };
     return product ? { productCode: product.code, ...baseData } : baseData;
   }
 }

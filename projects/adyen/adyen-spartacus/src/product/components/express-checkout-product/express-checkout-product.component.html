@@ -1,4 +1,5 @@
 <br />
 <p *ngIf="product?.purchasable && (product?.price?.value > 0)">
-  <cx-google-express-payment  [product]="product"></cx-google-express-payment>
+  <cx-google-express-payment [product]="product"></cx-google-express-payment>
+  <cx-apple-express-payment [product]="product"></cx-apple-express-payment>
 </p>
