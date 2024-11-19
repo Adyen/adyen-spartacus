@@ -93,7 +93,10 @@ export class AppleExpressPaymentComponent implements OnInit, OnDestroy{
         actions.resolve();
       },
       onError: (error) => this.handleError(error)
-    }).mount("#apple-pay-button");
+    })
+
+    this.applePay.isAvailable()
+      .then(() => this.applePay.mount("#apple-pay-button"))
   }
 
   private handleOnSubmit(state: SubmitData, actions: any) {
