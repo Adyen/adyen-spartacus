@@ -86,7 +86,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
   }
 
   adyenPlaceAppleExpressOrder(paymentData: PaymentData, authorizedPaymentData: any, product: Product): Observable<PlaceOrderResponse> {
-    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataGoogle(paymentData, authorizedPaymentData, product), connectorFunction: this.placeExpressAppleOrderWrapper});
+    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataApple(paymentData, authorizedPaymentData, product), connectorFunction: this.placeExpressAppleOrderWrapper});
   }
 
   protected placeExpressAppleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
