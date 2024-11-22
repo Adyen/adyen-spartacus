@@ -76,38 +76,40 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   private async setupAdyenCheckout(config: AdyenConfigData) {
     const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
 
-    this.googlePay = new GooglePay(adyenCheckout, {
-      callbackIntents: ['SHIPPING_ADDRESS'],
-      shippingAddressRequired: true,
-      shippingOptionRequired: false,
-      emailRequired: true,
-      shippingAddressParameters: {
-        allowedCountryCodes: [],
-        phoneNumberRequired: false
-      },
-      isExpress: true,
-      transactionInfo: {
-        totalPriceStatus: 'FINAL',
-        totalPriceLabel: 'Total',
-        totalPrice: this.product?.price?.value ? this.product.price.value.toString() : config.amountDecimal.toString(),
-        currencyCode: this.product?.price?.currencyIso ? this.product.price.currencyIso : config.amount.currency,
-        countryCode: 'US'
-      },
-      onSubmit: (state: any, element: UIElement, actions) => this.handleOnSubmit(state, actions),
-      paymentDataCallbacks: {
-        onPaymentDataChanged: async (intermediatePaymentData) => {
-          return new Promise(async resolve => {
-            const paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate = {};
-            resolve(paymentDataRequestUpdate);
-          });
+    if (config.expressPaymentConfig && (this.product && config.expressPaymentConfig.googlePayExpressEnabledOnProduct || config.expressPaymentConfig.amazonPayExpressEnabledOnProduct)){
+      this.googlePay = new GooglePay(adyenCheckout, {
+        callbackIntents: ['SHIPPING_ADDRESS'],
+        shippingAddressRequired: true,
+        shippingOptionRequired: false,
+        emailRequired: true,
+        shippingAddressParameters: {
+          allowedCountryCodes: [],
+          phoneNumberRequired: false
         },
-      },
-      onAuthorized: (paymentData, actions) => {
-        this.authorizedPaymentData = paymentData;
-        actions.resolve();
-      },
-      onError: (error) => this.handleError(error)
-    }).mount("#google-pay-button");
+        isExpress: true,
+        transactionInfo: {
+          totalPriceStatus: 'FINAL',
+          totalPriceLabel: 'Total',
+          totalPrice: this.product?.price?.value ? this.product.price.value.toString() : config.amountDecimal.toString(),
+          currencyCode: this.product?.price?.currencyIso ? this.product.price.currencyIso : config.amount.currency,
+          countryCode: 'US'
+        },
+        onSubmit: (state: any, element: UIElement, actions) => this.handleOnSubmit(state, actions),
+        paymentDataCallbacks: {
+          onPaymentDataChanged: async (intermediatePaymentData) => {
+            return new Promise(async resolve => {
+              const paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate = {};
+              resolve(paymentDataRequestUpdate);
+            });
+          },
+        },
+        onAuthorized: (paymentData, actions) => {
+          this.authorizedPaymentData = paymentData;
+          actions.resolve();
+        },
+        onError: (error) => this.handleError(error)
+      }).mount("#google-pay-button");
+    }
   }
 
   private handleOnSubmit(state: any, actions: any) {

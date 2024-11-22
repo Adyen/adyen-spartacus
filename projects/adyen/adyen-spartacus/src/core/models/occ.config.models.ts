@@ -27,6 +27,16 @@ export interface AdyenConfigData {
   countryCode: string;
   cardHolderNameRequired: boolean;
   sepaDirectDebit: boolean;
+  expressPaymentConfig: {
+    googlePayExpressEnabledOnCart: boolean,
+    applePayExpressEnabledOnCart: boolean,
+    paypalExpressEnabledOnCart: boolean,
+    amazonPayExpressEnabledOnCart: boolean,
+    googlePayExpressEnabledOnProduct: boolean,
+    applePayExpressEnabledOnProduct: boolean,
+    paypalExpressEnabledOnProduct: boolean,
+    amazonPayExpressEnabledOnProduct: boolean
+  }
 }
 
 interface SessionData {
