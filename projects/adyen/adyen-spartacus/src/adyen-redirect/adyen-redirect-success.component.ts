@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {RoutingService} from '@spartacus/core';
-import {AdyenOrderService} from "../service/adyen-order.service";
+import {AdyenExpressOrderService} from "../service/adyen-express-order.service";
 
 @Component({
   selector: 'adyen-redirect-success',
@@ -8,7 +8,7 @@ import {AdyenOrderService} from "../service/adyen-order.service";
 })
 export class AdyenRedirectSuccessComponent implements OnInit {
 
-  constructor(protected adyenOrderService: AdyenOrderService,
+  constructor(protected adyenOrderService: AdyenExpressOrderService,
               protected routingService: RoutingService) {
   }
 

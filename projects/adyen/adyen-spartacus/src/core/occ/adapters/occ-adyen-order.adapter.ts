@@ -2,7 +2,12 @@ import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {OccEndpointsService} from '@spartacus/core';
 import {Observable} from 'rxjs';
-import {GooglePayExpressCartRequest, PlaceOrderRequest, PlaceOrderResponse} from "../../models/occ.order.models";
+import {
+  ApplePayExpressRequest,
+  GooglePayExpressCartRequest,
+  PlaceOrderRequest,
+  PlaceOrderResponse
+} from "../../models/occ.order.models";
 
 @Injectable()
 export class OccAdyenOrderAdapter {
@@ -55,6 +60,28 @@ export class OccAdyenOrderAdapter {
 
   protected getPlaceGoogleExpressOrderEndpointProduct(userId: string, cartId: string): string {
     return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/google/PDP', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  public placeAppleExpressOrder(userId: string, cartId: string, orderData: ApplePayExpressRequest): Observable<PlaceOrderResponse> {
+    return this.http.post<PlaceOrderResponse>(orderData.productCode  ? this.getPlaceAppleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceAppleExpressOrderEndpointCart(userId, cartId), orderData);
+  }
+
+  protected getPlaceAppleExpressOrderEndpointCart(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/apple/cart', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  protected getPlaceAppleExpressOrderEndpointProduct(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/apple/PDP', {
       urlParams: {
         userId,
         cartId,
