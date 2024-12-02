@@ -1,6 +1,6 @@
 {
   "name": "@adyen/adyen-spartacus",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "schematics": "./schematics/collection.json",
   "peerDependencies": {
     "@angular/common": "^17.3.0",
