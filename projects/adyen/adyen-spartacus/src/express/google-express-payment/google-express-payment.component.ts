@@ -76,7 +76,10 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   private async setupAdyenCheckout(config: AdyenConfigData) {
     const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
 
-    if (config.expressPaymentConfig && (this.product && config.expressPaymentConfig.googlePayExpressEnabledOnProduct || config.expressPaymentConfig.amazonPayExpressEnabledOnProduct)){
+    if (this.googlePay)
+      this.googlePay.unmount();
+
+    if (config.expressPaymentConfig && (this.product && config.expressPaymentConfig.googlePayExpressEnabledOnProduct || config.expressPaymentConfig.googlePayExpressEnabledOnCart)){
       this.googlePay = new GooglePay(adyenCheckout, {
         callbackIntents: ['SHIPPING_ADDRESS'],
         shippingAddressRequired: true,
@@ -90,8 +93,8 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
         transactionInfo: {
           totalPriceStatus: 'FINAL',
           totalPriceLabel: 'Total',
-          totalPrice: this.product?.price?.value ? this.product.price.value.toString() : config.amountDecimal.toString(),
-          currencyCode: this.product?.price?.currencyIso ? this.product.price.currencyIso : config.amount.currency,
+          totalPrice: config.amountDecimal.toString(),
+          currencyCode: config.amount.currency,
           countryCode: 'US'
         },
         onSubmit: (state: any, element: UIElement, actions) => this.handleOnSubmit(state, actions),
@@ -135,7 +138,6 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   }
 
   protected handleConfigurationReload(event: CheckoutAdyenConfigurationReloadEvent): void {
-    this.googlePay.unmount();
     this.activeCartFacade.getActiveCartId().pipe(
       filter(cartId => !!cartId),
       switchMap(cartId => this.userIdService.takeUserId().pipe(
