@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, OnDestroy, OnInit} from "@angular/core";
 import {BehaviorSubject, Subscription, timer} from 'rxjs';
 import {OrderPaymentStatusService} from "./service/order-payment-status.service";
-import {AdyenOrderService} from "../../../../service/adyen-order.service";
+import {AdyenExpressOrderService} from "../../../../service/adyen-express-order.service";
 
 @Component({
   selector: 'cx-order-confirmation-status',
@@ -12,7 +12,7 @@ import {AdyenOrderService} from "../../../../service/adyen-order.service";
 export class OrderConfirmationPaymentStatusComponent implements OnInit, OnDestroy {
 
   constructor(protected orderPaymentStatusService: OrderPaymentStatusService,
-              protected adyenOrderService: AdyenOrderService) {
+              protected adyenOrderService: AdyenExpressOrderService) {
     adyenOrderService.getOrderDetails().subscribe(orderData => {
       this.orderCode = orderData? orderData.code : undefined;
     })

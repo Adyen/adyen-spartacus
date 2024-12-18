@@ -174,7 +174,12 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
           type: 'card',
           hasHolderName: true,
           holderNameRequired: adyenConfig.cardHolderNameRequired,
-          enableStoreDetails: adyenConfig.showRememberTheseDetails
+          enableStoreDetails: adyenConfig.showRememberTheseDetails,
+          clickToPayConfiguration: {
+            merchantDisplayName: adyenConfig.merchantDisplayName,
+            shopperEmail:  adyenConfig.shopperEmail,
+            locale: adyenConfig.clickToPayLocale,
+          }
         },
         paypal: {
           intent: "authorize"
