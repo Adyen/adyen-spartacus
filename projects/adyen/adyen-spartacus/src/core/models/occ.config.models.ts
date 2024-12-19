@@ -27,6 +27,9 @@ export interface AdyenConfigData {
   countryCode: string;
   cardHolderNameRequired: boolean;
   sepaDirectDebit: boolean;
+  merchantDisplayName: string,
+  shopperEmail: string,
+  clickToPayLocale: string,
   expressPaymentConfig: {
     googlePayExpressEnabledOnCart: boolean,
     applePayExpressEnabledOnCart: boolean,
