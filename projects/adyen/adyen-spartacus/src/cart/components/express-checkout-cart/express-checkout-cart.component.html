@@ -1,3 +1,7 @@
-<cx-google-express-payment></cx-google-express-payment>
-<cx-apple-express-payment></cx-apple-express-payment>
+@if ((configuration$ | async)?.expressPaymentConfig.googlePayExpressEnabledOnCart) {
+  <cx-google-express-payment></cx-google-express-payment>
+}
+@if ((configuration$ | async)?.expressPaymentConfig.applePayExpressEnabledOnCart) {
+  <cx-apple-express-payment></cx-apple-express-payment>
+}
 <p></p>
