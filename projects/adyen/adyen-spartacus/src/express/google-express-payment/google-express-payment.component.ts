@@ -1,16 +1,15 @@
-import { Component, OnInit,OnDestroy, Input } from '@angular/core';
-import { filter, map, switchMap, take } from 'rxjs/operators';
-import { CommonModule } from '@angular/common';
-import { GooglePayButtonModule } from '@google-pay/button-angular';
-import { ActionHandledReturnObject, CoreConfiguration, UIElement } from "@adyen/adyen-web";
-import { AdyenCheckout, AdyenCheckoutError, GooglePay } from '@adyen/adyen-web/auto';
-import { CheckoutAdyenConfigurationService } from "../../service/checkout-adyen-configuration.service";
-import { AdyenConfigData } from "../../core/models/occ.config.models";
-import { AdyenExpressOrderService } from "../../service/adyen-express-order.service";
-import { RoutingService, Product,  EventService,  UserIdService, } from '@spartacus/core';
-import { of } from 'rxjs';
-import {BehaviorSubject, Subscription,} from 'rxjs';
-import {ActiveCartFacade, CartType, MultiCartFacade} from '@spartacus/cart/base/root';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {filter, map, switchMap, take} from 'rxjs/operators';
+import {CommonModule} from '@angular/common';
+import {GooglePayButtonModule} from '@google-pay/button-angular';
+import {CoreConfiguration, UIElement} from "@adyen/adyen-web";
+import {AdyenCheckout, AdyenCheckoutError, GooglePay} from '@adyen/adyen-web/auto';
+import {CheckoutAdyenConfigurationService} from "../../service/checkout-adyen-configuration.service";
+import {AdyenConfigData} from "../../core/models/occ.config.models";
+import {AdyenExpressOrderService} from "../../service/adyen-express-order.service";
+import {EventService, Product, RoutingService, UserIdService,} from '@spartacus/core';
+import {of, Subscription} from 'rxjs';
+import {ActiveCartFacade} from '@spartacus/cart/base/root';
 import {CheckoutAdyenConfigurationReloadEvent} from "../../events/checkout-adyen.events";
 
 @Component({
@@ -61,25 +60,27 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   }
 
   private initializeGooglePay() {
-    this.checkoutAdyenConfigurationService.getCheckoutConfigurationState()
-      .pipe(
-        filter((state) => !state.loading),
-        take(1),
-        map((state) => state.data),
-        switchMap((config) => config ? this.setupAdyenCheckout(config) : of(null))
-      )
-      .subscribe({
-        error: (error) => console.error('Error initializing Google Pay:', error)
-      });
+    this.subscriptions.add(
+      this.checkoutAdyenConfigurationService.getCheckoutConfigurationState()
+        .pipe(
+          filter((state) => !state.loading),
+          take(1),
+          map((state) => state.data),
+          switchMap((config) => config ? this.setupAdyenCheckout(config) : of(null))
+        )
+        .subscribe({
+          error: (error) => console.error('Error initializing Google Pay:', error)
+        })
+    )
   }
 
   private async setupAdyenCheckout(config: AdyenConfigData) {
     const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
 
-    if (this.googlePay)
+    if (this.googlePay) {
       this.googlePay.unmount();
+    }
 
-    if (config.expressPaymentConfig && (this.product && config.expressPaymentConfig.googlePayExpressEnabledOnProduct || config.expressPaymentConfig.googlePayExpressEnabledOnCart)){
       this.googlePay = new GooglePay(adyenCheckout, {
         callbackIntents: ['SHIPPING_ADDRESS'],
         shippingAddressRequired: true,
@@ -112,7 +113,6 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
         },
         onError: (error) => this.handleError(error)
       }).mount("#google-pay-button");
-    }
   }
 
   private handleOnSubmit(state: any, actions: any) {
@@ -147,7 +147,7 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
       if (config) {
         await this.setupAdyenCheckout(config)
       }
-    });
+    }).unsubscribe()
   }
 
   protected getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreConfiguration {
