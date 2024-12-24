@@ -21,7 +21,7 @@ import {ActionHandledReturnObject} from "@adyen/adyen-web";
 import {PlaceOrderResponse} from "../core/models/occ.order.models";
 import {AdyenOrderService} from "../service/adyen-order.service";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
-import {CoreConfiguration, DropinConfiguration, UIElement} from "@adyen/adyen-web";
+import {CoreConfiguration, DropinConfiguration, UIElement, SubmitActions, AdditionalDetailsActions} from "@adyen/adyen-web";
 import { AdyenCheckout, Dropin,AdyenCheckoutError } from '@adyen/adyen-web/auto'
 import {AdyenExpressOrderService} from "../service/adyen-express-order.service";
 
@@ -151,8 +151,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         enabled: true
       },
       onError: (error: AdyenCheckoutError) => this.handleError(error),
-      onSubmit: (state: any, element: UIElement) => this.handlePayment(state.data),
-      onAdditionalDetails: (state: any, element?: UIElement) => this.handleAdditionalDetails(state.data),
+      onSubmit: (state: any, element: UIElement, actions: SubmitActions) => this.handlePayment(state.data,actions),
+      onAdditionalDetails: (state: any, element: UIElement, actions: AdditionalDetailsActions ) => this.handleAdditionalDetails(state.data,actions),
       onActionHandled(data: ActionHandledReturnObject) {
         console.log("onActionHandled", data);
       }
@@ -213,28 +213,31 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.billingAddress = address;
   }
 
-  private handlePayment(paymentData: any) {
+  private handlePayment(paymentData: any, actions: SubmitActions) {
     this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress).subscribe(
       result => {
-        this.handleResponse(result);
+        this.handleResponse(result, actions);
       }
     );
   }
 
-  private handleAdditionalDetails(details: any) {
+  private handleAdditionalDetails(details: any, actions: AdditionalDetailsActions) {
     this.adyenOrderService.sendAdditionalDetails(details).subscribe(
       result => {
-        this.handleResponse(result);
+        this.handleResponse(result, actions);
       }
     );
   }
 
-  private handleResponse(response: PlaceOrderResponse | void) {
+  private handleResponse(response: PlaceOrderResponse | void, actions: SubmitActions) {
     if (!!response) {
       if (response.success) {
         if (response.executeAction && response.paymentsAction !== undefined) {
           this.dropIn.handleAction(response.paymentsAction)
         } else {
+          actions.resolve({
+            resultCode: 'Authorised'
+          });
           this.onSuccess();
         }
       } else {
