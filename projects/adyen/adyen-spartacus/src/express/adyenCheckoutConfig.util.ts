@@ -6,10 +6,6 @@ export function getAdyenExpressCheckoutConfig(adyenConfig: AdyenExpressConfigDat
     locale: adyenConfig.shopperLocale,
     environment: castToEnvironment(adyenConfig.environmentMode),
     clientKey: adyenConfig.clientKey,
-    session: {
-      id: adyenConfig.sessionData.id,
-      sessionData: adyenConfig.sessionData.sessionData
-    },
     countryCode: adyenConfig.countryCode ? adyenConfig.countryCode : 'US',
     analytics: {
       enabled: false

@@ -27,6 +27,9 @@ export interface AdyenConfigData {
   countryCode: string;
   cardHolderNameRequired: boolean;
   sepaDirectDebit: boolean;
+  merchantDisplayName: string,
+  shopperEmail: string;
+  clickToPayLocale: string;
   expressPaymentConfig: ExpressPaymentConfig;
 }
 
@@ -38,8 +41,6 @@ export interface AdyenExpressConfigData {
   environmentMode: string;
   clientKey: string;
   merchantAccount: string;
-  //TODO: Remove in 13.3
-  sessionData: SessionData;
   amount: AmountData;
   amountDecimal: number;
   dfUrl: string;
