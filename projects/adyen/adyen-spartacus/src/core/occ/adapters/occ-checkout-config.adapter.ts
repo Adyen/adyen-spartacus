@@ -1,23 +1,20 @@
-import {inject, Injectable} from '@angular/core';
-import {ConverterService, LoggerService, OccEndpointsService} from "@spartacus/core";
+import {Injectable} from '@angular/core';
+import {OccEndpointsService} from "@spartacus/core";
 import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs";
-import {AdyenConfigData} from "../../models/occ.config.models";
+import {AdyenConfigData, AdyenExpressConfigData} from "../../models/occ.config.models";
 
 @Injectable()
 export class OccCheckoutConfigAdapter {
-
-  protected logger = inject(LoggerService);
 
 
   constructor(
     protected http: HttpClient,
     protected occEndpoints: OccEndpointsService,
-    protected converter: ConverterService
   ) {
   }
 
-  public getCheckoutConfiguration(userId: string, cartId: string):Observable<AdyenConfigData> {
+  public getCheckoutConfiguration(userId: string, cartId: string): Observable<AdyenConfigData> {
     return this.http.get<AdyenConfigData>(this.getCheckoutConfigurationEndpoint(userId, cartId));
   }
 
@@ -26,6 +23,38 @@ export class OccCheckoutConfigAdapter {
     cartId: string,
   ): string {
     return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/checkout-configuration', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    })
+  }
+
+  public getExpressCheckoutPDPConfiguration(productCode: string, userId: string): Observable<AdyenExpressConfigData> {
+    return this.http.get<AdyenExpressConfigData>(this.getExpressCheckoutPDPConfigurationEndpoint(productCode, userId));
+  }
+
+  protected getExpressCheckoutPDPConfigurationEndpoint(
+    productCode: string,
+    userId: string,
+  ): string {
+    return this.occEndpoints.buildUrl('users/${userId}/adyen/checkout-configuration/express/PDP/${productCode}', {
+      urlParams: {
+        userId,
+        productCode
+      }
+    })
+  }
+
+  public getExpressCheckoutCartConfiguration(userId: string, cartId: string): Observable<AdyenExpressConfigData> {
+    return this.http.get<AdyenExpressConfigData>(this.getExpressCheckoutCartConfigurationEndpoint(userId, cartId));
+  }
+
+  protected getExpressCheckoutCartConfigurationEndpoint(
+    userId: string,
+    cartId: string,
+  ): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/checkout-configuration/express/cart', {
       urlParams: {
         userId,
         cartId,

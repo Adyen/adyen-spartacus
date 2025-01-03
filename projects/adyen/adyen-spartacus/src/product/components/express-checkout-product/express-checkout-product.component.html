@@ -1,9 +1,12 @@
-<br />
-<p *ngIf="(product?.purchasable && (product?.price?.value > 0))">
-  @if ((configuration$ | async)?.expressPaymentConfig.googlePayExpressEnabledOnProduct){
-    <cx-google-express-payment [product]="product" [configuration$]="configuration$"></cx-google-express-payment>
-  }
-  @if ((configuration$ | async)?.expressPaymentConfig.applePayExpressEnabledOnProduct){
-    <cx-apple-express-payment [product]="product" ></cx-apple-express-payment>
-  }
-</p>
+<br/>
+<ng-container *ngIf="product$ | async as product">
+  <p *ngIf="(product?.purchasable && (product?.price?.value > 0)) && configuration$ | async as config">
+    @if (config.expressPaymentConfig.googlePayExpressEnabledOnProduct) {
+      <cx-google-express-payment [product]="product" [configuration]="config"></cx-google-express-payment>
+    }
+    @if (config.expressPaymentConfig.applePayExpressEnabledOnProduct) {
+      <cx-apple-express-payment [product]="product" [configuration]="config"></cx-apple-express-payment>
+    }
+  </p>
+</ng-container>
+
