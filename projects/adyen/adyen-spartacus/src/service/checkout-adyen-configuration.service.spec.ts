@@ -68,7 +68,6 @@ describe('CheckoutAdyenConfigurationService', () => {
       adyenClientKey: 'testClientKey',
       adyenPaypalMerchantId: 'testPaypalMerchantId',
       deviceFingerPrintUrl: 'https://example.com/fingerprint',
-      sessionData: { id: 'sessionId', sessionData: 'sessionData' },
       selectedPaymentMethod: 'visa',
       showRememberTheseDetails: true,
       checkoutShopperHost: 'https://example.com/shopper',

@@ -50,10 +50,6 @@ describe('OccCheckoutConfigAdapter', () => {
       adyenClientKey: 'mockClientKey',
       adyenPaypalMerchantId: 'mockPaypalMerchantId',
       deviceFingerPrintUrl: 'https://mock.device.fingerprint.url',
-      sessionData: {
-        id: 'mockSessionId',
-        sessionData: 'mockSessionData'
-      },
       selectedPaymentMethod: 'mockPaymentMethod',
       showRememberTheseDetails: true,
       checkoutShopperHost: 'https://mock.checkout.shopper.host',

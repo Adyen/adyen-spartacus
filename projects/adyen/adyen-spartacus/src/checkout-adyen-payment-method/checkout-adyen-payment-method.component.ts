@@ -137,12 +137,10 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         storedPaymentMethods: adyenConfig.storedPaymentMethodList
       },
       locale: adyenConfig.shopperLocale,
+      countryCode: adyenConfig.countryCode,
       environment: this.castToEnvironment(adyenConfig.environmentMode),
       clientKey: adyenConfig.adyenClientKey,
-      session: {
-        id: adyenConfig.sessionData.id,
-        sessionData: adyenConfig.sessionData.sessionData
-      },
+      amount: adyenConfig.amount,
       analytics: {
         enabled: false
       },
@@ -230,13 +228,13 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handleResponse(response: PlaceOrderResponse | void, actions: SubmitActions) {
-    if (!!response) {
+    if (response !== null && response !== undefined) {
       if (response.success) {
-        if (response.executeAction && response.paymentsAction !== undefined) {
+        if (response.executeAction === true && response.paymentsAction != null) {
           this.dropIn.handleAction(response.paymentsAction)
-        } else {
+        } else if (response.paymentsResponse !== undefined) {
           actions.resolve({
-            resultCode: 'Authorised'
+            resultCode: response.paymentsResponse.resultCode
           });
           this.onSuccess();
         }
