@@ -28,18 +28,36 @@ export interface AdyenConfigData {
   cardHolderNameRequired: boolean;
   sepaDirectDebit: boolean;
   merchantDisplayName: string,
-  shopperEmail: string,
-  clickToPayLocale: string,
-  expressPaymentConfig: {
-    googlePayExpressEnabledOnCart: boolean,
-    applePayExpressEnabledOnCart: boolean,
-    paypalExpressEnabledOnCart: boolean,
-    amazonPayExpressEnabledOnCart: boolean,
-    googlePayExpressEnabledOnProduct: boolean,
-    applePayExpressEnabledOnProduct: boolean,
-    paypalExpressEnabledOnProduct: boolean,
-    amazonPayExpressEnabledOnProduct: boolean
-  }
+  shopperEmail: string;
+  clickToPayLocale: string;
+  expressPaymentConfig: ExpressPaymentConfig;
+}
+
+export interface AdyenExpressConfigData {
+  applePayMerchantId: string;
+  applePayMerchantName: string;
+  payPalIntent: string;
+  shopperLocale: string;
+  environmentMode: string;
+  clientKey: string;
+  merchantAccount: string;
+  amount: AmountData;
+  amountDecimal: number;
+  dfUrl: string;
+  checkoutShopperHost: string;
+  expressPaymentConfig: ExpressPaymentConfig;
+  countryCode: string;
+}
+
+interface ExpressPaymentConfig {
+  googlePayExpressEnabledOnCart: boolean,
+  applePayExpressEnabledOnCart: boolean,
+  paypalExpressEnabledOnCart: boolean,
+  amazonPayExpressEnabledOnCart: boolean,
+  googlePayExpressEnabledOnProduct: boolean,
+  applePayExpressEnabledOnProduct: boolean,
+  paypalExpressEnabledOnProduct: boolean,
+  amazonPayExpressEnabledOnProduct: boolean
 }
 
 interface SessionData {
