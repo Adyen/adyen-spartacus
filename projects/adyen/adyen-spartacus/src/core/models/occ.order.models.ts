@@ -1,4 +1,4 @@
-import { PaymentAction } from "@adyen/adyen-web";
+import { PaymentAction,PaymentResponseData } from "@adyen/adyen-web";
 import { Order } from '@spartacus/order/root';
 
 export interface ApplePayExpressRequest {
@@ -25,6 +25,7 @@ export interface PlaceOrderResponse {
   success: boolean,
   executeAction?: boolean,
   paymentsAction?: PaymentAction,
+  paymentsResponse?: PaymentResponseData,
   error?: string,
   errorFieldCodes?: string[]
   orderNumber?: string,

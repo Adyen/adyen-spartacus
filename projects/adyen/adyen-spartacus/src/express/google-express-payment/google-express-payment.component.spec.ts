@@ -24,7 +24,6 @@ describe('GoogleExpressPaymentComponent', () => {
     adyenClientKey: 'mockClientKey',
     adyenPaypalMerchantId: 'mockPaypalMerchantId',
     deviceFingerPrintUrl: 'mockDeviceFingerPrintUrl',
-    sessionData: { id: 'mockSessionId', sessionData: 'mockSessionData' },
     selectedPaymentMethod: 'mockPaymentMethod',
     showRememberTheseDetails: true,
     checkoutShopperHost: 'mockShopperHost',

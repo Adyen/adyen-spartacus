@@ -12,7 +12,6 @@ export interface AdyenConfigData {
   adyenClientKey: string;
   adyenPaypalMerchantId: string;
   deviceFingerPrintUrl: string;
-  sessionData: SessionData;
   selectedPaymentMethod: string;
   showRememberTheseDetails: boolean;
   checkoutShopperHost: string;
@@ -58,11 +57,6 @@ interface ExpressPaymentConfig {
   applePayExpressEnabledOnProduct: boolean,
   paypalExpressEnabledOnProduct: boolean,
   amazonPayExpressEnabledOnProduct: boolean
-}
-
-interface SessionData {
-  id: string,
-  sessionData: string
 }
 
 interface StoredPaymentMethodData {
