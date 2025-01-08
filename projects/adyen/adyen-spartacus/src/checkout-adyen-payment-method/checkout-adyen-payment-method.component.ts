@@ -230,9 +230,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   private handleResponse(response: PlaceOrderResponse | void, actions: SubmitActions) {
     if (!!response) {
       if (response.success) {
-        if (response.executeAction === true && response.paymentsAction != null) {
+        if (response.executeAction === true && !!response.paymentsAction) {
           this.dropIn.handleAction(response.paymentsAction)
-        } else if (response.paymentsResponse !== undefined) {
+        } else if (!!response.paymentsResponse) {
           actions.resolve({
             resultCode: response.paymentsResponse.resultCode
           });
