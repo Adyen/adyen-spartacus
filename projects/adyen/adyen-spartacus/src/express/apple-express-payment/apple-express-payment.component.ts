@@ -53,6 +53,10 @@ export class AppleExpressPaymentComponent implements OnInit, OnDestroy{
         currency: config.amount.currency,
         value: config.amount.value
       },
+      configuration: {
+        merchantId: config.applePayMerchantId,
+        merchantName: config.applePayMerchantName
+      },
       // Button config
       buttonType: "check-out",
       buttonColor: "black",
