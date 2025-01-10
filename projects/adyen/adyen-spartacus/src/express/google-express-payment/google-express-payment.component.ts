@@ -43,7 +43,9 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
-    if(this.googlePay) this.googlePay.unmount();
+    if (this.googlePay) {
+      this.googlePay.unmount();
+    }
   }
 
   private async setupAdyenCheckout(config: AdyenExpressConfigData) {
