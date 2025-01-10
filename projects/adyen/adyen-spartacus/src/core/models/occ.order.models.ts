@@ -26,6 +26,7 @@ export interface PlaceOrderResponse {
   executeAction?: boolean,
   paymentsAction?: PaymentAction,
   paymentsResponse?: PaymentResponseData,
+  paymentDetailsResponse?: PaymentResponseData,
   error?: string,
   errorFieldCodes?: string[]
   orderNumber?: string,

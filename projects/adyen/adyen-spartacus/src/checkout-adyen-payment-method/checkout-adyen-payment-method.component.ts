@@ -237,6 +237,11 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
             resultCode: response.paymentsResponse.resultCode
           });
           this.onSuccess();
+        } else if (!!response.paymentDetailsResponse) {
+          actions.resolve({
+            resultCode: response.paymentDetailsResponse.resultCode
+          });
+          this.onSuccess();
         }
       } else {
         this.resetDropInComponent()
