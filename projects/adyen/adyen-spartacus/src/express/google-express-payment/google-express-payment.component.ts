@@ -96,13 +96,13 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
           if (result.executeAction && result.paymentsAction !== undefined) {
             this.googlePay.handleAction(result.paymentsAction);
           } else {
+            actions.resolve({ resultCode: 'Authorised' });
             this.onSuccess();
           }
         } else {
           console.error(result?.error);
           actions.reject();
         }
-        actions.resolve({ resultCode: 'Authorised' });
       },
       error => {
         console.error(error);
