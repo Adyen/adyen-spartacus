@@ -2,7 +2,7 @@ import {Injectable, OnDestroy} from "@angular/core";
 import {CheckoutAdyenConfigurationReloadEvent} from "./checkout-adyen.events";
 import {merge, Subscription} from "rxjs";
 import {CurrencySetEvent, EventService, LanguageSetEvent} from "@spartacus/core";
-import {CartUpdateEntrySuccessEvent} from "@spartacus/cart/base/root";
+import {CartRemoveEntrySuccessEvent, CartUpdateEntrySuccessEvent} from "@spartacus/cart/base/root";
 
 @Injectable({
   providedIn: 'root',
@@ -20,7 +20,8 @@ export class CheckoutAdyenEventListener implements OnDestroy{
       merge(
         this.eventService.get(LanguageSetEvent),
         this.eventService.get(CurrencySetEvent),
-        this.eventService.get(CartUpdateEntrySuccessEvent)
+        this.eventService.get(CartUpdateEntrySuccessEvent),
+        this.eventService.get(CartRemoveEntrySuccessEvent)
       ).subscribe(() => {
         this.eventService.dispatch(
           new CheckoutAdyenConfigurationReloadEvent()
