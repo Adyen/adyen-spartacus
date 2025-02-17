@@ -46,7 +46,7 @@ export class OccAdyenOrderAdapter {
   }
 
   public placeGoogleExpressOrderCart(userId: string, cartId: string, orderData: GooglePayExpressCartRequest): Observable<PlaceOrderResponse> {
-    return this.http.post<PlaceOrderResponse>(orderData.productCode  ? this.getPlaceGoogleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceGoogleExpressOrderEndpointCart(userId, cartId), orderData);
+    return this.http.post<PlaceOrderResponse>(orderData.cartId  ? this.getPlaceGoogleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceGoogleExpressOrderEndpointCart(userId, cartId), orderData);
   }
 
   protected getPlaceGoogleExpressOrderEndpointCart(userId: string, cartId: string): string {

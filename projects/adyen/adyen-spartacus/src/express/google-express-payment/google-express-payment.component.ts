@@ -8,8 +8,8 @@ import {AdyenExpressOrderService} from "../../service/adyen-express-order.servic
 import {Product, RoutingService,UserIdService} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode,MultiCartFacade} from '@spartacus/cart/base/root';
 import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
-import {Observable, of, Subscription, last} from 'rxjs';
-import {catchError, filter, map, switchMap, take} from 'rxjs/operators';
+import {Observable, of,Subject, firstValueFrom, last} from 'rxjs';
+import { filter, map,tap, switchMap, take, takeUntil, catchError } from 'rxjs/operators';
 import {AdyenCartService} from "../../service/adyen-cart-service";
 
 
@@ -22,15 +22,17 @@ import {AdyenCartService} from "../../service/adyen-cart-service";
 })
 export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
 
-  protected subscriptions = new Subscription();
+  private unsubscribe$ = new Subject<void>();
 
-  @Input()
-  product: Product;
+  @Input() product: Product;
 
-  @Input()
-  configuration: AdyenExpressConfigData;
+  @Input() configuration: AdyenExpressConfigData;
 
-  googlePay: GooglePay;
+  cart$!: Observable<Cart>;
+  deliveryModes$: Observable<DeliveryMode[]> = of([]);
+  productAdded = false;
+  googlePay!: GooglePay;
+  cartId: string;
 
   private authorizedPaymentData: any;
 
@@ -43,7 +45,77 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
     protected adyenCartService: AdyenCartService,
   ) {}
 
+  ngOnInit(): void {
+    this.initializeGooglePay();
+  }
 
+  private async initializeCart(): Promise<void> {
+    try {
+      const activeCart = await firstValueFrom(
+        this.activeCartService.getActive().pipe(
+          take(1),
+          catchError((error) => {
+            console.error("Error fetching the active cart:", error);
+            return of(null); // Ensure chain does not terminate
+          })
+        )
+      );
+
+      if (!activeCart) {
+        console.warn("No active cart found, emitting null.");
+        return; // Gracefully handle missing active cart
+      }
+
+      const cart = this.product
+        ? await firstValueFrom(this.createAndAddProductToCart())
+        : activeCart;
+
+      if (!this.cartId) {
+        if (cart && cart.code) {
+          this.cart$ = this.multiCartService.getCart(cart.code);
+          this.cartId = cart.code;
+
+        } else {
+          console.warn("Cart not available or invalid.");
+        }
+      }
+    } catch (error) {
+      console.error("Error in async cart initialization:", error);
+    }
+  }
+
+  private createAndAddProductToCart(): Observable<Cart> {
+    return this.userIdService.takeUserId().pipe(
+      filter(userId => !!userId), // Ensure we have a valid user ID
+      take(1),
+      takeUntil(this.unsubscribe$),
+      switchMap((userId) =>
+        this.multiCartService.createCart({
+          userId,
+          extraData: { active: false },
+        }).pipe(
+          tap((cart) => {
+            if(!this.productAdded) {
+              if (cart && cart.code && this.product?.code) {
+                // Call addEntry here, as it does not return an Observable
+                this.multiCartService.addEntry(userId, cart.code, this.product.code, 1);
+                this.productAdded = true;
+              } else {
+                console.error("Unable to add product or cart is invalid.");
+              }
+            }
+          }),
+          map((cart) => cart) // Forward the cart in the pipeline
+        )
+      )
+    )
+  }
+
+  private initializeGooglePay(): void {
+    if (this.configuration) {
+      this.setupAdyenCheckout(this.configuration); // Existing logic encapsulated into functions.
+    }
+  }
   deliveryModes: DeliveryMode[] = [];
 
   getSupportedDeliveryModesState(cartId: string): Observable<DeliveryMode[]> {
@@ -53,77 +125,7 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
     );
   }
 
-  productAdded = false;
-  cart: Cart;
-  activeCart: Cart;
-  cart$: Observable<Cart>;
-  ngOnInit(): void {
-
-
-    if (!this.product) {
-      this.activeCartService.getActive().subscribe(activeCart => {
-        this.cart = activeCart;
-        this.setupAdyenCheckout(this.configuration);
-      })
-      return;
-    }
-    this.activeCartService.getActive().subscribe(activeCart => {
-      this.activeCart = activeCart;
-    })
-
-    let userId: string;
-
-    this.userIdService
-      .takeUserId()
-      .pipe(
-        // Optionally filter out falsy user IDs if userId can initially be empty
-        filter((id) => !!id),
-        // Take only the first emission from userIdService
-        take(1),
-        switchMap((uid) => {
-          userId = uid;
-          // Create a cart for this user (once)
-          return this.multiCartService.createCart({
-            userId,
-            oldCartId: undefined,
-            toMergeCartGuid: undefined,
-            extraData: { active: false },
-          });
-        })
-      )
-      .subscribe((cart) => {
-        // Add an entry to the newly created cart (once)
-        if (!this.productAdded && cart.code) {
-          this.multiCartService.addEntry(
-            userId,
-            cart?.code || '',
-            this.product.code || '',
-            1,
-            undefined
-          );
-          this.cart = cart;
-          this.productAdded = true;
-          this.cart$ = this.multiCartService.getCart(cart.code)
-        } else {
-          console.log("Can't add product or create cart!")
-        }
-        this.setupAdyenCheckout(this.configuration);
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-    if (this.googlePay) {
-      this.googlePay.unmount();
-    }
-  }
-
   private async setupAdyenCheckout(config: AdyenExpressConfigData) {
-
-    //if(!!this.cart && this.cart.code) {
-      this.getSupportedDeliveryModesState(this.cart?.code || '').subscribe((deliveryModes) => {
-        this.deliveryModes = deliveryModes;
-      });
 
       const adyenCheckout = await AdyenCheckout(getAdyenExpressCheckoutConfig(config));
 
@@ -154,9 +156,14 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
             return new Promise(async resolve => {
               const {callbackTrigger, shippingAddress, shippingOptionData} = intermediatePaymentData;
               const paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate = {};
-              if (callbackTrigger === 'INITIALIZE') {
+
+              if(callbackTrigger === 'INITIALIZE'){
+                await this.initializeCart();
+              }
+
+              if (callbackTrigger === 'INITIALIZE' || callbackTrigger === 'SHIPPING_ADDRESS') {
                 if (shippingAddress) {
-                  this.adyenCartService.createAndSetAddress(this.cart?.code || '', {
+                  this.adyenCartService.createAndSetAddress(this.cartId, {
                     postalCode: shippingAddress.postalCode,
                     country: {isocode: shippingAddress.countryCode},
                     firstName: "placeholder",
@@ -165,18 +172,22 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
                     line1: "placeholder"
                   }).subscribe(
                     (result) => {
-                      this.getSupportedDeliveryModesState(this.cart?.code || '').subscribe((deliveryModes) => {
-                        if(deliveryModes.length>0) {
-                          this.deliveryModes = deliveryModes;
-                          paymentDataRequestUpdate.newShippingOptionParameters = {
-                            defaultSelectedOptionId: this.deliveryModes[0]?.code || "",
-                            shippingOptions: this.deliveryModes.map(mode => ({
-                              id: mode.code || "",
-                              label: mode.name || "",
-                              description: mode.description || ""
-                            }))
-                          }
-                          resolve(paymentDataRequestUpdate);
+                      this.getSupportedDeliveryModesState(this.cartId).subscribe((deliveryModes) => {
+                        if(deliveryModes.length > 0) {
+                          this.adyenCartService
+                            .setDeliveryMode(deliveryModes[0]?.code || "", this.cartId)
+                            .pipe(
+                              switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+                            ).subscribe({
+                            next: cart => {
+                              this.updateShippingOptions(paymentDataRequestUpdate, deliveryModes);
+                              this.updateTransactionInfo(paymentDataRequestUpdate, cart);
+                              resolve(paymentDataRequestUpdate);
+                            },
+                            error: err => {
+                              console.error('Error updating delivery mode:', err);
+                            },
+                          });
                         }
                       });
                     }
@@ -184,67 +195,15 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
                 }
               }
 
-              if (callbackTrigger === 'SHIPPING_ADDRESS' && !!shippingAddress) {
-                this.adyenCartService.createAndSetAddress(this.cart?.code || '', {
-                  postalCode: shippingAddress.postalCode,
-                  country: {isocode: shippingAddress.countryCode},
-                  firstName: "placeholder",
-                  lastName: "placeholder",
-                  town: "placeholder",
-                  line1: "placeholder"
-                }).subscribe(
-                  () => {
-
-                    this.getSupportedDeliveryModesState(this.cart?.code || '').subscribe((deliveryModes) => {
-                      this.deliveryModes = deliveryModes;
-
-                      this.adyenCartService
-                        .setDeliveryMode(this.deliveryModes[0]?.code || "", this.cart?.code || "")
-                        .pipe(
-                          switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-                        ).subscribe({
-                        next: cart => {
-                          paymentDataRequestUpdate.newShippingOptionParameters = {
-                            defaultSelectedOptionId: this.deliveryModes[0]?.code || "",
-                            shippingOptions: this.deliveryModes.map(mode => ({
-                              id: mode.code || "",
-                              label: mode.name || "",
-                              description: mode.description || ""
-                            }))
-                          }
-                          paymentDataRequestUpdate.newTransactionInfo = {
-                            countryCode: 'US',
-                            currencyCode: cart.totalPriceWithTax?.currencyIso ?? '',
-                            totalPriceStatus: 'FINAL',
-                            totalPrice: (cart.totalPriceWithTax?.value ?? 0).toString(),
-                            totalPriceLabel: 'Total'
-                          };
-                          resolve(paymentDataRequestUpdate);
-                        },
-                        error: err => {
-                          console.error('Error updating delivery mode:', err);
-                        },
-                      });
-                    });
-                  }
-                );
-              }
-
               if (callbackTrigger === 'SHIPPING_OPTION') {
                 if (shippingOptionData) {
                   this.adyenCartService
-                    .setDeliveryMode(shippingOptionData.id, this.cart?.code || "")
+                    .setDeliveryMode(shippingOptionData.id, this.cartId)
                     .pipe(
                       switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
                     ).subscribe({
                     next: cart => {
-                      paymentDataRequestUpdate.newTransactionInfo = {
-                        countryCode: 'US',
-                        currencyCode: cart.totalPriceWithTax?.currencyIso ?? '',
-                        totalPriceStatus: 'FINAL',
-                        totalPrice: (cart.totalPriceWithTax?.value ?? 0).toString(),
-                        totalPriceLabel: 'Total'
-                      };
+                      this.updateTransactionInfo(paymentDataRequestUpdate, cart);
                       resolve(paymentDataRequestUpdate);
                     },
                     error: err => {
@@ -262,11 +221,31 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
         },
         onError: (error) => this.handleError(error)
       }).mount("#google-pay-button");
-    //}
+  }
+
+  private updateShippingOptions(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, deliveryModes: DeliveryMode[]) {
+    paymentDataRequestUpdate.newShippingOptionParameters = {
+      defaultSelectedOptionId: deliveryModes[0]?.code || "",
+      shippingOptions: deliveryModes.map(mode => ({
+        id: mode.code || "",
+        label: mode.name || "",
+        description: mode.description || ""
+      }))
+    }
+  }
+
+  private updateTransactionInfo(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, cart: Cart) {
+    paymentDataRequestUpdate.newTransactionInfo = {
+      countryCode: 'US',
+      currencyCode: cart.totalPriceWithTax?.currencyIso ?? '',
+      totalPriceStatus: 'FINAL',
+      totalPrice: (cart.totalPriceWithTax?.value ?? 0).toString(),
+      totalPriceLabel: 'Total'
+    };
   }
 
   private handleOnSubmit(state: any, actions: any) {
-    this.adyenOrderService.adyenPlaceGoogleExpressOrder(state.data, this.authorizedPaymentData, this.product).subscribe(
+    this.adyenOrderService.adyenPlaceGoogleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
       result => {
         if (result?.success) {
           if (result.executeAction && result.paymentsAction !== undefined) {
@@ -292,4 +271,14 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   onSuccess(): void {
     this.routingService.go({ cxRoute: 'orderConfirmation' });
   }
+
+  ngOnDestroy(): void {
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+    if (this.googlePay) {
+      this.googlePay.unmount();
+    }
+  }
+
+
 }
