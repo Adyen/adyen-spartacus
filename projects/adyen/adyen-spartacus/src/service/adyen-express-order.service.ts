@@ -53,7 +53,6 @@ export class AdyenExpressOrderService extends AdyenOrderService {
       (expressCommand) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            // this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, paymentData).pipe(
             expressCommand.connectorFunction(userId, cartId, expressCommand.paymentData).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
@@ -80,8 +79,8 @@ export class AdyenExpressOrderService extends AdyenOrderService {
       }
     );
 
-  adyenPlaceGoogleExpressOrder(paymentData: any, authorizedPaymentData: any, product: Product): Observable<PlaceOrderResponse> {
-    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataGoogle(paymentData, authorizedPaymentData, product), connectorFunction: this.placeExpressGoogleOrderWrapper, isPDP: !!product});
+  adyenPlaceGoogleExpressOrder(paymentData: any, authorizedPaymentData: any, product: Product, cartId: string): Observable<PlaceOrderResponse> {
+    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataGoogle(paymentData, authorizedPaymentData, cartId), connectorFunction: this.placeExpressGoogleOrderWrapper, isPDP: !!product});
   }
 
   protected placeExpressGoogleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
@@ -108,7 +107,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
     });
   }
 
-  prepareDataGoogle(paymentData: any, authorizedPaymentData: any, product: Product): GooglePayExpressCartRequest {
+  prepareDataGoogle(paymentData: any, authorizedPaymentData: any, cartId: string): GooglePayExpressCartRequest {
     const baseData = {
       googlePayDetails: paymentData.paymentMethod,
       addressData: {
@@ -127,7 +126,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
       }
     };
     delete baseData.googlePayDetails.subtype;
-    return product ? { productCode: product.code, ...baseData } : baseData;
+    return { cartId: cartId, ...baseData }
   }
 
   prepareDataApple(paymentData: PaymentData, authorizedPaymentData: any, product: Product): ApplePayExpressRequest {

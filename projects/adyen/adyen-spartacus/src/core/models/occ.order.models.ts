@@ -11,6 +11,7 @@ export interface GooglePayExpressCartRequest {
   googlePayDetails: any;
   addressData: any;
   productCode?: string;
+  cartId?: string;
 }
 
 export interface PlaceOrderRequest {
