@@ -23,7 +23,9 @@ import {
 } from "./product/components/express-checkout-product/express-checkout-product.module";
 import {ExpressCheckoutCartModule} from "./cart/components/express-checkout-cart/express-checkout-cart.module";
 import {AdyenExpressOrderService} from "./service/adyen-express-order.service";
-
+import {AdyenCartService} from "./service/adyen-cart-service";
+import { CheckoutDeliveryModesConnector,CheckoutDeliveryAddressConnector ,CheckoutDeliveryModesAdapter, CheckoutDeliveryAddressAdapter} from '@spartacus/checkout/base/core';
+import { OccCheckoutDeliveryModesAdapter, OccCheckoutDeliveryAddressAdapter } from '@spartacus/checkout/base/occ';
 
 
 @NgModule({
@@ -34,28 +36,43 @@ import {AdyenExpressOrderService} from "./service/adyen-express-order.service";
     CheckoutAdyenRootModule,
     AdyenRedirectModule,
     ExpressCheckoutProductModule,
-    ExpressCheckoutCartModule
+    ExpressCheckoutCartModule,
   ],
-  providers: [CheckoutAdyenConfigurationService,
+  providers: [
+    provideDefaultConfig({
+      backend: {
+        occ: {
+          endpoints: {
+            orderDetail: 'users/${userId}/orders/${orderId}?fields=FULL',
+            createDeliveryAddress:'users/${userId}/carts/${cartId}/addresses/delivery',
+            deliveryModes:'users/${userId}/carts/${cartId}/deliverymodes',
+            setDeliveryMode: 'users/${userId}/carts/${cartId}/deliverymode',
+          }
+        }
+      }
+    }),
+    CheckoutAdyenConfigurationService,
     AdyenOrderService,
     AdyenExpressOrderService,
     AdyenAddressService,
     OrderConnector,
     AdditionalDetailsConnector,
     AdyenOrderConnector,
+    AdyenCartService,
+    CheckoutDeliveryModesConnector,
+    {
+      provide: CheckoutDeliveryModesAdapter,
+      useClass: OccCheckoutDeliveryModesAdapter,
+    },
+    CheckoutDeliveryAddressConnector,
+    {
+      provide: CheckoutDeliveryAddressAdapter,
+      useClass: OccCheckoutDeliveryAddressAdapter,
+    },
     {
       provide: OrderAdapter,
       useClass: OccOrderAdapter,
     },
-    provideDefaultConfig({
-      backend: {
-        occ: {
-          endpoints: {
-            orderDetail: 'users/${userId}/orders/${orderId}?fields=FULL'
-          }
-        }
-      }
-    }),
     {
       provide: OrderHistoryAdapter,
       useClass: OccOrderHistoryAdapter
