@@ -148,7 +148,7 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
           totalPriceLabel: 'Total',
           totalPrice: config.amountDecimal.toString(),
           currencyCode: config.amount.currency,
-          countryCode: 'US'
+          countryCode: undefined,
         },
         onSubmit: (state: any, element: UIElement, actions) => this.handleOnSubmit(state, actions),
         paymentDataCallbacks: {
@@ -175,7 +175,7 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
                       this.getSupportedDeliveryModesState(this.cartId).subscribe((deliveryModes) => {
                         if(deliveryModes.length > 0) {
                           this.adyenCartService
-                            .setDeliveryMode(deliveryModes[0]?.code || "", this.cartId)
+                            .setDeliveryMode(deliveryModes[0].code || "", this.cartId)
                             .pipe(
                               switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
                             ).subscribe({
@@ -224,8 +224,10 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   }
 
   private updateShippingOptions(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, deliveryModes: DeliveryMode[]) {
+    const validDeliveryModes = deliveryModes.filter(mode => mode.code);
+
     paymentDataRequestUpdate.newShippingOptionParameters = {
-      defaultSelectedOptionId: deliveryModes[0]?.code || "",
+      defaultSelectedOptionId: validDeliveryModes[0]?.code,
       shippingOptions: deliveryModes.map(mode => ({
         id: mode.code || "",
         label: mode.name || "",
@@ -235,13 +237,21 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   }
 
   private updateTransactionInfo(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, cart: Cart) {
+    if (
+      !cart.totalPriceWithTax?.currencyIso ||
+      !cart.totalPriceWithTax?.value
+    ) {
+      throw new Error("Missing required values.");
+    }
+
     paymentDataRequestUpdate.newTransactionInfo = {
-      countryCode: 'US',
-      currencyCode: cart.totalPriceWithTax?.currencyIso ?? '',
+      countryCode: undefined,
+      currencyCode: cart.totalPriceWithTax.currencyIso,
       totalPriceStatus: 'FINAL',
-      totalPrice: (cart.totalPriceWithTax?.value ?? 0).toString(),
+      totalPrice: cart.totalPriceWithTax.value.toString(),
       totalPriceLabel: 'Total'
     };
+
   }
 
   private handleOnSubmit(state: any, actions: any) {
