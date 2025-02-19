@@ -173,14 +173,15 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
                   }).subscribe(
                     (result) => {
                       this.getSupportedDeliveryModesState(this.cartId).subscribe((deliveryModes) => {
-                        if(deliveryModes.length > 0) {
+                        const validDeliveryModes = deliveryModes.filter(mode => mode.code);
+                        if(validDeliveryModes.length > 0) {
                           this.adyenCartService
                             .setDeliveryMode(deliveryModes[0].code || "", this.cartId)
                             .pipe(
                               switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
                             ).subscribe({
                             next: cart => {
-                              this.updateShippingOptions(paymentDataRequestUpdate, deliveryModes);
+                              this.updateShippingOptions(paymentDataRequestUpdate, validDeliveryModes);
                               this.updateTransactionInfo(paymentDataRequestUpdate, cart);
                               resolve(paymentDataRequestUpdate);
                             },
@@ -188,6 +189,8 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
                               console.error('Error updating delivery mode:', err);
                             },
                           });
+                        }else {
+                          console.error('No delivery mode found');
                         }
                       });
                     }
@@ -224,12 +227,10 @@ export class GoogleExpressPaymentComponent implements OnInit, OnDestroy{
   }
 
   private updateShippingOptions(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, deliveryModes: DeliveryMode[]) {
-    const validDeliveryModes = deliveryModes.filter(mode => mode.code);
-
     paymentDataRequestUpdate.newShippingOptionParameters = {
-      defaultSelectedOptionId: validDeliveryModes[0]?.code,
+      defaultSelectedOptionId: deliveryModes[0].code,
       shippingOptions: deliveryModes.map(mode => ({
-        id: mode.code || "",
+        id: mode.code!,
         label: mode.name || "",
         description: mode.description || ""
       }))
