@@ -45,8 +45,8 @@ export class OccAdyenOrderAdapter {
     });
   }
 
-  public placeGoogleExpressOrderCart(userId: string, cartId: string, orderData: GooglePayExpressRequest): Observable<PlaceOrderResponse> {
-    return this.http.post<PlaceOrderResponse>(orderData.cartId  ? this.getPlaceGoogleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceGoogleExpressOrderEndpointCart(userId, cartId), orderData);
+  public placeGoogleExpressOrderCart(userId: string, cartId: string, orderData: GooglePayExpressRequest, isPDP: boolean): Observable<PlaceOrderResponse> {
+    return this.http.post<PlaceOrderResponse>(isPDP  ? this.getPlaceGoogleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceGoogleExpressOrderEndpointCart(userId, cartId), orderData);
   }
 
   protected getPlaceGoogleExpressOrderEndpointCart(userId: string, cartId: string): string {
@@ -67,8 +67,8 @@ export class OccAdyenOrderAdapter {
     });
   }
 
-  public placeAppleExpressOrder(userId: string, cartId: string, orderData: ApplePayExpressRequest): Observable<PlaceOrderResponse> {
-    return this.http.post<PlaceOrderResponse>(orderData.productCode  ? this.getPlaceAppleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceAppleExpressOrderEndpointCart(userId, cartId), orderData);
+  public placeAppleExpressOrder(userId: string, cartId: string, orderData: ApplePayExpressRequest, isPDP: boolean): Observable<PlaceOrderResponse> {
+    return this.http.post<PlaceOrderResponse>(isPDP  ? this.getPlaceAppleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceAppleExpressOrderEndpointCart(userId, cartId), orderData);
   }
 
   protected getPlaceAppleExpressOrderEndpointCart(userId: string, cartId: string): string {

@@ -25,7 +25,7 @@ type ExpressPaymentDataRequest = GooglePayExpressRequest | ApplePayExpressReques
 
 type ExpressCommand = {
   paymentData: ExpressPaymentDataRequest,
-  connectorFunction: (userId: string, cartId: string, request: ExpressPaymentDataRequest) => Observable<PlaceOrderResponse>,
+  connectorFunction: (userId: string, cartId: string, request: ExpressPaymentDataRequest, isPDP: boolean) => Observable<PlaceOrderResponse>,
   isPDP: boolean,
 }
 
@@ -53,7 +53,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
       (expressCommand) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            expressCommand.connectorFunction(userId, cartId, expressCommand.paymentData).pipe(
+            expressCommand.connectorFunction(userId, cartId, expressCommand.paymentData, expressCommand.isPDP).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
@@ -83,16 +83,16 @@ export class AdyenExpressOrderService extends AdyenOrderService {
     return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataGoogle(paymentData, authorizedPaymentData, cartId), connectorFunction: this.placeExpressGoogleOrderWrapper, isPDP: !!product});
   }
 
-  protected placeExpressGoogleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
-    return this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, request as GooglePayExpressRequest)
+  protected placeExpressGoogleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest, isPDP: boolean) => {
+    return this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, request as GooglePayExpressRequest, isPDP)
   }
 
   adyenPlaceAppleExpressOrder(paymentData: PaymentData, authorizedPaymentData: any, product: Product, cartId: string): Observable<PlaceOrderResponse> {
     return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataApple(paymentData, authorizedPaymentData, cartId), connectorFunction: this.placeExpressAppleOrderWrapper, isPDP: !!product});
   }
 
-  protected placeExpressAppleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
-    return this.placeOrderConnector.placeAppleExpressOrder(userId, cartId, request as ApplePayExpressRequest)
+  protected placeExpressAppleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest, isPDP: boolean) => {
+    return this.placeOrderConnector.placeAppleExpressOrder(userId, cartId, request as ApplePayExpressRequest, isPDP)
   }
 
   private handlePlaceOrderError(error: HttpErrorResponse): Observable<PlaceOrderResponse> {

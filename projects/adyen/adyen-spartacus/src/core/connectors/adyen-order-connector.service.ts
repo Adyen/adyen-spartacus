@@ -20,11 +20,11 @@ export class AdyenOrderConnector {
     return this.adapter.cancelPayment(userId, cartId, orderCode);
   }
 
-  placeGoogleExpressOrderCart(userId: string, cartId: string, request: GooglePayExpressRequest): Observable<PlaceOrderResponse> {
-    return this.adapter.placeGoogleExpressOrderCart(userId, cartId, request);
+  placeGoogleExpressOrderCart(userId: string, cartId: string, request: GooglePayExpressRequest, isPDP: boolean): Observable<PlaceOrderResponse> {
+    return this.adapter.placeGoogleExpressOrderCart(userId, cartId, request, isPDP);
   }
 
-  placeAppleExpressOrder(userId: string, cartId: string, request: ApplePayExpressRequest): Observable<PlaceOrderResponse> {
-    return this.adapter.placeAppleExpressOrder(userId, cartId, request);
+  placeAppleExpressOrder(userId: string, cartId: string, request: ApplePayExpressRequest, isPDP: boolean): Observable<PlaceOrderResponse> {
+    return this.adapter.placeAppleExpressOrder(userId, cartId, request, isPDP);
   }
 }
