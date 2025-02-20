@@ -84,7 +84,7 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
   }
 
   private handleOnSubmit(state: SubmitData, actions: any) {
-    this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product).subscribe(
+    this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
       result => {
         if (result?.success) {
           if (result.executeAction && result.paymentsAction !== undefined) {
@@ -153,7 +153,7 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
                   reject()
                 },
               }));
-          } 
+          }
         }))
       }))
 
