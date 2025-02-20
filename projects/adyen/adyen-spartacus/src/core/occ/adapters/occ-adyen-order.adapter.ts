@@ -4,7 +4,7 @@ import {OccEndpointsService} from '@spartacus/core';
 import {Observable} from 'rxjs';
 import {
   ApplePayExpressRequest,
-  GooglePayExpressCartRequest,
+  GooglePayExpressRequest,
   PlaceOrderRequest,
   PlaceOrderResponse
 } from "../../models/occ.order.models";
@@ -45,7 +45,7 @@ export class OccAdyenOrderAdapter {
     });
   }
 
-  public placeGoogleExpressOrderCart(userId: string, cartId: string, orderData: GooglePayExpressCartRequest): Observable<PlaceOrderResponse> {
+  public placeGoogleExpressOrderCart(userId: string, cartId: string, orderData: GooglePayExpressRequest): Observable<PlaceOrderResponse> {
     return this.http.post<PlaceOrderResponse>(orderData.cartId  ? this.getPlaceGoogleExpressOrderEndpointProduct(userId, cartId) : this.getPlaceGoogleExpressOrderEndpointCart(userId, cartId), orderData);
   }
 

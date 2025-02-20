@@ -15,13 +15,13 @@ import {catchError, map, Observable, of, switchMap, tap} from "rxjs";
 import {OrderPlacedEvent} from '@spartacus/order/root';
 import {AdyenOrderConnector} from "../core/connectors/adyen-order-connector.service";
 import {ActiveCartFacade} from '@spartacus/cart/base/root';
-import {ApplePayExpressRequest, GooglePayExpressCartRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
+import {ApplePayExpressRequest, GooglePayExpressRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {AdyenOrderService} from "./adyen-order.service";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
 import {PaymentData} from "@adyen/adyen-web";
 
-type ExpressPaymentDataRequest = GooglePayExpressCartRequest | ApplePayExpressRequest;
+type ExpressPaymentDataRequest = GooglePayExpressRequest | ApplePayExpressRequest;
 
 type ExpressCommand = {
   paymentData: ExpressPaymentDataRequest,
@@ -84,11 +84,11 @@ export class AdyenExpressOrderService extends AdyenOrderService {
   }
 
   protected placeExpressGoogleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
-    return this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, request as GooglePayExpressCartRequest)
+    return this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, request as GooglePayExpressRequest)
   }
 
-  adyenPlaceAppleExpressOrder(paymentData: PaymentData, authorizedPaymentData: any, product: Product): Observable<PlaceOrderResponse> {
-    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataApple(paymentData, authorizedPaymentData, product), connectorFunction: this.placeExpressAppleOrderWrapper, isPDP: !!product});
+  adyenPlaceAppleExpressOrder(paymentData: PaymentData, authorizedPaymentData: any, product: Product, cartId: string): Observable<PlaceOrderResponse> {
+    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataApple(paymentData, authorizedPaymentData, cartId), connectorFunction: this.placeExpressAppleOrderWrapper, isPDP: !!product});
   }
 
   protected placeExpressAppleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
@@ -107,8 +107,9 @@ export class AdyenExpressOrderService extends AdyenOrderService {
     });
   }
 
-  prepareDataGoogle(paymentData: any, authorizedPaymentData: any, cartId: string): GooglePayExpressCartRequest {
-    const baseData = {
+  prepareDataGoogle(paymentData: any, authorizedPaymentData: any, cartId: string): GooglePayExpressRequest {
+    return  {
+      cartId: cartId,
       googlePayDetails: paymentData.paymentMethod,
       addressData: {
         email: authorizedPaymentData.authorizedEvent.email,
@@ -125,14 +126,13 @@ export class AdyenExpressOrderService extends AdyenOrderService {
         }
       }
     };
-    delete baseData.googlePayDetails.subtype;
-    return { cartId: cartId, ...baseData }
   }
 
-  prepareDataApple(paymentData: PaymentData, authorizedPaymentData: any, product: Product): ApplePayExpressRequest {
+  prepareDataApple(paymentData: PaymentData, authorizedPaymentData: any, cartId: string): ApplePayExpressRequest {
     let event = authorizedPaymentData.authorizedEvent;
 
-    const baseData = {
+    return  {
+      cartId: cartId,
       applePayDetails: paymentData.paymentMethod,
       addressData: {
         email: event.payment.shippingContact?.emailAddress,
@@ -150,6 +150,5 @@ export class AdyenExpressOrderService extends AdyenOrderService {
         }
       }
     };
-    return product ? { productCode: product.code, ...baseData } : baseData;
   }
 }
