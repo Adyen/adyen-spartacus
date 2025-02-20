@@ -153,10 +153,7 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
                   reject()
                 },
               }));
-          } else {
-            console.error("No delivery modes")
-            reject('Error updating delivery mode')
-          }
+          } 
         }))
       }))
 
