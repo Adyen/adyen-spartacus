@@ -40,11 +40,16 @@ export class ExpressPaymentBase implements OnDestroy {
         return; // Gracefully handle missing active cart
       }
 
-      const cart = product
-        ? await firstValueFrom(this.createAndAddProductToCart(product))
-        : activeCart;
+      console.log("init cart")
 
       if (!this.cartId) {
+        console.log("empty cart id, initializing with product: " + product.code)
+
+        const cart = product
+          ? await firstValueFrom(this.createAndAddProductToCart(product))
+          : activeCart;
+
+
         if (cart && cart.code) {
           this.cart$ = this.multiCartService.getCart(cart.code);
           this.cartId = cart.code;
