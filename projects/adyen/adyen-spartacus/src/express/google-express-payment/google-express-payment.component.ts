@@ -92,8 +92,9 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
               }
 
               if (callbackTrigger === 'INITIALIZE' || callbackTrigger === 'SHIPPING_ADDRESS') {
-                if (shippingAddress) {
-                  this.adyenCartService.createAndSetAddress(this.cartId, {
+                if (shippingAddress && !!this.cartId) {
+                  const cartCode = this.cartId;
+                  this.adyenCartService.createAndSetAddress(cartCode, {
                     postalCode: shippingAddress.postalCode,
                     country: {isocode: shippingAddress.countryCode},
                     firstName: "placeholder",
@@ -102,10 +103,10 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
                     line1: "placeholder"
                   }).subscribe(
                     (result) => {
-                      this.getSupportedDeliveryModesState(this.cartId).subscribe((deliveryModes) => {
-                        if(deliveryModes.length > 0) {
+                      this.getSupportedDeliveryModesState(cartCode).subscribe((deliveryModes) => {
+                        if (deliveryModes.length > 0) {
                           this.adyenCartService
-                            .setDeliveryMode(deliveryModes[0]?.code || "", this.cartId)
+                            .setDeliveryMode(deliveryModes[0]?.code || "", cartCode)
                             .pipe(
                               switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
                             ).subscribe({
@@ -123,10 +124,12 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
                     }
                   );
                 }
+              } else {
+                console.error("Undefined cart id")
               }
 
               if (callbackTrigger === 'SHIPPING_OPTION') {
-                if (shippingOptionData) {
+                if (shippingOptionData && !!this.cartId) {
                   this.adyenCartService
                     .setDeliveryMode(shippingOptionData.id, this.cartId)
                     .pipe(
@@ -140,6 +143,8 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
                       console.error('Error updating delivery mode:', err);
                     },
                   });
+                } else {
+                  console.error("Undefined cart id")
                 }
               }
             });
@@ -175,25 +180,29 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   private handleOnSubmit(state: any, actions: any) {
-    this.adyenOrderService.adyenPlaceGoogleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
-      result => {
-        if (result?.success) {
-          if (result.executeAction && result.paymentsAction !== undefined) {
-            this.googlePay.handleAction(result.paymentsAction);
+    if(!!this.cartId) {
+      this.adyenOrderService.adyenPlaceGoogleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
+        result => {
+          if (result?.success) {
+            if (result.executeAction && result.paymentsAction !== undefined) {
+              this.googlePay.handleAction(result.paymentsAction);
+            } else {
+              this.onSuccess();
+            }
           } else {
-            this.onSuccess();
+            console.error(result?.error);
+            actions.reject();
           }
-        } else {
-          console.error(result?.error);
+          actions.resolve({resultCode: 'Authorised'});
+        },
+        error => {
+          console.error(error);
           actions.reject();
         }
-        actions.resolve({ resultCode: 'Authorised' });
-      },
-      error => {
-        console.error(error);
-        actions.reject();
-      }
-    );
+      );
+    } else {
+      console.error("Undefined cart id")
+    }
   }
 
   handleError(error: AdyenCheckoutError) {}

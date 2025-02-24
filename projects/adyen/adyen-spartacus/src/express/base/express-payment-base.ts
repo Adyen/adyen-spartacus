@@ -20,7 +20,7 @@ export class ExpressPaymentBase implements OnDestroy {
   protected subscriptions = new Subscription();
 
   productAdded = false;
-  cartId: string;
+  cartId: string | undefined;
   cart$!: Observable<Cart>;
 
 
@@ -44,7 +44,7 @@ export class ExpressPaymentBase implements OnDestroy {
       console.log("init cart")
 
       if (!this.cartId) {
-        console.log("empty cart id, initializing with product: " + product.code)
+        console.log("empty cart id, initializing with product: " + product?.code)
 
         const cart = product
           ? await firstValueFrom(this.createAndAddProductToCart(product))
@@ -99,25 +99,29 @@ export class ExpressPaymentBase implements OnDestroy {
   }
 
   setDeliveryMode<T>(deliveryModeId: string, product: Product, mappingFunction: (cart: Cart) => T, resolve: any, reject: any): void {
-    this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
-      .pipe(
-        switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-      ).subscribe({
-        next: cart => {
-          try {
-            const update = mappingFunction(cart);
+    if(!!this.cartId) {
+      this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
+        .pipe(
+          switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+        ).subscribe({
+          next: cart => {
+            try {
+              const update = mappingFunction(cart);
 
-            resolve(update)
-          } catch (e) {
-            console.error("Delivery mode selection issue")
-            reject();
-          }
-        },
-        error: err => {
-          console.error('Error updating delivery mode:', err);
-          reject()
-        },
-      }));
+              resolve(update)
+            } catch (e) {
+              console.error("Delivery mode selection issue")
+              reject();
+            }
+          },
+          error: err => {
+            console.error('Error updating delivery mode:', err);
+            reject()
+          },
+        }));
+    } else {
+      console.error("Undefined cart id")
+    }
   }
 
   async handleShippingContactSelected<T>(address: {
@@ -133,34 +137,39 @@ export class ExpressPaymentBase implements OnDestroy {
       town: "placeholder",
       line1: "placeholder"
     }
-    this.subscriptions.add(this.adyenCartService.createAndSetAddress(this.cartId, shippingAddress).subscribe(() => {
-      this.subscriptions.add(this.getSupportedDeliveryModesState(this.cartId).subscribe((deliveryModes) => {
-        const validDeliveryModes = deliveryModes.filter(mode => mode.code);
+    if(!!this.cartId) {
+      const cartCode = this.cartId;
+      this.subscriptions.add(this.adyenCartService.createAndSetAddress(cartCode, shippingAddress).subscribe(() => {
+        this.subscriptions.add(this.getSupportedDeliveryModesState(cartCode).subscribe((deliveryModes) => {
+          const validDeliveryModes = deliveryModes.filter(mode => mode.code);
 
-        if (validDeliveryModes.length > 0) {
-          this.subscriptions.add(this.adyenCartService
-            .setDeliveryMode(validDeliveryModes[0].code!, this.cartId)
-            .pipe(
-              switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-            ).subscribe({
-              next: cart => {
-                try {
-                  let update = mappingFunction(cart, validDeliveryModes);
+          if (validDeliveryModes.length > 0) {
+            this.subscriptions.add(this.adyenCartService
+              .setDeliveryMode(validDeliveryModes[0].code!, cartCode)
+              .pipe(
+                switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+              ).subscribe({
+                next: cart => {
+                  try {
+                    let update = mappingFunction(cart, validDeliveryModes);
 
-                  resolve(update);
-                } catch (e) {
-                  console.error("Delivery mode mapping issue")
-                  reject();
-                }
-              },
-              error: err => {
-                console.error('Error updating delivery mode:', err);
-                reject()
-              },
-            }));
-        }
+                    resolve(update);
+                  } catch (e) {
+                    console.error("Delivery mode mapping issue")
+                    reject();
+                  }
+                },
+                error: err => {
+                  console.error('Error updating delivery mode:', err);
+                  reject()
+                },
+              }));
+          }
+        }))
       }))
-    }))
+    } else{
+      console.error("Undefined cart id")
+    }
   }
 
   ngOnDestroy(): void {

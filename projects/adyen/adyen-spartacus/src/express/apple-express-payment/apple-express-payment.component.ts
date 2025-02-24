@@ -117,25 +117,30 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
   }
 
   private handleOnSubmit(state: SubmitData, actions: any) {
-    this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
-      result => {
-        if (result?.success) {
-          if (result.executeAction && result.paymentsAction !== undefined) {
-            this.applePay.handleAction(result.paymentsAction);
+    if(!!this.cartId){
+      this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
+        result => {
+          if (result?.success) {
+            if (result.executeAction && result.paymentsAction !== undefined) {
+              this.applePay.handleAction(result.paymentsAction);
+            } else {
+              this.onSuccess();
+            }
           } else {
-            this.onSuccess();
+            console.error(result?.error);
+            actions.reject();
           }
-        } else {
-          console.error(result?.error);
+          actions.resolve({resultCode: 'Authorised'});
+        },
+        error => {
+          console.error(error);
           actions.reject();
         }
-        actions.resolve({resultCode: 'Authorised'});
-      },
-      error => {
-        console.error(error);
-        actions.reject();
-      }
-    );
+      );
+    } else {
+      console.error("Undefined cart id")
+    }
+
   }
 
   // async handleShippingContactSelected(resolve: any, reject: any, event: any, label: string): Promise<void> {
