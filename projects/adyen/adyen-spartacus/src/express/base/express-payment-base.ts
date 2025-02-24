@@ -1,7 +1,7 @@
 import {Injectable, OnDestroy} from "@angular/core";
-import {Product, UserIdService} from '@spartacus/core';
+import {Address, Product, UserIdService} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
-import {firstValueFrom, Observable, of, Subject} from 'rxjs';
+import {firstValueFrom, Observable, of, Subject, Subscription} from 'rxjs';
 import {catchError, filter, map, switchMap, take, takeUntil, tap} from 'rxjs/operators';
 import {AdyenCartService} from "../../service/adyen-cart-service";
 
@@ -17,6 +17,7 @@ export class ExpressPaymentBase implements OnDestroy {
   }
 
   private unsubscribe$ = new Subject<void>();
+  protected subscriptions = new Subscription();
 
   productAdded = false;
   cartId: string;
@@ -97,7 +98,73 @@ export class ExpressPaymentBase implements OnDestroy {
     );
   }
 
+  setDeliveryMode<T>(deliveryModeId: string, product: Product, mappingFunction: (cart: Cart) => T, resolve: any, reject: any): void {
+    this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
+      .pipe(
+        switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+      ).subscribe({
+        next: cart => {
+          try {
+            const update = mappingFunction(cart);
+
+            resolve(update)
+          } catch (e) {
+            console.error("Delivery mode selection issue")
+            reject();
+          }
+        },
+        error: err => {
+          console.error('Error updating delivery mode:', err);
+          reject()
+        },
+      }));
+  }
+
+  async handleShippingContactSelected<T>(address: {
+    postalCode: string,
+    countryCode: string
+  }, product: Product, mappingFunction: (cart: Cart, deliveryModes: DeliveryMode[]) => T, resolve: any, reject: any): Promise<void> {
+    await this.initializeCart(product);
+    const shippingAddress: Address = {
+      postalCode: address.postalCode,
+      country: {isocode: address.countryCode},
+      firstName: "placeholder",
+      lastName: "placeholder",
+      town: "placeholder",
+      line1: "placeholder"
+    }
+    this.subscriptions.add(this.adyenCartService.createAndSetAddress(this.cartId, shippingAddress).subscribe(() => {
+      this.subscriptions.add(this.getSupportedDeliveryModesState(this.cartId).subscribe((deliveryModes) => {
+        const validDeliveryModes = deliveryModes.filter(mode => mode.code);
+
+        if (validDeliveryModes.length > 0) {
+          this.subscriptions.add(this.adyenCartService
+            .setDeliveryMode(validDeliveryModes[0].code!, this.cartId)
+            .pipe(
+              switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+            ).subscribe({
+              next: cart => {
+                try {
+                  let update = mappingFunction(cart, validDeliveryModes);
+
+                  resolve(update);
+                } catch (e) {
+                  console.error("Delivery mode mapping issue")
+                  reject();
+                }
+              },
+              error: err => {
+                console.error('Error updating delivery mode:', err);
+                reject()
+              },
+            }));
+        }
+      }))
+    }))
+  }
+
   ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
   }
