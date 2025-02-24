@@ -4,8 +4,7 @@ import {ApplePay, SubmitData, UIElement} from "@adyen/adyen-web";
 import {AdyenCheckout, AdyenCheckoutError} from '@adyen/adyen-web/auto';
 import {AdyenExpressConfigData} from "../../core/models/occ.config.models";
 import {AdyenExpressOrderService} from "../../service/adyen-express-order.service";
-import {Address, Product, RoutingService, UserIdService,} from '@spartacus/core';
-import {Subscription, switchMap} from 'rxjs';
+import {Product, RoutingService, UserIdService,} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
 import {ExpressPaymentBase} from "../base/express-payment-base";
@@ -19,8 +18,6 @@ import {AdyenCartService} from "../../service/adyen-cart-service";
   styleUrls: ['./apple-express-payment.component.css']
 })
 export class AppleExpressPaymentComponent extends ExpressPaymentBase implements OnInit, OnDestroy {
-
-  // protected subscriptions = new Subscription();
 
   @Input()
   product: Product;
@@ -69,8 +66,6 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
         "name",
         "email"
       ],
-      // onShippingContactSelected: (resolve, reject, event) => this.handleShippingContactSelected(resolve,reject,event, config.applePayMerchantName),
-      // onShippingMethodSelected: (resolve, reject, event) =>this.handleShippingMethodSelected(resolve,reject,event, config.applePayMerchantName),
       onShippingContactSelected: (resolve, reject, event) => {
         const mappingFunction = (cart: Cart, deliveryModes: DeliveryMode[]): any => {
           return {
@@ -142,88 +137,6 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
     }
 
   }
-
-  // async handleShippingContactSelected(resolve: any, reject: any, event: any, label: string): Promise<void> {
-  //   await this.initializeCart(this.product);
-  //   if (event.shippingContact) {
-  //     const shippingAddress: Address = {
-  //       postalCode: event.shippingContact.postalCode,
-  //       country: {isocode: event.shippingContact.countryCode},
-  //       firstName: "placeholder",
-  //       lastName: "placeholder",
-  //       town: "placeholder",
-  //       line1: "placeholder"
-  //     }
-  //     this.subscriptions.add(this.adyenCartService.createAndSetAddress(this.cartId, shippingAddress).subscribe(() => {
-  //       this.subscriptions.add(this.getSupportedDeliveryModesState(this.cartId).subscribe((deliveryModes) => {
-  //         const validDeliveryModes = deliveryModes.filter(mode => mode.code);
-  //
-  //         if (validDeliveryModes.length > 0) {
-  //           this.subscriptions.add(this.adyenCartService
-  //             .setDeliveryMode(validDeliveryModes[0].code!, this.cartId)
-  //             .pipe(
-  //               switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-  //             ).subscribe({
-  //               next: cart => {
-  //                 try {
-  //                   const shippingContactUpdate = {
-  //                     newTotal: {
-  //                       label: label,
-  //                       type: 'final',
-  //                       amount: cart.totalPriceWithTax!.value!.toString()
-  //                     },
-  //                     newShippingMethods: deliveryModes.map((mode) => ({
-  //                       identifier: mode.code!,
-  //                       label: mode.name || "",
-  //                       detail: mode.description || "",
-  //                       amount: mode.deliveryCost!.value!.toString()
-  //                     }))
-  //                   }
-  //
-  //                   resolve(shippingContactUpdate);
-  //                 } catch (e) {
-  //                   console.error("Delivery mode mapping issue")
-  //                   reject();
-  //                 }
-  //               },
-  //               error: err => {
-  //                 console.error('Error updating delivery mode:', err);
-  //                 reject()
-  //               },
-  //             }));
-  //         }
-  //       }))
-  //     }))
-  //
-  //   }
-  // }
-
-  // handleShippingMethodSelected(resolve: any, reject: any, event: any, label: string): void {
-  //   this.subscriptions.add(this.adyenCartService.setDeliveryMode(event.shippingMethod.identifier, this.cartId)
-  //     .pipe(
-  //       switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-  //     ).subscribe({
-  //       next: cart => {
-  //         try {
-  //           const shippingMethodUpdate = {
-  //             newTotal: {
-  //               label: label,
-  //               type: 'final',
-  //               amount: cart.totalPriceWithTax!.value!.toString()
-  //             }
-  //           }
-  //           resolve(shippingMethodUpdate)
-  //         } catch (e) {
-  //           console.error("Delivery mode selection issue")
-  //           reject();
-  //         }
-  //       },
-  //       error: err => {
-  //         console.error('Error updating delivery mode:', err);
-  //         reject()
-  //       },
-  //     }));
-  // }
 
   handleError(error: AdyenCheckoutError) {
   }

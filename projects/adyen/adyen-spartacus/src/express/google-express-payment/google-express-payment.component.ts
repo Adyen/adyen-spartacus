@@ -5,11 +5,9 @@ import {UIElement} from "@adyen/adyen-web";
 import {AdyenCheckout, AdyenCheckoutError, GooglePay} from '@adyen/adyen-web/auto';
 import {AdyenExpressConfigData} from "../../core/models/occ.config.models";
 import {AdyenExpressOrderService} from "../../service/adyen-express-order.service";
-import {Product, RoutingService,UserIdService} from '@spartacus/core';
-import {ActiveCartFacade, Cart, DeliveryMode,MultiCartFacade} from '@spartacus/cart/base/root';
+import {Product, RoutingService, UserIdService} from '@spartacus/core';
+import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
-import {Observable, of,Subject, firstValueFrom, last} from 'rxjs';
-import { filter, map,tap, switchMap, take, takeUntil, catchError } from 'rxjs/operators';
 import {AdyenCartService} from "../../service/adyen-cart-service";
 import {ExpressPaymentBase} from "../base/express-payment-base";
 
@@ -83,68 +81,35 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
         onSubmit: (state: any, element: UIElement, actions) => this.handleOnSubmit(state, actions),
         paymentDataCallbacks: {
           onPaymentDataChanged: async (intermediatePaymentData) => {
-            return new Promise(async resolve => {
+            return new Promise(async (resolve, reject) => {
               const {callbackTrigger, shippingAddress, shippingOptionData} = intermediatePaymentData;
-              const paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate = {};
+              // const paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate = {};
 
-              if(callbackTrigger === 'INITIALIZE'){
+              if (callbackTrigger === 'INITIALIZE') {
                 await this.initializeCart(this.product);
               }
 
               if (callbackTrigger === 'INITIALIZE' || callbackTrigger === 'SHIPPING_ADDRESS') {
-                if (shippingAddress && !!this.cartId) {
-                  const cartCode = this.cartId;
-                  this.adyenCartService.createAndSetAddress(cartCode, {
+                if (shippingAddress) {
+                  const mappingFunction = (cart: Cart, deliveryModes: DeliveryMode[]): google.payments.api.PaymentDataRequestUpdate => {
+                    let shippingOptionsUpdate = this.updateShippingOptions(deliveryModes);
+                    let cartUpdate = this.updateTransactionInfo(cart);
+
+                    return {...shippingOptionsUpdate, ...cartUpdate}
+                  }
+
+                  const address = {
                     postalCode: shippingAddress.postalCode,
-                    country: {isocode: shippingAddress.countryCode},
-                    firstName: "placeholder",
-                    lastName: "placeholder",
-                    town: "placeholder",
-                    line1: "placeholder"
-                  }).subscribe(
-                    (result) => {
-                      this.getSupportedDeliveryModesState(cartCode).subscribe((deliveryModes) => {
-                        if (deliveryModes.length > 0) {
-                          this.adyenCartService
-                            .setDeliveryMode(deliveryModes[0]?.code || "", cartCode)
-                            .pipe(
-                              switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-                            ).subscribe({
-                            next: cart => {
-                              this.updateShippingOptions(paymentDataRequestUpdate, deliveryModes);
-                              this.updateTransactionInfo(paymentDataRequestUpdate, cart);
-                              resolve(paymentDataRequestUpdate);
-                            },
-                            error: err => {
-                              console.error('Error updating delivery mode:', err);
-                            },
-                          });
-                        }
-                      });
-                    }
-                  );
+                    countryCode: shippingAddress.countryCode
+                  }
+
+                  await this.handleShippingContactSelected<google.payments.api.PaymentDataRequestUpdate>(address, this.product, mappingFunction, resolve, reject)
                 }
-              } else {
-                console.error("Undefined cart id")
               }
 
               if (callbackTrigger === 'SHIPPING_OPTION') {
-                if (shippingOptionData && !!this.cartId) {
-                  this.adyenCartService
-                    .setDeliveryMode(shippingOptionData.id, this.cartId)
-                    .pipe(
-                      switchMap(() => !!this.product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-                    ).subscribe({
-                    next: cart => {
-                      this.updateTransactionInfo(paymentDataRequestUpdate, cart);
-                      resolve(paymentDataRequestUpdate);
-                    },
-                    error: err => {
-                      console.error('Error updating delivery mode:', err);
-                    },
-                  });
-                } else {
-                  console.error("Undefined cart id")
+                if (shippingOptionData) {
+                  this.setDeliveryMode<google.payments.api.PaymentDataRequestUpdate>(shippingOptionData.id, this.product, this.updateTransactionInfo, resolve, reject);
                 }
               }
             });
@@ -158,25 +123,29 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
       }).mount("#google-pay-button");
   }
 
-  private updateShippingOptions(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, deliveryModes: DeliveryMode[]) {
-    paymentDataRequestUpdate.newShippingOptionParameters = {
-      defaultSelectedOptionId: deliveryModes[0]?.code || "",
-      shippingOptions: deliveryModes.map(mode => ({
-        id: mode.code || "",
-        label: mode.name || "",
-        description: mode.description || ""
-      }))
+  private updateShippingOptions(deliveryModes: DeliveryMode[]): google.payments.api.PaymentDataRequestUpdate {
+    return {
+      newShippingOptionParameters: {
+        defaultSelectedOptionId: deliveryModes[0]?.code || "",
+        shippingOptions: deliveryModes.map(mode => ({
+          id: mode.code || "",
+          label: mode.name || "",
+          description: mode.description || ""
+        }))
+      }
     }
   }
 
-  private updateTransactionInfo(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, cart: Cart) {
-    paymentDataRequestUpdate.newTransactionInfo = {
-      countryCode: 'US',
-      currencyCode: cart.totalPriceWithTax?.currencyIso ?? '',
-      totalPriceStatus: 'FINAL',
-      totalPrice: (cart.totalPriceWithTax?.value ?? 0).toString(),
-      totalPriceLabel: 'Total'
-    };
+  private updateTransactionInfo(cart: Cart): google.payments.api.PaymentDataRequestUpdate {
+    return {
+      newTransactionInfo: {
+        countryCode: 'US',
+        currencyCode: cart.totalPriceWithTax?.currencyIso ?? '',
+        totalPriceStatus: 'FINAL',
+        totalPrice: (cart.totalPriceWithTax?.value ?? 0).toString(),
+        totalPriceLabel: 'Total'
+      }
+    }
   }
 
   private handleOnSubmit(state: any, actions: any) {
