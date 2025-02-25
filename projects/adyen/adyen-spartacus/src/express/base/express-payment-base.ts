@@ -1,9 +1,10 @@
 import {Injectable, OnDestroy} from "@angular/core";
-import {Address, Product, UserIdService} from '@spartacus/core';
+import {Address, EventService, Product, UserIdService} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {firstValueFrom, Observable, of, Subject, Subscription} from 'rxjs';
 import {catchError, filter, map, switchMap, take, takeUntil, tap} from 'rxjs/operators';
 import {AdyenCartService} from "../../service/adyen-cart-service";
+import {ExpressCheckoutSuccessfulEvent} from "../../events/checkout-adyen.events";
 
 
 @Injectable()
@@ -12,8 +13,14 @@ export class ExpressPaymentBase implements OnDestroy {
   constructor(protected multiCartService: MultiCartFacade,
               protected userIdService: UserIdService,
               protected activeCartService: ActiveCartFacade,
-              protected adyenCartService: AdyenCartService) {
-
+              protected adyenCartService: AdyenCartService,
+              protected eventService: EventService) {
+    this.subscriptions.add(this.eventService.get(ExpressCheckoutSuccessfulEvent).subscribe(event => {
+      if (this.cartId) {
+        multiCartService.removeCart(this.cartId);
+      }
+      this.cartId = undefined;
+    }));
   }
 
   private unsubscribe$ = new Subject<void>();

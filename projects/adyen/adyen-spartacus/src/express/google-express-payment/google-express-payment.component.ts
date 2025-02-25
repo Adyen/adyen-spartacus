@@ -5,7 +5,7 @@ import {UIElement} from "@adyen/adyen-web";
 import {AdyenCheckout, AdyenCheckoutError, GooglePay} from '@adyen/adyen-web/auto';
 import {AdyenExpressConfigData} from "../../core/models/occ.config.models";
 import {AdyenExpressOrderService} from "../../service/adyen-express-order.service";
-import {Product, RoutingService, UserIdService} from '@spartacus/core';
+import {EventService, Product, RoutingService, UserIdService} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
 import {AdyenCartService} from "../../service/adyen-cart-service";
@@ -37,8 +37,9 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
     protected override multiCartService: MultiCartFacade,
     protected override userIdService: UserIdService,
     protected override adyenCartService: AdyenCartService,
+    protected override eventService: EventService
   ) {
-    super(multiCartService, userIdService, activeCartService, adyenCartService)
+    super(multiCartService, userIdService, activeCartService, adyenCartService, eventService)
   }
 
   ngOnInit(): void {

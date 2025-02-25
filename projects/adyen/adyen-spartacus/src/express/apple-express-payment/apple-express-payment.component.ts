@@ -4,7 +4,7 @@ import {ApplePay, SubmitData, UIElement} from "@adyen/adyen-web";
 import {AdyenCheckout, AdyenCheckoutError} from '@adyen/adyen-web/auto';
 import {AdyenExpressConfigData} from "../../core/models/occ.config.models";
 import {AdyenExpressOrderService} from "../../service/adyen-express-order.service";
-import {Product, RoutingService, UserIdService,} from '@spartacus/core';
+import {EventService, Product, RoutingService, UserIdService,} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
 import {ExpressPaymentBase} from "../base/express-payment-base";
@@ -36,8 +36,9 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
     protected override multiCartService: MultiCartFacade,
     protected override userIdService: UserIdService,
     protected override adyenCartService: AdyenCartService,
+    protected override eventService: EventService
   ) {
-    super(multiCartService, userIdService, activeCartFacade, adyenCartService)
+    super(multiCartService, userIdService, activeCartFacade, adyenCartService, eventService)
   }
 
   ngOnInit(): void {
