@@ -77,7 +77,7 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
           totalPriceLabel: 'Total',
           totalPrice: config.amountDecimal.toString(),
           currencyCode: config.amount.currency,
-          countryCode: 'US'
+          countryCode: undefined,
         },
         onSubmit: (state: any, element: UIElement, actions) => this.handleOnSubmit(state, actions),
         paymentDataCallbacks: {
@@ -127,9 +127,9 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
   private updateShippingOptions(deliveryModes: DeliveryMode[]): google.payments.api.PaymentDataRequestUpdate {
     return {
       newShippingOptionParameters: {
-        defaultSelectedOptionId: deliveryModes[0]?.code || "",
+        defaultSelectedOptionId: deliveryModes[0].code,
         shippingOptions: deliveryModes.map(mode => ({
-          id: mode.code || "",
+          id: mode.code!,
           label: mode.name || "",
           description: mode.description || ""
         }))
@@ -137,16 +137,22 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
     }
   }
 
-  private updateTransactionInfo(cart: Cart): google.payments.api.PaymentDataRequestUpdate {
-    return {
-      newTransactionInfo: {
-        countryCode: 'US',
-        currencyCode: cart.totalPriceWithTax?.currencyIso ?? '',
-        totalPriceStatus: 'FINAL',
-        totalPrice: (cart.totalPriceWithTax?.value ?? 0).toString(),
-        totalPriceLabel: 'Total'
-      }
+  private updateTransactionInfo(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, cart: Cart) {
+    if (
+      !cart.totalPriceWithTax?.currencyIso ||
+      !cart.totalPriceWithTax?.value
+    ) {
+      throw new Error("Missing required values.");
     }
+
+    return {
+      countryCode: undefined,
+      currencyCode: cart.totalPriceWithTax.currencyIso,
+      totalPriceStatus: 'FINAL',
+      totalPrice: cart.totalPriceWithTax.value.toString(),
+      totalPriceLabel: 'Total'
+    };
+
   }
 
   private handleOnSubmit(state: any, actions: any) {
@@ -157,13 +163,13 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
             if (result.executeAction && result.paymentsAction !== undefined) {
               this.googlePay.handleAction(result.paymentsAction);
             } else {
+              actions.resolve({ resultCode: 'Authorised' });
               this.onSuccess();
             }
           } else {
             console.error(result?.error);
             actions.reject();
           }
-          actions.resolve({resultCode: 'Authorised'});
         },
         error => {
           console.error(error);
