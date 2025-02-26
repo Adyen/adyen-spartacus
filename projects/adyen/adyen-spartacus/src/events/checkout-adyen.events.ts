@@ -9,4 +9,10 @@ export class CheckoutAdyenConfigurationReloadEvent extends CheckoutAdyenConfigur
   }
 }
 
+export class ExpressCheckoutSuccessfulEvent extends CheckoutEvent {
+  readonly type = 'ExpressCheckoutSuccessfulEvent';
+  constructor() {
+    super();
+  }
+}
 

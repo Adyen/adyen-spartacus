@@ -2,12 +2,13 @@ import { PaymentAction,PaymentResponseData } from "@adyen/adyen-web";
 import { Order } from '@spartacus/order/root';
 
 export interface ApplePayExpressRequest {
+  cartId?: string;
   applePayDetails: any;
   addressData: any;
   productCode?: string;
 }
 
-export interface GooglePayExpressCartRequest {
+export interface GooglePayExpressRequest {
   googlePayDetails: any;
   addressData: any;
   productCode?: string;

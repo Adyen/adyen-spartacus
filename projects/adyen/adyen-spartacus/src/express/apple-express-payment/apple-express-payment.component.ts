@@ -4,10 +4,11 @@ import {ApplePay, SubmitData, UIElement} from "@adyen/adyen-web";
 import {AdyenCheckout, AdyenCheckoutError} from '@adyen/adyen-web/auto';
 import {AdyenExpressConfigData} from "../../core/models/occ.config.models";
 import {AdyenExpressOrderService} from "../../service/adyen-express-order.service";
-import {Product, RoutingService,} from '@spartacus/core';
-import {Subscription} from 'rxjs';
-import {ActiveCartFacade} from '@spartacus/cart/base/root';
+import {EventService, Product, RoutingService, UserIdService,} from '@spartacus/core';
+import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
+import {ExpressPaymentBase} from "../base/express-payment-base";
+import {AdyenCartService} from "../../service/adyen-cart-service";
 
 @Component({
   selector: 'cx-apple-express-payment',
@@ -16,9 +17,7 @@ import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
   templateUrl: './apple-express-payment.component.html',
   styleUrls: ['./apple-express-payment.component.css']
 })
-export class AppleExpressPaymentComponent implements OnInit, OnDestroy{
-
-  protected subscriptions = new Subscription();
+export class AppleExpressPaymentComponent extends ExpressPaymentBase implements OnInit, OnDestroy {
 
   @Input()
   product: Product;
@@ -34,16 +33,18 @@ export class AppleExpressPaymentComponent implements OnInit, OnDestroy{
     protected adyenOrderService: AdyenExpressOrderService,
     protected routingService: RoutingService,
     protected activeCartFacade: ActiveCartFacade,
-  ) {}
+    protected override multiCartService: MultiCartFacade,
+    protected override userIdService: UserIdService,
+    protected override adyenCartService: AdyenCartService,
+    protected override eventService: EventService
+  ) {
+    super(multiCartService, userIdService, activeCartFacade, adyenCartService, eventService)
+  }
 
   ngOnInit(): void {
     this.setupAdyenCheckout(this.configuration)
   }
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-    if(this.applePay) this.applePay.unmount();
-  }
 
   private async setupAdyenCheckout(config: AdyenExpressConfigData) {
     const adyenCheckout = await AdyenCheckout(getAdyenExpressCheckoutConfig(config));
@@ -57,6 +58,7 @@ export class AppleExpressPaymentComponent implements OnInit, OnDestroy{
         merchantId: config.applePayMerchantId,
         merchantName: config.applePayMerchantName
       },
+      isExpress: true,
       // Button config
       buttonType: "check-out",
       buttonColor: "black",
@@ -65,6 +67,39 @@ export class AppleExpressPaymentComponent implements OnInit, OnDestroy{
         "name",
         "email"
       ],
+      onShippingContactSelected: (resolve, reject, event) => {
+        const mappingFunction = (cart: Cart, deliveryModes: DeliveryMode[]): any => {
+          return {
+            newTotal: {
+              label: config.applePayMerchantName,
+              type: 'final',
+              amount: cart.totalPriceWithTax!.value!.toString()
+            },
+            newShippingMethods: deliveryModes.map((mode) => ({
+              identifier: mode.code!,
+              label: mode.name || "",
+              detail: mode.description || "",
+              amount: mode.deliveryCost!.value!.toString()
+            }))
+          }
+        }
+        if (event.shippingContact) {
+          const address = {postalCode: event.shippingContact.postalCode!, countryCode: event.shippingContact.countryCode!}
+          this.handleShippingContactSelected<any>(address, this.product, mappingFunction, resolve, reject)
+        }
+      },
+      onShippingMethodSelected: (resolve, reject, event) => {
+        const mappingFunction = (cart: Cart): any => {
+          return {
+            newTotal: {
+              label: config.applePayMerchantName,
+              type: 'final',
+              amount: cart.totalPriceWithTax!.value!.toString()
+            }
+          }
+        }
+        this.setDeliveryMode<any>(event.shippingMethod.identifier, this.product, mappingFunction, resolve, reject);
+      },
       onSubmit: (state, element: UIElement, actions) => this.handleOnSubmit(state, actions),
       onAuthorized: (paymentData, actions) => {
         this.authorizedPaymentData = paymentData;
@@ -78,29 +113,42 @@ export class AppleExpressPaymentComponent implements OnInit, OnDestroy{
   }
 
   private handleOnSubmit(state: SubmitData, actions: any) {
-    this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product).subscribe(
-      result => {
-        if (result?.success) {
-          if (result.executeAction && result.paymentsAction !== undefined) {
-            this.applePay.handleAction(result.paymentsAction);
+    if(!!this.cartId){
+      this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
+        result => {
+          if (result?.success) {
+            if (result.executeAction && result.paymentsAction !== undefined) {
+              this.applePay.handleAction(result.paymentsAction);
+            } else {
+              this.onSuccess();
+            }
           } else {
-            this.onSuccess();
+            console.error(result?.error);
+            actions.reject();
           }
-        } else {
-          console.error(result?.error);
+          actions.resolve({resultCode: 'Authorised'});
+        },
+        error => {
+          console.error(error);
           actions.reject();
         }
-        actions.resolve({ resultCode: 'Authorised' });
-      },
-      error => {
-        console.error(error);
-        actions.reject();
-      }
-    );
+      );
+    } else {
+      console.error("Undefined cart id")
+    }
+
   }
-  handleError(error: AdyenCheckoutError) {}
+
+  handleError(error: AdyenCheckoutError) {
+  }
 
   onSuccess(): void {
-    this.routingService.go({ cxRoute: 'orderConfirmation' });
+    this.routingService.go({cxRoute: 'orderConfirmation'});
+  }
+
+  override ngOnDestroy(): void {
+    super.ngOnDestroy()
+    this.subscriptions.unsubscribe();
+    if (this.applePay) this.applePay.unmount();
   }
 }
