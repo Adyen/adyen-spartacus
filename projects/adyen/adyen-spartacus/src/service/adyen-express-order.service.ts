@@ -15,18 +15,17 @@ import {catchError, map, Observable, of, switchMap, tap} from "rxjs";
 import {OrderPlacedEvent} from '@spartacus/order/root';
 import {AdyenOrderConnector} from "../core/connectors/adyen-order-connector.service";
 import {ActiveCartFacade} from '@spartacus/cart/base/root';
-import {ApplePayExpressRequest, GooglePayExpressRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
+import {ApplePayExpressRequest, GooglePayExpressCartRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {AdyenOrderService} from "./adyen-order.service";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
 import {PaymentData} from "@adyen/adyen-web";
-import {CheckoutAdyenConfigurationReloadEvent, ExpressCheckoutSuccessfulEvent} from "../events/checkout-adyen.events";
 
-type ExpressPaymentDataRequest = GooglePayExpressRequest | ApplePayExpressRequest;
+type ExpressPaymentDataRequest = GooglePayExpressCartRequest | ApplePayExpressRequest;
 
 type ExpressCommand = {
   paymentData: ExpressPaymentDataRequest,
-  connectorFunction: (userId: string, cartId: string, request: ExpressPaymentDataRequest, isPDP: boolean) => Observable<PlaceOrderResponse>,
+  connectorFunction: (userId: string, cartId: string, request: ExpressPaymentDataRequest) => Observable<PlaceOrderResponse>,
   isPDP: boolean,
 }
 
@@ -54,7 +53,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
       (expressCommand) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            expressCommand.connectorFunction(userId, cartId, expressCommand.paymentData, expressCommand.isPDP).pipe(
+            expressCommand.connectorFunction(userId, cartId, expressCommand.paymentData).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
@@ -69,9 +68,6 @@ export class AdyenExpressOrderService extends AdyenOrderService {
                     OrderPlacedEvent
                   );
                 }
-                this.eventService.dispatch(
-                  new ExpressCheckoutSuccessfulEvent()
-                );
               }),
               map((response) => ({ ...response, success: true })),
               catchError((error: HttpErrorResponse) => this.handlePlaceOrderError(error))
@@ -87,16 +83,16 @@ export class AdyenExpressOrderService extends AdyenOrderService {
     return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataGoogle(paymentData, authorizedPaymentData, cartId), connectorFunction: this.placeExpressGoogleOrderWrapper, isPDP: !!product});
   }
 
-  protected placeExpressGoogleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest, isPDP: boolean) => {
-    return this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, request as GooglePayExpressRequest, isPDP)
+  protected placeExpressGoogleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
+    return this.placeOrderConnector.placeGoogleExpressOrderCart(userId, cartId, request as GooglePayExpressCartRequest)
   }
 
-  adyenPlaceAppleExpressOrder(paymentData: PaymentData, authorizedPaymentData: any, product: Product, cartId: string): Observable<PlaceOrderResponse> {
-    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataApple(paymentData, authorizedPaymentData, cartId), connectorFunction: this.placeExpressAppleOrderWrapper, isPDP: !!product});
+  adyenPlaceAppleExpressOrder(paymentData: PaymentData, authorizedPaymentData: any, product: Product): Observable<PlaceOrderResponse> {
+    return this.adyenPlaceExpressOrderCommand.execute({paymentData: this.prepareDataApple(paymentData, authorizedPaymentData, product), connectorFunction: this.placeExpressAppleOrderWrapper, isPDP: !!product});
   }
 
-  protected placeExpressAppleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest, isPDP: boolean) => {
-    return this.placeOrderConnector.placeAppleExpressOrder(userId, cartId, request as ApplePayExpressRequest, isPDP)
+  protected placeExpressAppleOrderWrapper = (userId: string, cartId: string, request: ExpressPaymentDataRequest) => {
+    return this.placeOrderConnector.placeAppleExpressOrder(userId, cartId, request as ApplePayExpressRequest)
   }
 
   private handlePlaceOrderError(error: HttpErrorResponse): Observable<PlaceOrderResponse> {
@@ -111,9 +107,8 @@ export class AdyenExpressOrderService extends AdyenOrderService {
     });
   }
 
-  prepareDataGoogle(paymentData: any, authorizedPaymentData: any, cartId: string): GooglePayExpressRequest {
-    return  {
-      cartId: cartId,
+  prepareDataGoogle(paymentData: any, authorizedPaymentData: any, cartId: string): GooglePayExpressCartRequest {
+    const baseData = {
       googlePayDetails: paymentData.paymentMethod,
       addressData: {
         email: authorizedPaymentData.authorizedEvent.email,
@@ -130,13 +125,14 @@ export class AdyenExpressOrderService extends AdyenOrderService {
         }
       }
     };
+    delete baseData.googlePayDetails.subtype;
+    return { cartId: cartId, ...baseData }
   }
 
-  prepareDataApple(paymentData: PaymentData, authorizedPaymentData: any, cartId: string): ApplePayExpressRequest {
+  prepareDataApple(paymentData: PaymentData, authorizedPaymentData: any, product: Product): ApplePayExpressRequest {
     let event = authorizedPaymentData.authorizedEvent;
 
-    return  {
-      cartId: cartId,
+    const baseData = {
       applePayDetails: paymentData.paymentMethod,
       addressData: {
         email: event.payment.shippingContact?.emailAddress,
@@ -154,5 +150,6 @@ export class AdyenExpressOrderService extends AdyenOrderService {
         }
       }
     };
+    return product ? { productCode: product.code, ...baseData } : baseData;
   }
 }
