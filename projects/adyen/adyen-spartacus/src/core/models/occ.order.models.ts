@@ -13,6 +13,14 @@ export interface GooglePayExpressRequest {
   addressData: any;
   productCode?: string;
   cartId?: string;
+  returnUrl?: string;
+}
+
+export interface PayPalExpressRequest {
+  payPalDetails: any;
+  productCode?: string;
+  cartId?: string;
+  addressData?: any;
 }
 
 export interface PlaceOrderRequest {
@@ -33,6 +41,14 @@ export interface PlaceOrderResponse {
   errorFieldCodes?: string[]
   orderNumber?: string,
   orderData?: Order
+}
+
+export interface PayPalExpressSubmitResponse{
+  success: boolean,
+  paymentResponse?: PaymentResponseData,
+  expressCartGuid?: string
+  error?: string,
+  errorFieldCodes?: string[]
 }
 
 export interface AddressData {

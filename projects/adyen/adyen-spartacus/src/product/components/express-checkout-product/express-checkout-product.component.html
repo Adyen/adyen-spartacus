@@ -7,6 +7,9 @@
     @if (config.expressPaymentConfig.applePayExpressEnabledOnProduct) {
       <cx-apple-express-payment [product]="product" [configuration]="config"></cx-apple-express-payment>
     }
+    @if (config.expressPaymentConfig.paypalExpressEnabledOnProduct) {
+      <cx-paypal-express-payment [product]="product" [configuration]="config"></cx-paypal-express-payment>
+    }
   </p>
 </ng-container>
 

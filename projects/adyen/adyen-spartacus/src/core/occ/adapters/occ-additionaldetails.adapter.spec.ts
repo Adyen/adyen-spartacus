@@ -51,11 +51,11 @@ describe('OccAdditionalDetailsAdapter', () => {
 
     occEndpointsService.buildUrl.and.returnValue(`users/${userId}/carts/${cartId}/adyen/additional-details`);
 
-    adapter.sendAdditionalDetails(userId, cartId, details).subscribe(response => {
+    adapter.sendAdditionalDetails(userId, details).subscribe(response => {
       expect(response).toEqual(mockResponse);
     });
 
-    const req = httpMock.expectOne(`users/${userId}/carts/${cartId}/adyen/additional-details`);
+    const req = httpMock.expectOne(`users/${userId}/adyen/additional-details`);
     expect(req.request.method).toBe('POST');
     req.flush(mockResponse);
   });
