@@ -137,7 +137,7 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
     }
   }
 
-  private updateTransactionInfo(paymentDataRequestUpdate: google.payments.api.PaymentDataRequestUpdate, cart: Cart) {
+  private updateTransactionInfo(cart: Cart) : google.payments.api.PaymentDataRequestUpdate {
     if (
       !cart.totalPriceWithTax?.currencyIso ||
       !cart.totalPriceWithTax?.value
@@ -146,11 +146,13 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
     }
 
     return {
-      countryCode: undefined,
-      currencyCode: cart.totalPriceWithTax.currencyIso,
-      totalPriceStatus: 'FINAL',
-      totalPrice: cart.totalPriceWithTax.value.toString(),
-      totalPriceLabel: 'Total'
+      newTransactionInfo: {
+        countryCode: undefined,
+        currencyCode: cart.totalPriceWithTax.currencyIso,
+        totalPriceStatus: 'FINAL',
+        totalPrice: cart.totalPriceWithTax.value.toString(),
+        totalPriceLabel: 'Total'
+      }
     };
 
   }
