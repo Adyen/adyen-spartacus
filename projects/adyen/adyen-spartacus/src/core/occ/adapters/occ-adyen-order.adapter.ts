@@ -4,7 +4,11 @@ import {OccEndpointsService} from '@spartacus/core';
 import {Observable} from 'rxjs';
 import {
   ApplePayExpressRequest,
-  GooglePayExpressRequest, PayPalExpressRequest, PayPalExpressSubmitResponse,
+  GooglePayExpressRequest,
+  PayPalExpressRequest,
+  PayPalExpressSubmitResponse,
+  PaypalUpdateOrderRequest,
+  PaypalUpdateOrderResponse,
   PlaceOrderRequest,
   PlaceOrderResponse
 } from "../../models/occ.order.models";
@@ -41,6 +45,18 @@ export class OccAdyenOrderAdapter {
         userId,
         cartId,
         orderCode
+      }
+    });
+  }
+
+  public updatePaypalOrder(userId: string, request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
+    return this.http.post<any>(this.getUpdatePaypalOrderEndpoint(userId), request);
+  }
+
+  protected getUpdatePaypalOrderEndpoint(userId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/adyen/express-checkout/paypal/update-order', {
+      urlParams: {
+        userId,
       }
     });
   }

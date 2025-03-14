@@ -23,6 +23,26 @@ export interface PayPalExpressRequest {
   addressData?: any;
 }
 
+export interface PaypalUpdateOrderRequest{
+  amount: {currency: string, value: number},
+  deliveryMethods: {
+    amount: {currency: string, value: number},
+    description: string,
+    reference: string,
+    selected: boolean,
+    type?: string
+  }[],
+  paymentData: string,
+  pspReference: string,
+  sessionId?: string,
+  taxTotal?: {currency: string, value: number}
+}
+
+export interface PaypalUpdateOrderResponse{
+  paymentData: any,
+  status: string
+}
+
 export interface PlaceOrderRequest {
   paymentRequest: any;
 

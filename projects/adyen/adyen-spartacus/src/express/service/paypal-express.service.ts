@@ -1,8 +1,8 @@
 import {Injectable} from "@angular/core";
 import {
-  PayPalExpressRequest,
+  PayPalExpressRequest, PaypalUpdateOrderRequest,
   PayPalExpressSubmitResponse,
-  PlaceOrderResponse
+  PlaceOrderResponse, PaypalUpdateOrderResponse
 } from "../../core/models/occ.order.models";
 
 import {
@@ -11,7 +11,6 @@ import {
   CommandStrategy,
   EventService,
   GlobalMessageService,
-  GlobalMessageType,
   Product,
   TranslationService,
   UserIdService
@@ -29,6 +28,12 @@ type PayPalSubmitCommand = {
   connectorFunction: (userId: string, cartId: string, request: PayPalExpressRequest) => Observable<PlaceOrderResponse>,
   isPDP: boolean,
   cartId: string
+}
+
+type PayPalUpdateOrderCommand = {
+  request: PaypalUpdateOrderRequest,
+  connectorFunction: (userId: string,request: PaypalUpdateOrderRequest) => Observable<PaypalUpdateOrderResponse>,
+
 }
 
 @Injectable()
@@ -75,14 +80,32 @@ export class PaypalExpressService extends AdyenBaseService{
       }
     );
 
+  protected paypalUpdateOrderCommand: Command<PayPalUpdateOrderCommand, PaypalUpdateOrderResponse> =
+    this.commandService.create<PayPalUpdateOrderCommand, PaypalUpdateOrderResponse>(
+      (expressCommand) =>
+        this.checkoutPreconditions().pipe(
+          switchMap(([userId]) =>
+            expressCommand.connectorFunction(userId, expressCommand.request).pipe(
+              tap((paypalUpdateResponse) => {
+              }),
+              catchError((error: HttpErrorResponse) => this.handlePayPalUpdateError(error))
+            )
+          )
+        ),
+      {
+        strategy: CommandStrategy.CancelPrevious,
+      }
+    );
+
   submitPayPal(paymentData: PaymentData,  product: Product, cartId: string): Observable<PayPalExpressSubmitResponse> {
     return this.paypalSubmitCommand.execute({paymentData: this.prepareDataPayPal(paymentData, product, cartId), connectorFunction: this.submitPayPalWrapper, isPDP: !!product, cartId});
   }
 
+
+
   protected submitPayPalWrapper = (userId: string, cartId: string, request: PayPalExpressRequest) => {
     return this.placeOrderConnector.handlePayPalSubmit(userId, cartId, request)
   }
-
 
   prepareDataPayPal(paymentData: PaymentData, product: Product, cartId: string): PayPalExpressRequest {
     const baseData = {
@@ -93,6 +116,14 @@ export class PaypalExpressService extends AdyenBaseService{
     return product ? { productCode: product.code, ...baseData } : baseData;
   }
 
+  updatePaypalOrder( request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
+    return this.paypalUpdateOrderCommand.execute({request: request , connectorFunction: this.updatePayPalWrapper});
+  }
+
+  protected updatePayPalWrapper = (userId: string, request: PaypalUpdateOrderRequest) => {
+    return this.placeOrderConnector.updatePaypalOrder(userId, request)
+  }
+
   private handlePlaceOrderError(error: HttpErrorResponse): Observable<PayPalExpressSubmitResponse> {
     return of({
       success: false,
@@ -100,4 +131,12 @@ export class PaypalExpressService extends AdyenBaseService{
       errorFieldCodes: error.error.invalidFields
     });
   }
+
+  private handlePayPalUpdateError(error: HttpErrorResponse): Observable<PaypalUpdateOrderResponse> {
+    return of({
+      paymentData: null,
+      status: 'ERROR'
+    });
+  }
+
 }

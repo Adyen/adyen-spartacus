@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   ApplePayExpressRequest,
-  GooglePayExpressRequest, PayPalExpressRequest,
+  GooglePayExpressRequest, PayPalExpressRequest, PaypalUpdateOrderRequest, PaypalUpdateOrderResponse,
   PlaceOrderRequest,
   PlaceOrderResponse
 } from "../models/occ.order.models";
@@ -34,5 +34,9 @@ export class AdyenOrderConnector {
 
   handlePayPalSubmit(userId: string, cartId: string, request: PayPalExpressRequest){
     return this.adapter.payPalSubmit(userId, cartId, request);
+  }
+
+  updatePaypalOrder(userId: string, request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
+    return this.adapter.updatePaypalOrder(userId, request);
   }
 }
