@@ -7,7 +7,7 @@ import {OccAdditionalDetailsAdapter} from "../occ/adapters/occ-additionaldetails
 export class AdditionalDetailsConnector {
   constructor(protected adapter: OccAdditionalDetailsAdapter) {}
 
-  sendAdditionalDetails(userId: string, cartId: string, orderData: PlaceOrderRequest): Observable<PlaceOrderResponse> {
-    return this.adapter.sendAdditionalDetails(userId, cartId, orderData);
+  sendAdditionalDetails(userId: string, orderData: PlaceOrderRequest): Observable<PlaceOrderResponse> {
+    return this.adapter.sendAdditionalDetails(userId, orderData);
   }
 }

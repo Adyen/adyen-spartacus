@@ -5,6 +5,10 @@ import {Observable} from 'rxjs';
 import {
   ApplePayExpressRequest,
   GooglePayExpressRequest,
+  PayPalExpressRequest,
+  PayPalExpressSubmitResponse,
+  PaypalUpdateOrderRequest,
+  PaypalUpdateOrderResponse,
   PlaceOrderRequest,
   PlaceOrderResponse
 } from "../../models/occ.order.models";
@@ -41,6 +45,18 @@ export class OccAdyenOrderAdapter {
         userId,
         cartId,
         orderCode
+      }
+    });
+  }
+
+  public updatePaypalOrder(userId: string, request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
+    return this.http.post<any>(this.getUpdatePaypalOrderEndpoint(userId), request);
+  }
+
+  protected getUpdatePaypalOrderEndpoint(userId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/adyen/express-checkout/paypal/update-order', {
+      urlParams: {
+        userId,
       }
     });
   }
@@ -82,6 +98,41 @@ export class OccAdyenOrderAdapter {
 
   protected getPlaceAppleExpressOrderEndpointProduct(userId: string, cartId: string): string {
     return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/apple/PDP', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  public placePayPalExpressOrder(userId: string, cartId: string, orderData: PayPalExpressRequest, isPDP: boolean): Observable<PlaceOrderResponse> {
+    return this.http.post<PlaceOrderResponse>(isPDP  ? this.getPlacePayPalExpressOrderEndpointProduct(userId, cartId) : this.getPlacePayPalExpressOrderEndpointCart(userId, cartId), orderData);
+  }
+
+  public payPalSubmit(userId: string, cartId: string, orderData: PayPalExpressRequest): Observable<PayPalExpressSubmitResponse> {
+    return this.http.post<PayPalExpressSubmitResponse>(this.getPayPalSubminEndpoint(userId, cartId), orderData);
+  }
+
+  protected getPlacePayPalExpressOrderEndpointCart(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/paypal/cart', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  protected getPayPalSubminEndpoint(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/paypal/submit/PDP', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  protected getPlacePayPalExpressOrderEndpointProduct(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/paypal/PDP', {
       urlParams: {
         userId,
         cartId,

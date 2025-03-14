@@ -4,6 +4,7 @@ import {ConfigModule} from '@spartacus/core';
 import {ExpressCheckoutProductComponent} from "./express-checkout-product.component";
 import {GoogleExpressPaymentComponent} from "../../../express/google-express-payment/google-express-payment.component";
 import {AppleExpressPaymentComponent} from "../../../express/apple-express-payment/apple-express-payment.component";
+import {PaypalExpressPaymentComponent} from "../../../express/paypal-express-payment/paypal-express-payment.component";
 
 
 @NgModule({
@@ -17,6 +18,7 @@ import {AppleExpressPaymentComponent} from "../../../express/apple-express-payme
       }
     }),
     GoogleExpressPaymentComponent,
+    PaypalExpressPaymentComponent,
     AppleExpressPaymentComponent
   ],
   declarations: [ExpressCheckoutProductComponent],
