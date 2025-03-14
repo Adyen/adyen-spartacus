@@ -110,9 +110,7 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
 
               if (callbackTrigger === 'SHIPPING_OPTION') {
                 if (shippingOptionData) {
-                  this.setDeliveryMode<google.payments.api.PaymentDataRequestUpdate>(shippingOptionData.id, this.product, (cart: Cart) => ({
-                    newTransactionInfo: this.updateTransactionInfo(cart)
-                  }), resolve, reject);
+                  this.setDeliveryMode<google.payments.api.PaymentDataRequestUpdate>(shippingOptionData.id, this.product, this.updateTransactionInfo, resolve, reject);
                 }
               }
             });
@@ -139,7 +137,7 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
     }
   }
 
-  private updateTransactionInfo(cart: Cart): google.payments.api.TransactionInfo {
+  private updateTransactionInfo(cart: Cart) : google.payments.api.PaymentDataRequestUpdate {
     if (
       !cart.totalPriceWithTax?.currencyIso ||
       !cart.totalPriceWithTax?.value
@@ -148,11 +146,13 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
     }
 
     return {
-      countryCode: undefined,
-      currencyCode: cart.totalPriceWithTax.currencyIso,
-      totalPriceStatus: 'FINAL',
-      totalPrice: cart.totalPriceWithTax.value.toString(),
-      totalPriceLabel: 'Total'
+      newTransactionInfo: {
+        countryCode: undefined,
+        currencyCode: cart.totalPriceWithTax.currencyIso,
+        totalPriceStatus: 'FINAL',
+        totalPrice: cart.totalPriceWithTax.value.toString(),
+        totalPriceLabel: 'Total'
+      }
     };
 
   }
