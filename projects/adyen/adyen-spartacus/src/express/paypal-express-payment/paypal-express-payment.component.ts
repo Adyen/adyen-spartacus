@@ -15,7 +15,7 @@ import {
   PaypalUpdateOrderResponse,
   PlaceOrderResponse
 } from "../../core/models/occ.order.models";
-import {Observable} from 'rxjs';
+import {Observable, firstValueFrom} from 'rxjs';
 import {AmountUtil} from "../../utils/amount-util";
 import {ExpressCheckoutWithAdditionalDetailsSuccessfulEvent} from "../../events/checkout-adyen.events";
 
@@ -83,7 +83,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
 
       if (config.expressPaymentConfig && (this.product && config.expressPaymentConfig.paypalExpressEnabledOnProduct || config.expressPaymentConfig.paypalExpressEnabledOnCart)) {
 
-        const mappingFunction = (cart: Cart, deliveryModes: DeliveryMode[], component: any): Observable<PaypalUpdateOrderResponse> => {
+        const mappingFunction = (cart: Cart, deliveryModes: DeliveryMode[], component: any, selectedShipingOption: any = null): Observable<PaypalUpdateOrderResponse> => {
           if (cart.totalPriceWithTax?.currencyIso && cart.totalPriceWithTax?.value) {
 
             let request = {
@@ -100,7 +100,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
                   amount: AmountUtil.createAmount(deliveryCost, deliveryCurrency),
                   description: deliveryMode.name || '',
                   reference: deliveryMode.code || '',
-                  selected: index === 0,
+                  selected: (selectedShipingOption === null && index === 0) || (selectedShipingOption !== null && deliveryMode.code === selectedShipingOption),
                 };
               }),
               paymentData: component.paymentData,
@@ -119,7 +119,6 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
             currency: config.amount.currency,
             value: config.amount.value
           },
-          countryCode: "US",
           isExpress: true,
           blockPayPalVenmoButton: true,
           blockPayPalCreditButton: true,
@@ -136,12 +135,17 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
               postalCode: data.shippingAddress.postalCode,
               countryCode: data.shippingAddress.countryCode
             }
-            await this.handleShippingContactSelectedPayPal(address, this.product, mappingFunction, component, actions.reject)
+            let paypalUpdateOrderResponse = await this.handleShippingContactSelectedPayPal(address, this.product, mappingFunction, component, actions.reject);
+            let newVar = await firstValueFrom(paypalUpdateOrderResponse);
+            component.updatePaymentData(newVar.paymentData);
 
           },
           onShippingOptionsChange: async (data, actions, component) => {
-            await this.handleDeliveryModeSelectedPaypal<Observable<PaypalUpdateOrderResponse>>(data.selectedShippingOption.id, this.product,
-              (cart: Cart) => mappingFunction(cart, this.deliveryModes, component), component, actions.reject);
+            let paypalUpdateOrderResponse =
+              await this.handleDeliveryModeSelectedPaypal<Observable<PaypalUpdateOrderResponse>>(data.selectedShippingOption.id, this.product,
+               mappingFunction, component, actions.reject);
+            let newVar = await firstValueFrom(paypalUpdateOrderResponse);
+            component.updatePaymentData(newVar.paymentData);
 
           },
           onSubmit: (state: SubmitData, component: UIElement, actions: SubmitActions) => {
@@ -162,36 +166,39 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
     }
   }
 
-  protected async handleDeliveryModeSelectedPaypal<T>(deliveryModeId: string, product: Product, mappingFunction: (cart: Cart) => T, resolve: any, reject: any): Promise<void> {
-    if(!!this.cartId) {
-      this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
-        .pipe(
-          switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-        ).subscribe({
-          next: cart => {
-            try {
-              const update = mappingFunction(cart);
-
-              resolve(update)
-            } catch (e) {
-              console.error("Delivery mode selection issue")
-              reject();
-            }
-          },
-          error: err => {
-            console.error('Error updating delivery mode:', err);
-            reject()
-          },
-        }));
-    } else {
-      console.error("Undefined cart id")
-    }
+  protected async handleDeliveryModeSelectedPaypal<T>(deliveryModeId: string, product: Product,
+                                                      mappingFunction: (cart: Cart, deliveryModes: DeliveryMode[], component: any, deliveryModeId: string) => T,
+                                                      resolve: any, reject: any): Promise<T> {
+    return new Promise(async (resolve, reject) => {
+      if(!!this.cartId) {
+        this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
+          .pipe(
+            switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+          ).subscribe({
+            next: cart => {
+              try {
+                const update =  mappingFunction(cart, this.deliveryModes, this.paypal, deliveryModeId);
+                resolve(update)
+              } catch (e) {
+                console.error("Delivery mode selection issue")
+                reject();
+              }
+            },
+            error: err => {
+              console.error('Error updating delivery mode:', err);
+              reject()
+            },
+          }));
+      } else {
+        console.error("Undefined cart id")
+      }
+    })
   }
 
   protected async handleShippingContactSelectedPayPal(address: {
     postalCode: string,
     countryCode: string
-  }, product: Product, mappingFunction: (cart: Cart, deliveryModes: DeliveryMode[], component: any) => Observable<PaypalUpdateOrderResponse>, component: any, reject: any): Promise<void> {
+  }, product: Product, mappingFunction: (cart: Cart, deliveryModes: DeliveryMode[], component: any) => Observable<PaypalUpdateOrderResponse>, component: any, reject: any): Promise<Observable<PaypalUpdateOrderResponse>> {
     const shippingAddress: Address = {
       postalCode: address.postalCode,
       country: {isocode: address.countryCode},
@@ -200,46 +207,35 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
       town: "placeholder",
       line1: "placeholder"
     }
-    if(!!this.cartId) {
-      const cartCode = this.cartId;
-      this.subscriptions.add(this.adyenCartService.createAndSetAddress(cartCode, shippingAddress).subscribe(() => {
-        this.subscriptions.add(this.getSupportedDeliveryModesState(cartCode).subscribe((deliveryModes) => {
-          const validDeliveryModes = deliveryModes.filter(mode => mode.code);
-
-          if (validDeliveryModes.length > 0) {
-            this.subscriptions.add(this.adyenCartService
-              .setDeliveryMode(validDeliveryModes[0].code!, cartCode)
-              .pipe(
-                switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
-              ).subscribe({
-                next: cart => {
-                  const mappingSubscription = mappingFunction(cart, validDeliveryModes, component).subscribe({
-                    next: (response: PaypalUpdateOrderResponse) => {
-                      if(response) {
-                        component.updatePaymentData(response.paymentData);
-                      }else {
-                        console.error("Delivery mode mapping issue");
-                      }
-                    },
-                    error: (error) => {
-                      console.error("Delivery mode mapping issue");
-                      reject();
-                    }
-                  });
-
-                  this.subscriptions.add(mappingSubscription);
-                },
-                error: err => {
-                  console.error('Error updating delivery mode:', err);
-                  reject()
-                },
-              }));
-          }
+    return new Promise((resolve, reject) => {
+      if(!!this.cartId) {
+        const cartCode = this.cartId;
+        this.subscriptions.add(this.adyenCartService.createAndSetAddress(cartCode, shippingAddress).subscribe(() => {
+          this.subscriptions.add(this.getSupportedDeliveryModesState(cartCode).subscribe((deliveryModes) => {
+            const validDeliveryModes = deliveryModes.filter(mode => mode.code);
+            this.deliveryModes = validDeliveryModes;
+            if (validDeliveryModes.length > 0) {
+              this.subscriptions.add(this.adyenCartService
+                .setDeliveryMode(validDeliveryModes[0].code!, cartCode)
+                .pipe(
+                  switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+                ).subscribe({
+                  next: cart => {
+                    let paypalUpdateOrderResponse = mappingFunction(cart, validDeliveryModes, component);
+                    resolve(paypalUpdateOrderResponse);
+                  },
+                  error: err => {
+                    console.error('Error updating delivery mode:', err);
+                    reject()
+                  },
+                }));
+            }
+          }))
         }))
-      }))
-    } else{
-      console.error("Undefined cart id")
-    }
+      } else{
+        console.error("Undefined cart id")
+      }
+    });
   }
 
   protected handlePayPalSubmit(state: SubmitData, component: UIElement, actions: SubmitActions) {
