@@ -1,33 +1,26 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {
   Address,
   Command,
   CommandService,
   CommandStrategy,
   EventService,
-  OCC_USER_ID_ANONYMOUS,
-  Query,
   QueryNotifier,
-  QueryService,
-  QueryState,
   UserIdService,
 } from '@spartacus/core';
 import {AdyenBaseService} from "./adyen-base.service";
-import {ActiveCartFacade, Cart, DeliveryMode,MultiCartFacade} from '@spartacus/cart/base/root';
-import { filter, map, switchMap, take, tap } from 'rxjs/operators';
-import { CheckoutDeliveryModesConnector,
-  CheckoutDeliveryAddressConnector,
-} from '@spartacus/checkout/base/core';
-import { CheckoutDeliveryModeSetEvent,
-  CheckoutDeliveryAddressSetEvent,
+import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
+import {filter, map, switchMap, take, tap} from 'rxjs/operators';
+import {CheckoutDeliveryAddressConnector, CheckoutDeliveryModesConnector,} from '@spartacus/checkout/base/core';
+import {
   CheckoutDeliveryAddressCreatedEvent,
-  CheckoutQueryFacade,
+  CheckoutDeliveryModeSetEvent,
   CheckoutSupportedDeliveryModesQueryReloadEvent,
   CheckoutSupportedDeliveryModesQueryResetEvent,
 } from '@spartacus/checkout/base/root';
 
 
-import {Observable, of, Subscription, last} from 'rxjs';
+import {Observable} from 'rxjs';
 
 
 @Injectable()
@@ -39,7 +32,6 @@ export class AdyenCartService extends AdyenBaseService{
     protected commandService: CommandService,
     protected eventService: EventService,
     protected multiCartFacade: MultiCartFacade,
-    protected queryService: QueryService,
     protected checkoutDeliveryModesConnector: CheckoutDeliveryModesConnector,
     protected checkoutDeliveryAddressConnector: CheckoutDeliveryAddressConnector,
   ){
@@ -82,25 +74,15 @@ export class AdyenCartService extends AdyenBaseService{
       }
     );
 
-  protected supportedDeliveryModesQuery = (cartId: string): Query<DeliveryMode[]> =>
-    this.queryService.create<DeliveryMode[]>(
-      () =>
-        this.checkoutPreconditions().pipe(
-          switchMap(([userId]) =>
-            this.checkoutDeliveryModesConnector.getSupportedModes(
-              userId,
-              cartId
-            )
-          )
-        ),
-      {
-        reloadOn: this.getCheckoutSupportedDeliveryModesQueryReloadEvents(),
-        resetOn: this.getCheckoutSupportedDeliveryModesQueryResetEvents(),
-      }
-    );
-
-  getSupportedDeliveryModesStateForCart(cartId: string): Observable<QueryState<DeliveryMode[]>> {
-    return this.supportedDeliveryModesQuery(cartId).getState();
+  getSupportedDeliveryModesForCart(cartId: string): Observable<DeliveryMode[]> {
+    return this.checkoutPreconditions().pipe(
+      switchMap(([userId]) =>
+        this.checkoutDeliveryModesConnector.getSupportedModes(
+          userId,
+          cartId
+        )
+      )
+    )
   }
 
   protected createDeliveryAddressCommand: Command<{address: Address, cartId: string}, unknown> =
