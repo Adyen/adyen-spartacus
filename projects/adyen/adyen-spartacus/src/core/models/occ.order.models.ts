@@ -1,5 +1,6 @@
 import { PaymentAction,PaymentResponseData } from "@adyen/adyen-web";
 import { Order } from '@spartacus/order/root';
+import {AmountData} from "./occ.config.models";
 
 export interface ApplePayExpressRequest {
   cartId?: string;
@@ -23,19 +24,21 @@ export interface PayPalExpressRequest {
   addressData?: any;
 }
 
-export interface PaypalUpdateOrderRequest{
-  amount: {currency: string, value: number},
-  deliveryMethods: {
-    amount: {currency: string, value: number},
-    description: string,
-    reference: string,
-    selected: boolean,
-    type?: string
-  }[],
+export interface PaypalUpdateOrderRequest {
+  amount: AmountData,
+  deliveryMethods: DeliveryMethod[],
   paymentData: string,
   pspReference: string,
   sessionId?: string,
-  taxTotal?: {currency: string, value: number}
+  taxTotal?: AmountData
+}
+
+export interface DeliveryMethod {
+  amount: AmountData,
+  description: string,
+  reference: string,
+  selected: boolean,
+  type?: string
 }
 
 export interface PaypalUpdateOrderResponse{
@@ -61,14 +64,6 @@ export interface PlaceOrderResponse {
   errorFieldCodes?: string[]
   orderNumber?: string,
   orderData?: Order
-}
-
-export interface PayPalExpressSubmitResponse{
-  success: boolean,
-  paymentResponse?: PaymentResponseData,
-  expressCartGuid?: string
-  error?: string,
-  errorFieldCodes?: string[]
 }
 
 export interface AddressData {

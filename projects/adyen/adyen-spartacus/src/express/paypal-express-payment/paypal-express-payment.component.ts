@@ -106,7 +106,6 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
               paymentData: component.paymentData,
               pspReference: this.pspReference,
             }
-            console.log(request);
             return this.paypalExpressService.updatePaypalOrder(request);
           } else {
             console.error("cartId is undefined");
@@ -136,16 +135,16 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
               countryCode: data.shippingAddress.countryCode
             }
             let paypalUpdateOrderResponse = await this.handleShippingContactSelectedPayPal(address, this.product, mappingFunction, component, actions.reject);
-            let newVar = await firstValueFrom(paypalUpdateOrderResponse);
-            component.updatePaymentData(newVar.paymentData);
+            let paypalUpdateOrderResponseValue = await firstValueFrom(paypalUpdateOrderResponse);
+            component.updatePaymentData(paypalUpdateOrderResponseValue.paymentData);
 
           },
           onShippingOptionsChange: async (data, actions, component) => {
             let paypalUpdateOrderResponse =
               await this.handleDeliveryModeSelectedPaypal<Observable<PaypalUpdateOrderResponse>>(data.selectedShippingOption.id, this.product,
                mappingFunction, component, actions.reject);
-            let newVar = await firstValueFrom(paypalUpdateOrderResponse);
-            component.updatePaymentData(newVar.paymentData);
+            let paypalUpdateOrderResponseValue = await firstValueFrom(paypalUpdateOrderResponse);
+            component.updatePaymentData(paypalUpdateOrderResponseValue.paymentData);
 
           },
           onSubmit: (state: SubmitData, component: UIElement, actions: SubmitActions) => {
@@ -239,18 +238,17 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   protected handlePayPalSubmit(state: SubmitData, component: UIElement, actions: SubmitActions) {
-      console.log(this.cartId)
       if (!this.cartId) {
         console.error("cartId is undefined");
         actions.reject();
         return;
       }
       this.paypalExpressService.submitPayPal(state.data, this.product, this.cartId).subscribe({
-        next: (result) => {
+        next: (paymentResponse) => {
           // @ts-ignore
-          this.pspReference = result.paymentResponse?.pspReference;
-          if (result?.paymentResponse?.action) {
-            component.handleAction(result.paymentResponse.action);
+          this.pspReference = paymentResponse?.pspReference;
+          if (paymentResponse?.action) {
+            component.handleAction(paymentResponse.action);
           }
         },
         error: (error) => {

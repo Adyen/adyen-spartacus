@@ -6,12 +6,12 @@ import {
   ApplePayExpressRequest,
   GooglePayExpressRequest,
   PayPalExpressRequest,
-  PayPalExpressSubmitResponse,
   PaypalUpdateOrderRequest,
   PaypalUpdateOrderResponse,
   PlaceOrderRequest,
   PlaceOrderResponse
 } from "../../models/occ.order.models";
+import { PaymentResponseData } from "@adyen/adyen-web";
 
 @Injectable()
 export class OccAdyenOrderAdapter {
@@ -109,8 +109,8 @@ export class OccAdyenOrderAdapter {
     return this.http.post<PlaceOrderResponse>(isPDP  ? this.getPlacePayPalExpressOrderEndpointProduct(userId, cartId) : this.getPlacePayPalExpressOrderEndpointCart(userId, cartId), orderData);
   }
 
-  public payPalSubmit(userId: string, cartId: string, orderData: PayPalExpressRequest): Observable<PayPalExpressSubmitResponse> {
-    return this.http.post<PayPalExpressSubmitResponse>(this.getPayPalSubminEndpoint(userId, cartId), orderData);
+  public payPalSubmit(userId: string, cartId: string, orderData: PayPalExpressRequest): Observable<PaymentResponseData> {
+    return this.http.post<PaymentResponseData>(this.getPayPalSubmitEndpoint(userId, cartId), orderData);
   }
 
   protected getPlacePayPalExpressOrderEndpointCart(userId: string, cartId: string): string {
@@ -122,7 +122,7 @@ export class OccAdyenOrderAdapter {
     });
   }
 
-  protected getPayPalSubminEndpoint(userId: string, cartId: string): string {
+  protected getPayPalSubmitEndpoint(userId: string, cartId: string): string {
     return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/paypal/submit/PDP', {
       urlParams: {
         userId,
