@@ -44,10 +44,10 @@ describe('AdditionalDetailsConnector', () => {
 
     adapter.sendAdditionalDetails.and.returnValue(of(response));
 
-    connector.sendAdditionalDetails(userId, cartId, orderData).subscribe(result => {
+    connector.sendAdditionalDetails(userId, orderData).subscribe(result => {
       expect(result).toEqual(response);
     });
 
-    expect(adapter.sendAdditionalDetails).toHaveBeenCalledWith(userId, cartId, orderData);
+    expect(adapter.sendAdditionalDetails).toHaveBeenCalledWith(userId, orderData);
   });
 });

@@ -12,15 +12,14 @@ export class OccAdditionalDetailsAdapter {
     protected occEndpoints: OccEndpointsService
   ) {}
 
-  public sendAdditionalDetails(userId: string, cartId: string, details: any): Observable<PlaceOrderResponse> {
-    return this.http.post<PlaceOrderResponse>(this.getAdditionalDetailsEndpoint(userId, cartId), details);
+  public sendAdditionalDetails(userId: string, details: any): Observable<PlaceOrderResponse> {
+    return this.http.post<PlaceOrderResponse>(this.getAdditionalDetailsEndpoint(userId), details);
   }
 
-  protected getAdditionalDetailsEndpoint(userId: string, cartId: string): string {
-    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/additional-details', {
+  protected getAdditionalDetailsEndpoint(userId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/adyen/additional-details', {
       urlParams: {
         userId,
-        cartId,
       }
     });
   }

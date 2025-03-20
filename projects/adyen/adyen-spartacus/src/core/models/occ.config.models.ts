@@ -75,7 +75,7 @@ interface StoredPaymentMethodData {
   type: string;
 }
 
-interface AmountData {
+export interface AmountData {
   value: number;
   currency: string;
 }

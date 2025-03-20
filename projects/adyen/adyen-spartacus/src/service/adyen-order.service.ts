@@ -96,7 +96,7 @@ export class AdyenOrderService extends OrderService {
       (details) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            this.additionalDetailsConnector.sendAdditionalDetails(userId, cartId, details).pipe(
+            this.additionalDetailsConnector.sendAdditionalDetails(userId, details).pipe(
               tap((placeOrderResponse) => {
                 this.placedOrder$.next(placeOrderResponse.orderData);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
