@@ -95,12 +95,6 @@ export class ExpressPaymentBase implements OnDestroy {
     )
   }
 
-  getSupportedDeliveryModesState(cartId: string): Observable<DeliveryMode[]> {
-    return this.adyenCartService.getSupportedDeliveryModesStateForCart(cartId).pipe(
-      map((state) => state.data || []),
-      catchError(() => of([]))
-    );
-  }
 
   setDeliveryMode<T>(deliveryModeId: string, product: Product, mappingFunction: (cart: Cart) => T, resolve: any, reject: any): void {
     if(!!this.cartId) {
@@ -144,7 +138,7 @@ export class ExpressPaymentBase implements OnDestroy {
     if(!!this.cartId) {
       const cartCode = this.cartId;
       this.subscriptions.add(this.adyenCartService.createAndSetAddress(cartCode, shippingAddress).subscribe(() => {
-        this.subscriptions.add(this.getSupportedDeliveryModesState(cartCode).subscribe((deliveryModes) => {
+        this.subscriptions.add(this.adyenCartService.getSupportedDeliveryModesForCart(cartCode).subscribe((deliveryModes) => {
           const validDeliveryModes = deliveryModes.filter(mode => mode.code);
 
           if (validDeliveryModes.length > 0) {
