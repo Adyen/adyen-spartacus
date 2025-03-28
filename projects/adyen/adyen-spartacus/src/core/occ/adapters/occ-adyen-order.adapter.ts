@@ -49,14 +49,15 @@ export class OccAdyenOrderAdapter {
     });
   }
 
-  public updatePaypalOrder(userId: string, request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
-    return this.http.post<any>(this.getUpdatePaypalOrderEndpoint(userId), request);
+  public updatePaypalOrder(userId: string, cartId: string, request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
+    return this.http.post<any>(this.getUpdatePaypalOrderEndpoint(userId,cartId), request);
   }
 
-  protected getUpdatePaypalOrderEndpoint(userId: string): string {
-    return this.occEndpoints.buildUrl('users/${userId}/adyen/express-checkout/paypal/update-order', {
+  protected getUpdatePaypalOrderEndpoint(userId: string, cartId: string,): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/paypal/update-order', {
       urlParams: {
         userId,
+        cartId,
       }
     });
   }

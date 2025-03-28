@@ -31,7 +31,8 @@ type PayPalSubmitCommand = {
 
 type PayPalUpdateOrderCommand = {
   request: PaypalUpdateOrderRequest,
-  connectorFunction: (userId: string,request: PaypalUpdateOrderRequest) => Observable<PaypalUpdateOrderResponse>,
+  cartId: string,
+  connectorFunction: (userId: string, cartId: string,request: PaypalUpdateOrderRequest) => Observable<PaypalUpdateOrderResponse>,
 
 }
 
@@ -83,7 +84,7 @@ export class PaypalExpressService extends AdyenBaseService{
       (expressCommand) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId]) =>
-            expressCommand.connectorFunction(userId, expressCommand.request).pipe(
+            expressCommand.connectorFunction(userId, expressCommand.cartId, expressCommand.request).pipe(
               tap((paypalUpdateResponse) => {
               }),
               catchError((error: HttpErrorResponse) => this.handlePayPalUpdateError(error))
@@ -112,12 +113,12 @@ export class PaypalExpressService extends AdyenBaseService{
     return product ? { productCode: product.code, ...baseData } : baseData;
   }
 
-  updatePaypalOrder( request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
-    return this.paypalUpdateOrderCommand.execute({request: request , connectorFunction: this.updatePayPalWrapper});
+  updatePaypalOrder( cartId: string, request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
+    return this.paypalUpdateOrderCommand.execute({request: request , cartId, connectorFunction: this.updatePayPalWrapper});
   }
 
-  protected updatePayPalWrapper = (userId: string, request: PaypalUpdateOrderRequest) => {
-    return this.placeOrderConnector.updatePaypalOrder(userId, request)
+  protected updatePayPalWrapper = (userId: string,cartId: string, request: PaypalUpdateOrderRequest) => {
+    return this.placeOrderConnector.updatePaypalOrder(userId,cartId, request)
   }
 
   private handlePlaceOrderError(error: HttpErrorResponse): Observable<PaymentResponseData> {

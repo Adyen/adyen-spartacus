@@ -36,7 +36,7 @@ export class AdyenOrderConnector {
     return this.adapter.payPalSubmit(userId, cartId, request);
   }
 
-  updatePaypalOrder(userId: string, request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
-    return this.adapter.updatePaypalOrder(userId, request);
+  updatePaypalOrder(userId: string, cartId: string,  request: PaypalUpdateOrderRequest): Observable<PaypalUpdateOrderResponse> {
+    return this.adapter.updatePaypalOrder(userId, cartId, request);
   }
 }

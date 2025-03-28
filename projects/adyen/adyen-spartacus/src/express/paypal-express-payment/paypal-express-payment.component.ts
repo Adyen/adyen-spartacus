@@ -16,7 +16,6 @@ import {
   PlaceOrderResponse
 } from "../../core/models/occ.order.models";
 import {Observable, firstValueFrom} from 'rxjs';
-import {AmountUtil} from "../../utils/amount-util";
 import {ExpressCheckoutWithAdditionalDetailsSuccessfulEvent} from "../../events/checkout-adyen.events";
 
 
@@ -83,30 +82,29 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
 
       if (config.expressPaymentConfig && (this.product && config.expressPaymentConfig.paypalExpressEnabledOnProduct || config.expressPaymentConfig.paypalExpressEnabledOnCart)) {
 
-        const mappingFunction = (cart: Cart, deliveryModes: DeliveryMode[], component: any, selectedShipingOption: any = null): Observable<PaypalUpdateOrderResponse> => {
-          if (cart.totalPriceWithTax?.currencyIso && cart.totalPriceWithTax?.value) {
+        const mappingFunction = (cart: Cart, deliveryModes: DeliveryMode[], component: any, selectedShippingOption: any = null): Observable<PaypalUpdateOrderResponse> => {
+          if (!!cart.code && cart.totalPriceWithTax?.currencyIso && cart.totalPriceWithTax?.value) {
 
             let request = {
-              amount: AmountUtil.createAmount(cart.totalPriceWithTax?.value, cart.totalPriceWithTax?.currencyIso),
+              amount: {value: -1, currency: cart.totalPriceWithTax?.currencyIso},
               deliveryMethods: deliveryModes.map((deliveryMode, index) => {
-                const deliveryCost = deliveryMode.deliveryCost?.value;
                 const deliveryCurrency = deliveryMode.deliveryCost?.currencyIso
-                if (deliveryCurrency === undefined || deliveryCost === undefined || deliveryCost === null || isNaN(Number(deliveryCost))) {
+                if (deliveryCurrency === undefined ) {
                   console.warn(`Invalid delivery cost for mode: ${deliveryMode.code}`);
                   throw "Invalid delivery cost"
                 }
 
                 return {
-                  amount: AmountUtil.createAmount(deliveryCost, deliveryCurrency),
+                  amount: { value: -1, currency: deliveryCurrency},
                   description: deliveryMode.name || '',
                   reference: deliveryMode.code || '',
-                  selected: (selectedShipingOption === null && index === 0) || (selectedShipingOption !== null && deliveryMode.code === selectedShipingOption),
+                  selected: (selectedShippingOption === null && index === 0) || (selectedShippingOption !== null && deliveryMode.code === selectedShippingOption),
                 };
               }),
               paymentData: component.paymentData,
               pspReference: this.pspReference,
             }
-            return this.paypalExpressService.updatePaypalOrder(request);
+            return this.paypalExpressService.updatePaypalOrder(cart.code, request);
           } else {
             console.error("cartId is undefined");
             throw "cartId is undefined"
@@ -124,10 +122,6 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
           blockPayPalPayLaterButton: true,
 
           intent: config.payPalIntent as Intent,
-
-          onInit: (data: any, actions: any) => {
-            this.initializeCart(this.product);
-          },
 
           onShippingAddressChange: async (data, actions, component) => {
             const address = {
@@ -237,7 +231,8 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
     });
   }
 
-  protected handlePayPalSubmit(state: SubmitData, component: UIElement, actions: SubmitActions) {
+  protected async handlePayPalSubmit(state: SubmitData, component: UIElement, actions: SubmitActions) {
+      await this.initializeCart(this.product);
       if (!this.cartId) {
         console.error("cartId is undefined");
         actions.reject();
