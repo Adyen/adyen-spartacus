@@ -87,20 +87,22 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
 
             let request = {
               amount: {value: -1, currency: cart.totalPriceWithTax?.currencyIso},
-              deliveryMethods: deliveryModes.map((deliveryMode, index) => {
-                const deliveryCurrency = deliveryMode.deliveryCost?.currencyIso
-                if (deliveryCurrency === undefined ) {
-                  console.warn(`Invalid delivery cost for mode: ${deliveryMode.code}`);
-                  throw "Invalid delivery cost"
-                }
+              deliveryMethods: deliveryModes
+                .filter((deliveryMode) => selectedShippingOption === null || deliveryMode.code === selectedShippingOption)
+                .map((deliveryMode) => {
+                  const deliveryCurrency = deliveryMode.deliveryCost?.currencyIso;
+                  if (deliveryCurrency === undefined) {
+                    console.warn(`Invalid delivery cost for mode: ${deliveryMode.code}`);
+                    throw "Invalid delivery cost";
+                  }
 
-                return {
-                  amount: { value: -1, currency: deliveryCurrency},
-                  description: deliveryMode.name || '',
-                  reference: deliveryMode.code || '',
-                  selected: (selectedShippingOption === null && index === 0) || (selectedShippingOption !== null && deliveryMode.code === selectedShippingOption),
-                };
-              }),
+                  return {
+                    amount: {value: -1, currency: deliveryCurrency},
+                    description: deliveryMode.name || '',
+                    reference: deliveryMode.code || '',
+                    selected: true,
+                  };
+                }),
               paymentData: component.paymentData,
               pspReference: this.pspReference,
             }
