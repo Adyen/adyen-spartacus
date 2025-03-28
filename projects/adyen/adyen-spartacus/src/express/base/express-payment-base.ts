@@ -15,9 +15,13 @@ export class ExpressPaymentBase implements OnDestroy {
               protected activeCartService: ActiveCartFacade,
               protected adyenCartService: AdyenCartService,
               protected eventService: EventService) {
+    this.cleanupCart();
+  }
+
+  protected cleanupCart(): void {
     this.subscriptions.add(this.eventService.get(ExpressCheckoutSuccessfulEvent).subscribe(event => {
       if (this.cartId) {
-        multiCartService.removeCart(this.cartId);
+        this.multiCartService.removeCart(this.cartId);
       }
       this.cartId = undefined;
     }));

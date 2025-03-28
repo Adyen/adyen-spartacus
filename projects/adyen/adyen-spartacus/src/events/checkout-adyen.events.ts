@@ -16,3 +16,9 @@ export class ExpressCheckoutSuccessfulEvent extends CheckoutEvent {
   }
 }
 
+export class ExpressCheckoutWithAdditionalDetailsSuccessfulEvent extends CheckoutEvent {
+  readonly type = 'PayPalExpressCheckoutSuccessfulEvent';
+  constructor() {
+    super();
+  }
+}
