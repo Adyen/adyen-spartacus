@@ -8,17 +8,3 @@ export class CheckoutAdyenConfigurationReloadEvent extends CheckoutAdyenConfigur
     super();
   }
 }
-
-export class ExpressCheckoutSuccessfulEvent extends CheckoutEvent {
-  readonly type = 'ExpressCheckoutSuccessfulEvent';
-  constructor() {
-    super();
-  }
-}
-
-export class ExpressCheckoutWithAdditionalDetailsSuccessfulEvent extends CheckoutEvent {
-  readonly type = 'PayPalExpressCheckoutSuccessfulEvent';
-  constructor() {
-    super();
-  }
-}

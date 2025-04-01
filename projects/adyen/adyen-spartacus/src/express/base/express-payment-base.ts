@@ -1,11 +1,9 @@
 import {Injectable, OnDestroy} from "@angular/core";
-import {Address, EventService, Product, UserIdService} from '@spartacus/core';
+import {Address, EventService, Product, RoutingService, UserIdService} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {firstValueFrom, Observable, of, Subject, Subscription} from 'rxjs';
 import {catchError, filter, map, switchMap, take, takeUntil, tap} from 'rxjs/operators';
 import {AdyenCartService} from "../../service/adyen-cart-service";
-import {ExpressCheckoutSuccessfulEvent} from "../../events/checkout-adyen.events";
-
 
 @Injectable()
 export class ExpressPaymentBase implements OnDestroy {
@@ -14,25 +12,16 @@ export class ExpressPaymentBase implements OnDestroy {
               protected userIdService: UserIdService,
               protected activeCartService: ActiveCartFacade,
               protected adyenCartService: AdyenCartService,
-              protected eventService: EventService) {
-    this.cleanupCart();
-  }
-
-  protected cleanupCart(): void {
-    this.subscriptions.add(this.eventService.get(ExpressCheckoutSuccessfulEvent).subscribe(event => {
-      if (this.cartId) {
-        this.multiCartService.removeCart(this.cartId);
-      }
-      this.cartId = undefined;
-    }));
+              protected eventService: EventService,
+              protected routingService: RoutingService) {
   }
 
   private unsubscribe$ = new Subject<void>();
   protected subscriptions = new Subscription();
 
-  productAdded = false;
-  cartId: string | undefined;
-  cart$!: Observable<Cart>;
+  static productAdded = false;
+  static cartId: string | undefined;
+  static cart$: Observable<Cart>;
 
 
   async initializeCart(product: Product): Promise<void> {
@@ -53,15 +42,15 @@ export class ExpressPaymentBase implements OnDestroy {
       }
 
 
-      if (!this.cartId) {
+      if (!ExpressPaymentBase.cartId) {
         const cart = product
           ? await firstValueFrom(this.createAndAddProductToCart(product))
           : activeCart;
 
 
         if (cart && cart.code) {
-          this.cart$ = this.multiCartService.getCart(cart.code);
-          this.cartId = cart.code;
+          ExpressPaymentBase.cart$ = this.multiCartService.getCart(cart.code);
+          ExpressPaymentBase.cartId = cart.code;
 
         } else {
           console.warn("Cart not available or invalid.");
@@ -83,11 +72,11 @@ export class ExpressPaymentBase implements OnDestroy {
           extraData: {active: false},
         }).pipe(
           tap((cart) => {
-            if (!this.productAdded) {
+            if (!ExpressPaymentBase.productAdded) {
               if (cart && cart.code && product?.code) {
                 // Call addEntry here, as it does not return an Observable
                 this.multiCartService.addEntry(userId, cart.code, product.code, 1);
-                this.productAdded = true;
+                ExpressPaymentBase.productAdded = true;
               } else {
                 console.error("Unable to add product or cart is invalid.");
               }
@@ -101,10 +90,10 @@ export class ExpressPaymentBase implements OnDestroy {
 
 
   setDeliveryMode<T>(deliveryModeId: string, product: Product, mappingFunction: (cart: Cart) => T, resolve: any, reject: any): void {
-    if(!!this.cartId) {
-      this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
+    if(!!ExpressPaymentBase.cartId) {
+      this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, ExpressPaymentBase.cartId)
         .pipe(
-          switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+          switchMap(() => !!product ? this.adyenCartService.takeStable(ExpressPaymentBase.cart$) : this.activeCartService.takeActive())
         ).subscribe({
           next: cart => {
             try {
@@ -139,8 +128,8 @@ export class ExpressPaymentBase implements OnDestroy {
       town: "placeholder",
       line1: "placeholder"
     }
-    if(!!this.cartId) {
-      const cartCode = this.cartId;
+    if(!!ExpressPaymentBase.cartId) {
+      const cartCode = ExpressPaymentBase.cartId;
       this.subscriptions.add(this.adyenCartService.createAndSetAddress(cartCode, shippingAddress).subscribe(() => {
         this.subscriptions.add(this.adyenCartService.getSupportedDeliveryModesForCart(cartCode).subscribe((deliveryModes) => {
           const validDeliveryModes = deliveryModes.filter(mode => mode.code);
@@ -149,7 +138,7 @@ export class ExpressPaymentBase implements OnDestroy {
             this.subscriptions.add(this.adyenCartService
               .setDeliveryMode(validDeliveryModes[0].code!, cartCode)
               .pipe(
-                switchMap(() => !!product ? this.adyenCartService.takeStable(this.cart$) : this.activeCartService.takeActive())
+                switchMap(() => !!product ? this.adyenCartService.takeStable(ExpressPaymentBase.cart$) : this.activeCartService.takeActive())
               ).subscribe({
                 next: cart => {
                   try {
@@ -173,6 +162,16 @@ export class ExpressPaymentBase implements OnDestroy {
       console.error("Undefined cart id")
     }
   }
+
+  onSuccess(): void {
+    if (ExpressPaymentBase.cartId) {
+      this.multiCartService.removeCart(ExpressPaymentBase.cartId);
+    }
+    ExpressPaymentBase.cartId = undefined;
+
+    this.routingService.go({cxRoute: 'orderConfirmation'});
+  }
+
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
