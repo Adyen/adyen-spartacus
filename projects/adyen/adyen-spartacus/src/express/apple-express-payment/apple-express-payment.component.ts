@@ -31,14 +31,14 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
 
   constructor(
     protected adyenOrderService: AdyenExpressOrderService,
-    protected routingService: RoutingService,
     protected activeCartFacade: ActiveCartFacade,
+    protected override routingService: RoutingService,
     protected override multiCartService: MultiCartFacade,
     protected override userIdService: UserIdService,
     protected override adyenCartService: AdyenCartService,
     protected override eventService: EventService
   ) {
-    super(multiCartService, userIdService, activeCartFacade, adyenCartService, eventService)
+    super(multiCartService, userIdService, activeCartFacade, adyenCartService, eventService, routingService)
   }
 
   ngOnInit(): void {
@@ -113,8 +113,8 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
   }
 
   private handleOnSubmit(state: SubmitData, actions: any) {
-    if(!!this.cartId){
-      this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
+    if(!!AppleExpressPaymentComponent.cartId){
+      this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, AppleExpressPaymentComponent.cartId).subscribe(
         result => {
           if (result?.success) {
             if (result.executeAction && result.paymentsAction !== undefined) {
@@ -140,10 +140,6 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
   }
 
   handleError(error: AdyenCheckoutError) {
-  }
-
-  onSuccess(): void {
-    this.routingService.go({cxRoute: 'orderConfirmation'});
   }
 
   override ngOnDestroy(): void {

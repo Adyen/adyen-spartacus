@@ -25,7 +25,6 @@ import {HttpErrorResponse} from "@angular/common/http";
 import {AdyenOrderService} from "./adyen-order.service";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
 import {PaymentData} from "@adyen/adyen-web";
-import {ExpressCheckoutSuccessfulEvent, ExpressCheckoutWithAdditionalDetailsSuccessfulEvent} from "../events/checkout-adyen.events";
 
 type ExpressPaymentDataRequest = GooglePayExpressRequest | ApplePayExpressRequest | PayPalExpressRequest;
 
@@ -74,9 +73,6 @@ export class AdyenExpressOrderService extends AdyenOrderService {
                     OrderPlacedEvent
                   );
                 }
-                this.eventService.dispatch(
-                  new ExpressCheckoutSuccessfulEvent()
-                );
               }),
               map((response) => ({...response, success: true})),
               catchError((error: HttpErrorResponse) => this.handlePlaceOrderError(error))
@@ -103,9 +99,6 @@ export class AdyenExpressOrderService extends AdyenOrderService {
                     order: placeOrderResponse.orderData!,
                   },
                   OrderPlacedEvent
-                );
-                this.eventService.dispatch(
-                  new ExpressCheckoutWithAdditionalDetailsSuccessfulEvent()
                 );
               }),
               map((response) => {

@@ -32,14 +32,14 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
 
   constructor(
     protected adyenOrderService: AdyenExpressOrderService,
-    protected routingService: RoutingService,
+    protected override routingService: RoutingService,
     protected override activeCartService: ActiveCartFacade,
     protected override multiCartService: MultiCartFacade,
     protected override userIdService: UserIdService,
     protected override adyenCartService: AdyenCartService,
     protected override eventService: EventService
   ) {
-    super(multiCartService, userIdService, activeCartService, adyenCartService, eventService)
+    super(multiCartService, userIdService, activeCartService, adyenCartService, eventService, routingService)
   }
 
   ngOnInit(): void {
@@ -158,8 +158,8 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   private handleOnSubmit(state: any, actions: any) {
-    if(!!this.cartId) {
-      this.adyenOrderService.adyenPlaceGoogleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
+    if(!!GoogleExpressPaymentComponent.cartId) {
+      this.adyenOrderService.adyenPlaceGoogleExpressOrder(state.data, this.authorizedPaymentData, this.product, GoogleExpressPaymentComponent.cartId).subscribe(
         result => {
           if (result?.success) {
             if (result.executeAction && result.paymentsAction !== undefined) {
@@ -184,10 +184,6 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   handleError(error: AdyenCheckoutError) {}
-
-  onSuccess(): void {
-    this.routingService.go({ cxRoute: 'orderConfirmation' });
-  }
 
   override ngOnDestroy(): void {
     super.ngOnDestroy();
