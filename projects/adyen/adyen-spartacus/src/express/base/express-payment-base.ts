@@ -167,14 +167,20 @@ export class ExpressPaymentBase implements OnDestroy {
     if (ExpressPaymentBase.cartId) {
       this.multiCartService.removeCart(ExpressPaymentBase.cartId);
     }
-    ExpressPaymentBase.cartId = undefined;
-    ExpressPaymentBase.productAdded = false;
+
+    this.clearStaticState();
 
     this.routingService.go({cxRoute: 'orderConfirmation'});
   }
 
 
+  clearStaticState(): void {
+    ExpressPaymentBase.cartId = undefined;
+    ExpressPaymentBase.productAdded = false;
+  }
+
   ngOnDestroy(): void {
+    this.clearStaticState();
     this.subscriptions.unsubscribe();
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
