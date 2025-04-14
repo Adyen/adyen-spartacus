@@ -63,6 +63,10 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
       }
 
       this.googlePay = new GooglePay(adyenCheckout, {
+        configuration: {
+          merchantId: config.googlePayMerchantId,
+          gatewayMerchantId: config.googlePayGatewayMerchantId
+        },
         callbackIntents: ['SHIPPING_ADDRESS', 'SHIPPING_OPTION'],
         shippingAddressRequired: true,
         shippingOptionRequired: true,
