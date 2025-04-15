@@ -35,6 +35,8 @@ export interface AdyenConfigData {
 export interface AdyenExpressConfigData {
   applePayMerchantId: string;
   applePayMerchantName: string;
+  googlePayMerchantId: string;
+  googlePayGatewayMerchantId: string;
   payPalIntent: string;
   shopperLocale: string;
   environmentMode: string;
