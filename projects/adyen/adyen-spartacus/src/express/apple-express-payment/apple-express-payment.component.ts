@@ -140,6 +140,7 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
   }
 
   handleError(error: AdyenCheckoutError) {
+    this.clearStaticState();
   }
 
   override ngOnDestroy(): void {

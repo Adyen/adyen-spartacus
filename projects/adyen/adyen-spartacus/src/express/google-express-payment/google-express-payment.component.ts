@@ -183,7 +183,9 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
     }
   }
 
-  handleError(error: AdyenCheckoutError) {}
+  handleError(error: AdyenCheckoutError) {
+    this.clearStaticState();
+  }
 
   override ngOnDestroy(): void {
     super.ngOnDestroy();

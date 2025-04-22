@@ -122,7 +122,6 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
             let paypalUpdateOrderResponse = await this.handleShippingContactSelectedPayPal(address, this.product, mappingFunction, component, actions.reject);
             let paypalUpdateOrderResponseValue = await firstValueFrom(paypalUpdateOrderResponse);
             component.updatePaymentData(paypalUpdateOrderResponseValue.paymentData);
-
           },
           onShippingOptionsChange: async (data, actions, component) => {
             let paypalUpdateOrderResponse =
@@ -132,8 +131,9 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
             component.updatePaymentData(paypalUpdateOrderResponseValue.paymentData);
 
           },
-          onSubmit: (state: SubmitData, component: UIElement, actions: SubmitActions) => {
-            this.handlePayPalSubmit(state, component, actions);
+          onSubmit: async (state: SubmitData, component: UIElement, actions: SubmitActions) => {
+            await this.initializeCart(this.product);
+            await this.handlePayPalSubmit(state, component, actions);
           },
           onAuthorized: (paymentData, actions) => {
             this.authorizedPaymentData = paymentData;
@@ -223,25 +223,21 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   protected async handlePayPalSubmit(state: SubmitData, component: UIElement, actions: SubmitActions) {
-      await this.initializeCart(this.product);
-      if (!PaypalExpressPaymentComponent.cartId) {
-        console.error("cartId is undefined");
-        actions.reject();
-        return;
-      }
-      this.paypalExpressService.submitPayPal(state.data, this.product, PaypalExpressPaymentComponent.cartId).subscribe({
-        next: (paymentResponse) => {
-          // @ts-ignore
-          this.pspReference = paymentResponse?.pspReference;
-          if (paymentResponse?.action) {
-            component.handleAction(paymentResponse.action);
-          }
-        },
-        error: (error) => {
-          console.log(error);
-          actions.reject();
-        },
-      });
+    if (!PaypalExpressPaymentComponent.cartId) {
+      console.error("cartId is undefined");
+      actions.reject();
+      return;
+    }
+
+    let paymentResponse = this.paypalExpressService.submitPayPal(state.data, this.product, PaypalExpressPaymentComponent.cartId);
+    let paymentResponseValue = await firstValueFrom(paymentResponse);
+    
+    // @ts-ignore
+    this.pspReference = paymentResponseValue?.pspReference;
+    if (paymentResponseValue?.action) {
+      component.handleAction(paymentResponseValue.action);
+    }
+    
   }
 
   protected handleAuthorise(state: any, actions: any) {
@@ -303,6 +299,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   protected handleError(error: AdyenCheckoutError) {
+    this.clearStaticState();
   }
 
 }
