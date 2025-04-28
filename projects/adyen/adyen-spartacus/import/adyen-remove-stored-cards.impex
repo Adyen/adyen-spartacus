@@ -1,0 +1,25 @@
+$contentCatalog=electronics-spaContentCatalog
+$contentCV=catalogVersion(CatalogVersion.catalog(Catalog.id[default=$contentCatalog]),CatalogVersion.version[default=Staged])[default=$contentCatalog:Staged]
+
+INSERT_UPDATE ContentPage;uid[unique=true];masterTemplate(uid,$contentCV);label;name;title[lang=en];defaultPage[default='true'];approvalStatus(code)[default='approved'];homepage[default='false'];$contentCV[unique=true]
+                         ;adyenStoredCards;AccountPageTemplate;/my-account/stored-cards;Manage Stored Cards;Manage My Stored Cards;;
+
+INSERT_UPDATE CMSFlexComponent;$contentCV[unique=true];uid[unique=true];name;flexType;&componentRef
+                              ;;AdyenMyStoredCardsComponent;Stored Card List Component;AdyenMyStoredCardsComponent;AdyenMyStoredCardsComponent
+
+INSERT_UPDATE ContentSlot;$contentCV[unique=true];uid[unique=true];name;active;cmsComponents(&componentRef)
+                         ;;BodyContent-adyenStoredCards;Body Content Slot for My Stored Cards;true;AdyenMyStoredCardsComponent;
+
+INSERT_UPDATE ContentSlotForPage;uid[unique=true];position[unique=true];page(uid,$contentCV)[unique=true];contentSlot(uid,$contentCV)[unique=true];$contentCV[unique=true]
+                                ;BodyContent-adyenStoredCards;BodyContent;adyenStoredCards;BodyContent-adyenStoredCards;
+
+
+
+INSERT_UPDATE CMSLinkComponent;$contentCV[unique=true];uid[unique=true];name;linkName[lang=en];url;&linkRef;target(code)[default='sameWindow']
+;;AdyenMyStoredCardsLink;My Stored Cards Link;Stored Cards;/my-account/stored-cards;AdyenMyStoredCardsLink;
+
+INSERT_UPDATE CMSNavigationNode;uid[unique=true];$contentCV[unique=true];name;parent(uid, $contentCV);links(&linkRef);&nodeRef
+;AdyenMyStoredCardsNavNode;;My Stored Cards Navigation Node;MyAccountNavNode;;AdyenMyStoredCardsNavNode
+
+INSERT_UPDATE CMSNavigationEntry;uid[unique=true];$contentCV[unique=true];name;navigationNode(&nodeRef);item(&linkRef);
+;AdyenMyStoredCardsNavNodeEntry;;My Stored Cards Navigation Node Entry;AdyenMyStoredCardsNavNode;AdyenMyStoredCardsLink;
