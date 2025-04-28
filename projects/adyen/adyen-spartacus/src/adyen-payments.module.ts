@@ -27,6 +27,7 @@ import {AdyenCartService} from "./service/adyen-cart-service";
 import { CheckoutDeliveryModesConnector,CheckoutDeliveryAddressConnector ,CheckoutDeliveryModesAdapter, CheckoutDeliveryAddressAdapter} from '@spartacus/checkout/base/core';
 import { OccCheckoutDeliveryModesAdapter, OccCheckoutDeliveryAddressAdapter } from '@spartacus/checkout/base/occ';
 import {PaypalExpressService} from "./express/service/paypal-express.service";
+import {AdyenMyAccountModule} from "./adyen-my-account/adyen-my-account.module";
 
 
 @NgModule({
@@ -38,6 +39,7 @@ import {PaypalExpressService} from "./express/service/paypal-express.service";
     AdyenRedirectModule,
     ExpressCheckoutProductModule,
     ExpressCheckoutCartModule,
+    AdyenMyAccountModule
   ],
   providers: [
     provideDefaultConfig({
