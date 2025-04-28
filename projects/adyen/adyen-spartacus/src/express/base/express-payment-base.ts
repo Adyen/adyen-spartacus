@@ -31,7 +31,7 @@ export class ExpressPaymentBase implements OnDestroy {
           take(1),
           catchError((error) => {
             console.error("Error fetching the active cart:", error);
-            return of(null); // Ensure chain does not terminate
+            throw error; 
           })
         )
       );
@@ -50,6 +50,8 @@ export class ExpressPaymentBase implements OnDestroy {
 
         if (cart && cart.code) {
           ExpressPaymentBase.cart$ = this.multiCartService.getCart(cart.code);
+          if(product)
+             await firstValueFrom(this.adyenCartService.takeStable(ExpressPaymentBase.cart$))
           ExpressPaymentBase.cartId = cart.code;
 
         } else {
@@ -175,6 +177,7 @@ export class ExpressPaymentBase implements OnDestroy {
 
 
   clearStaticState(): void {
+    this.multiCartService.removeCart(ExpressPaymentBase.cartId!);
     ExpressPaymentBase.cartId = undefined;
     ExpressPaymentBase.productAdded = false;
   }

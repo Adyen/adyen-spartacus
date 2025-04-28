@@ -11,14 +11,14 @@ import {
 import {AdyenBaseService} from "./adyen-base.service";
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {filter, map, switchMap, take, tap} from 'rxjs/operators';
-import {CheckoutDeliveryAddressConnector, CheckoutDeliveryModesConnector,} from '@spartacus/checkout/base/core';
+import { CheckoutDeliveryModesConnector,} from '@spartacus/checkout/base/core';
 import {
   CheckoutDeliveryAddressCreatedEvent,
   CheckoutDeliveryModeSetEvent,
   CheckoutSupportedDeliveryModesQueryReloadEvent,
   CheckoutSupportedDeliveryModesQueryResetEvent,
 } from '@spartacus/checkout/base/root';
-
+import {AdyenCheckoutDeliveryAddressConnector} from "../core/connectors/adyen-checkout-delivery-address.connector";
 
 import {Observable} from 'rxjs';
 
@@ -33,7 +33,7 @@ export class AdyenCartService extends AdyenBaseService{
     protected eventService: EventService,
     protected multiCartFacade: MultiCartFacade,
     protected checkoutDeliveryModesConnector: CheckoutDeliveryModesConnector,
-    protected checkoutDeliveryAddressConnector: CheckoutDeliveryAddressConnector,
+    protected checkoutDeliveryAddressConnector: AdyenCheckoutDeliveryAddressConnector,
   ){
     super(userIdService, activeCartFacade)
   }
