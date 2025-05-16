@@ -1,0 +1,16 @@
+.cx-delivery-address-card {
+  padding-bottom: 30px;
+}
+
+.adyen-spinner-overlay {
+  position: fixed; /* Position relative to the nearest positioned ancestor */
+  top: 0;
+  left: 0;
+  width: 100%; /* Cover the entire width of the parent */
+  height: 100%; /* Cover the entire height of the parent */
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10; /* Ensure it's on top of the parent's content */
+}

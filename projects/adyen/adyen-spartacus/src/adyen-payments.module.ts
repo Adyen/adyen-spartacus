@@ -29,6 +29,8 @@ import { OccCheckoutDeliveryModesAdapter, OccCheckoutDeliveryAddressAdapter } fr
 import {PaypalExpressService} from "./express/service/paypal-express.service";
 import { AdyenCheckoutDeliveryAddressConnector } from './core/connectors/adyen-checkout-delivery-address.connector';
 import { OccAdyenCheckoutDeliveryAddressAdapter } from './core/occ/adapters/occ-adyen-checkout-delivery-address.adapter';
+import {AdyenMyAccountModule} from "./adyen-my-account/adyen-my-account.module";
+
 
 @NgModule({
   imports: [
@@ -39,6 +41,7 @@ import { OccAdyenCheckoutDeliveryAddressAdapter } from './core/occ/adapters/occ-
     AdyenRedirectModule,
     ExpressCheckoutProductModule,
     ExpressCheckoutCartModule,
+    AdyenMyAccountModule
   ],
   providers: [
     provideDefaultConfig({
