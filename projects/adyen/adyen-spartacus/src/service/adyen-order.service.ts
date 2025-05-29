@@ -19,7 +19,7 @@ import {AddressData, PlaceOrderRequest, PlaceOrderResponse} from "../core/models
 import {HttpErrorResponse} from "@angular/common/http";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
 import {errorCodePrefix} from "../assets/translations/translations";
-
+import {STOREFRONT_VERSION} from '../package.const';
 
 @Injectable()
 export class AdyenOrderService extends OrderService {
@@ -173,6 +173,8 @@ export class AdyenOrderService extends OrderService {
   static preparePlaceOrderRequest(paymentData: any, billingAddress?: Address): PlaceOrderRequest {
     return {
       paymentRequest: paymentData,
+      storefrontType: "SPARTACUS",
+      storefrontVersion: STOREFRONT_VERSION,
       useAdyenDeliveryAddress: billingAddress === undefined,
       billingAddress: this.mapBillingAddress(billingAddress),
     }

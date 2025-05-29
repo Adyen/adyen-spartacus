@@ -52,6 +52,8 @@ export interface PlaceOrderRequest {
   //Billing address related fields
   useAdyenDeliveryAddress?: boolean;
   billingAddress?: AddressData;
+  storefrontType: string;
+  storefrontVersion: string;
 }
 
 export interface PlaceOrderResponse {
