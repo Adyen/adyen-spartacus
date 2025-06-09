@@ -30,7 +30,7 @@ import {PaypalExpressService} from "./express/service/paypal-express.service";
 import { AdyenCheckoutDeliveryAddressConnector } from './core/connectors/adyen-checkout-delivery-address.connector';
 import { OccAdyenCheckoutDeliveryAddressAdapter } from './core/occ/adapters/occ-adyen-checkout-delivery-address.adapter';
 import {AdyenMyAccountModule} from "./adyen-my-account/adyen-my-account.module";
-
+import {AdyenDataCollectionModule} from "./data-collection/adyen-data-collection.module";
 
 @NgModule({
   imports: [
@@ -41,7 +41,8 @@ import {AdyenMyAccountModule} from "./adyen-my-account/adyen-my-account.module";
     AdyenRedirectModule,
     ExpressCheckoutProductModule,
     ExpressCheckoutCartModule,
-    AdyenMyAccountModule
+    AdyenMyAccountModule,
+    AdyenDataCollectionModule
   ],
   providers: [
     provideDefaultConfig({
