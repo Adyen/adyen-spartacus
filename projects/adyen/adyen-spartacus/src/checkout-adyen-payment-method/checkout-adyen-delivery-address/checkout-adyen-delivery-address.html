@@ -81,14 +81,76 @@
         </ng-template>
 
         <ng-template #newAddressForm>
-          <cx-address-form
-            *ngIf="cards.length"
-            [showTitleCode]="true"
-            (backToAddress)="hideNewAddressForm()"
-            (submitAddress)="addAddress($event)"
-            actionBtnLabel="{{'common.save' | cxTranslate}}"
-            [setAsDefaultField]="false"
-          ></cx-address-form>
+          <div class="adyen-company-data">
+            <div class="form-group">
+              <div class="form-check">
+                <label>
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [checked]="showCompanyDataFields"
+                    (change)="toggleShowCompanyDataFields()"
+                    [attr.aria-label]="
+                      'adyenCheckout.showCompanyDataFields' | cxTranslate
+                    "
+                  />
+                  <span class="form-check-label">{{
+                      'adyenCheckout.showCompanyDataFields' | cxTranslate
+                    }}</span>
+                </label>
+              </div>
+            </div>
+            <div class="adyen-company-data-fields" *ngIf="showCompanyDataFields">
+              <div class="form-group">
+                <label for="companyName">{{
+                    'adyenCheckout.companyName.label' | cxTranslate
+                  }}</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="companyName"
+                  name="companyName"
+                  maxlength="255"
+                  placeholder="{{ 'adyenCheckout.companyName.placeholder' | cxTranslate }}"
+                  (change)="onCompanyNameChange($event)"
+                />
+              </div>
+              <div class="form-group">
+                <label for="taxNumber">{{ 'adyenCheckout.taxNumber.label' | cxTranslate }}</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="taxNumber"
+                  name="taxNumber"
+                  maxlength="255"
+                  placeholder="{{ 'adyenCheckout.taxNumber.placeholder' | cxTranslate }}"
+                  (change)="onTaxNumberChange($event)"
+                />
+              </div>
+              <div class="form-group">
+                <label for="registrationNumber">{{ 'adyenCheckout.registrationNumber.label' | cxTranslate }}</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="registrationNumber"
+                  name="registrationNumber"
+                  maxlength="255"
+                  placeholder="{{ 'adyenCheckout.registrationNumber.placeholder' | cxTranslate }}"
+                  (change)="onRegistrationNumberChange($event)"
+                />
+              </div>
+            </div>
+          </div>
+
+            <cx-address-form
+              *ngIf="cards.length"
+              [showTitleCode]="true"
+              (backToAddress)="hideNewAddressForm()"
+              (submitAddress)="addAddress($event)"
+              actionBtnLabel="{{'common.save' | cxTranslate}}"
+              [setAsDefaultField]="false"
+            ></cx-address-form>
+
         </ng-template>
       </ng-container>
     </ng-container>

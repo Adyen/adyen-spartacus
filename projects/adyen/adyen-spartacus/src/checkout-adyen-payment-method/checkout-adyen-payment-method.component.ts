@@ -17,12 +17,17 @@ import {filter, map, switchMap, take,} from 'rxjs/operators';
 import {CheckoutStepService} from "@spartacus/checkout/base/components";
 import {CheckoutAdyenConfigurationService} from "../service/checkout-adyen-configuration.service";
 import {AdyenConfigData} from "../core/models/occ.config.models";
-import {ActionHandledReturnObject} from "@adyen/adyen-web";
-import {PlaceOrderResponse} from "../core/models/occ.order.models";
-import {AdyenOrderService} from "../service/adyen-order.service";
+import {
+  ActionHandledReturnObject,
+  AdditionalDetailsActions,
+  CoreConfiguration,
+  DropinConfiguration,
+  SubmitActions,
+  UIElement
+} from "@adyen/adyen-web";
+import {BillingAddress, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
-import {CoreConfiguration, DropinConfiguration, UIElement, SubmitActions, AdditionalDetailsActions} from "@adyen/adyen-web";
-import { AdyenCheckout, Dropin,AdyenCheckoutError } from '@adyen/adyen-web/auto'
+import {AdyenCheckout, AdyenCheckoutError, Dropin} from '@adyen/adyen-web/auto'
 import {AdyenExpressOrderService} from "../service/adyen-express-order.service";
 
 @Component({
@@ -44,7 +49,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
 
   isGuestCheckout = false;
   paymentDetails?: PaymentDetails;
-  billingAddress?: Address = undefined;
+  billingAddress?: BillingAddress = undefined;
 
 
   get backBtnText() {
@@ -207,7 +212,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  setBillingAddress(address?: Address) {
+  setBillingAddress(address?: BillingAddress) {
     this.billingAddress = address;
   }
 
