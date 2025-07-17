@@ -1,0 +1,18 @@
+@import "bootstrap/scss/bootstrap";
+
+
+:host {
+  @include media-breakpoint-up(lg) {
+    padding-inline-start: 20px;
+    padding-inline-end: 20px
+  }
+}
+
+
+.adyen-pdp-express-btn {
+  padding-bottom: 0.5rem;
+
+  &-apple{
+    padding-bottom: 0.3rem;
+  }
+}

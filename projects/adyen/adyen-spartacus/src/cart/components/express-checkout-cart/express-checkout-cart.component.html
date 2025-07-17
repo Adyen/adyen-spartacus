@@ -1,12 +1,18 @@
 <ng-container *ngIf="configuration$ | async as config">
   @if (config.expressPaymentConfig.googlePayExpressEnabledOnCart) {
-    <cx-google-express-payment [configuration]="config"></cx-google-express-payment>
+    <div class="adyen-cart-express-btn">
+      <cx-google-express-payment [configuration]="config"></cx-google-express-payment>
+    </div>
   }
   @if (config.expressPaymentConfig.applePayExpressEnabledOnCart) {
-    <cx-apple-express-payment [configuration]="config"></cx-apple-express-payment>
+    <div class="adyen-cart-express-btn adyen-cart-express-btn-apple">
+      <cx-apple-express-payment [configuration]="config"></cx-apple-express-payment>
+    </div>
   }
   @if (config.expressPaymentConfig.paypalExpressEnabledOnCart) {
-    <cx-paypal-express-payment [configuration]="config"></cx-paypal-express-payment>
+    <div class="adyen-cart-express-btn">
+      <cx-paypal-express-payment [configuration]="config"></cx-paypal-express-payment>
+    </div>
   }
   <p></p>
 </ng-container>
