@@ -4,4 +4,33 @@
   @include media-breakpoint-down(md) {
     order: 6
   }
+  padding-inline-start: 3rem;
+
+  @include media-breakpoint-down(md) {
+    padding-inline-start: 0;
+  }
+}
+
+
+.adyen-cart-express-btn {
+  padding-bottom: 0.5rem;
+
+  &-apple {
+    padding-bottom: 0.3rem;
+  }
+
+  @include media-breakpoint-down(md) {
+    padding-bottom: 0.7rem;
+
+    &-apple {
+      padding-bottom: 0.5rem;
+    }
+  }
+
+  @include media-breakpoint-down(sm) {
+    padding-bottom: 1rem;
+    &-apple {
+      padding-bottom: 0.7rem;
+    }
+  }
 }
