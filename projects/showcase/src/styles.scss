@@ -4,3 +4,9 @@
 @import '@spartacus/styles/index';
 
 @import '@adyen/adyen-web/styles/adyen.css';
+
+.adyen-checkout__applepay__button {
+  width: 100%;
+  -webkit-appearance: -apple-pay-button;
+  border-radius: 32px;
+}

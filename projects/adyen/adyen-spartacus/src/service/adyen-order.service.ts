@@ -15,7 +15,7 @@ import {BehaviorSubject, catchError, map, Observable, of, switchMap, tap} from "
 import {OrderPlacedEvent} from '@spartacus/order/root';
 import {AdyenOrderConnector} from "../core/connectors/adyen-order-connector.service";
 import {ActiveCartFacade} from '@spartacus/cart/base/root';
-import {AddressData, PlaceOrderRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
+import {AddressData, BillingAddress, PlaceOrderRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
 import {errorCodePrefix} from "../assets/translations/translations";
@@ -85,7 +85,7 @@ export class AdyenOrderService extends OrderService {
       }
     );
 
-  adyenPlaceOrder(paymentData: any, billingAddress?: Address): Observable<PlaceOrderResponse> {
+  adyenPlaceOrder(paymentData: any, billingAddress?: BillingAddress): Observable<PlaceOrderResponse> {
     return this.adyenPlaceOrderCommand.execute({paymentData, billingAddress});
   }
 
@@ -170,7 +170,7 @@ export class AdyenOrderService extends OrderService {
   }
 
 
-  static preparePlaceOrderRequest(paymentData: any, billingAddress?: Address): PlaceOrderRequest {
+  static preparePlaceOrderRequest(paymentData: any, billingAddress?: BillingAddress): PlaceOrderRequest {
     return {
       paymentRequest: paymentData,
       storefrontType: STOREFRONT_TYPE,
@@ -180,7 +180,7 @@ export class AdyenOrderService extends OrderService {
     }
   }
 
-  static mapBillingAddress(billingAddress?: Address): AddressData | undefined {
+  static mapBillingAddress(billingAddress?: BillingAddress): AddressData | undefined {
     if (billingAddress) {
       return {
         addressId: billingAddress.id!,
@@ -194,7 +194,10 @@ export class AdyenOrderService extends OrderService {
         regionIso: billingAddress.region ? billingAddress.region.isocode : undefined,
         saveInAddressBook: false,
         titleCode: billingAddress.titleCode!,
-        townCity: billingAddress.town!
+        townCity: billingAddress.town!,
+        companyName: billingAddress.companyName,
+        taxNumber: billingAddress.taxNumber,
+        registrationNumber: billingAddress.registrationNumber
       }
     }
     return undefined;
