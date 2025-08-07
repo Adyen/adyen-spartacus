@@ -30,6 +30,7 @@ import {PaypalExpressService} from "./express/service/paypal-express.service";
 import { AdyenCheckoutDeliveryAddressConnector } from './core/connectors/adyen-checkout-delivery-address.connector';
 import { OccAdyenCheckoutDeliveryAddressAdapter } from './core/occ/adapters/occ-adyen-checkout-delivery-address.adapter';
 import {AdyenMyAccountModule} from "./adyen-my-account/adyen-my-account.module";
+import {AdyenDataCollectionModule} from "./data-collection/adyen-data-collection.module";
 import {OccAdyenCheckoutBillingAddressAdapter} from "./core/occ/adapters/occ-adyen-checkout-billing-address.adapter";
 import {AdyenCheckoutBillingAddressConnector} from "./core/connectors/adyen-checkout-billing-address.connector";
 
@@ -43,7 +44,8 @@ import {AdyenCheckoutBillingAddressConnector} from "./core/connectors/adyen-chec
     AdyenRedirectModule,
     ExpressCheckoutProductModule,
     ExpressCheckoutCartModule,
-    AdyenMyAccountModule
+    AdyenMyAccountModule,
+    AdyenDataCollectionModule
   ],
   providers: [
     provideDefaultConfig({

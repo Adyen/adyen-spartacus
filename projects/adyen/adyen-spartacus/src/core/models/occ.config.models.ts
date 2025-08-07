@@ -86,3 +86,8 @@ interface AllowedCard {
   code: string,
   type: string
 }
+
+export interface AdyenDataCollectionConfig {
+  checkoutShopperHost: string,
+  dataCollectionEnabled: boolean
+}
