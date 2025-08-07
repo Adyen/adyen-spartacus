@@ -1,11 +1,10 @@
 import {Injectable} from "@angular/core";
 import {AdyenBaseService} from "./adyen-base.service";
 import {ActiveCartFacade} from "@spartacus/cart/base/root";
-import {LoginEvent, LogoutEvent, Query, QueryService, QueryState, UserIdService} from "@spartacus/core";
+import {Query, QueryService, QueryState, UserIdService} from "@spartacus/core";
 import {DataCollectionConfigConnector} from "../core/connectors/data-collection-config.connector";
 import {AdyenDataCollectionConfig} from "../core/models/occ.config.models";
-import {Observable, filter, map, switchMap} from "rxjs";
-import {CheckoutAdyenConfigurationReloadEvent} from "../events/checkout-adyen.events";
+import {combineLatest, filter, map, Observable, switchMap} from "rxjs";
 
 @Injectable()
 export class AdyenDataCollectionConfigurationService extends AdyenBaseService {
@@ -19,12 +18,9 @@ export class AdyenDataCollectionConfigurationService extends AdyenBaseService {
   }
 
   protected dataCollectionConfiguration: Query<AdyenDataCollectionConfig> = this.queryService.create(
-    () => this.checkoutPreconditions().pipe(
+    () => this.preconditions().pipe(
       switchMap(([userId, cartId]) => this.dataCollectionConfigConnector.getDataCollectionConfiguration(userId, cartId))
-    ), {
-      reloadOn: [CheckoutAdyenConfigurationReloadEvent],
-      resetOn: [LoginEvent, LogoutEvent]
-    }
+    )
   )
 
   getDataCollectionConfigurationState(): Observable<QueryState<AdyenDataCollectionConfig>> {
@@ -36,5 +32,12 @@ export class AdyenDataCollectionConfigurationService extends AdyenBaseService {
       filter((state) => !state.loading),
       map((state) => state.data)
     );
+  }
+
+  protected preconditions(): Observable<[string, string]> {
+    return combineLatest([
+      this.userIdService.takeUserId(),
+      this.activeCartFacade.takeActiveCartId(),
+    ])
   }
 }
