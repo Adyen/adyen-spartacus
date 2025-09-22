@@ -10,7 +10,8 @@ import {AdyenExpressConfigData} from "../../../core/models/occ.config.models";
 @Component({
   selector: 'cx-express-checkout-product',
   templateUrl: './express-checkout-product.component.html',
-  styleUrl: './express-checkout-product.component.scss'
+  styleUrl: './express-checkout-product.component.scss',
+  standalone: false
 })
 export class ExpressCheckoutProductComponent implements OnInit, OnDestroy {
   protected subscriptions = new Subscription();

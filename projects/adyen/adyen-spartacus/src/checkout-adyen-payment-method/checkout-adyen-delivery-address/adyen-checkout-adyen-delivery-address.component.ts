@@ -12,7 +12,8 @@ import {BillingAddress} from "../../core/models/occ.order.models";
 @Component({
   selector: "cx-adyen-delivery-address",
   templateUrl: "./checkout-adyen-delivery-address.html",
-  styleUrls: ['./checkout-adyen-delivery-address.scss']
+  styleUrls: ['./checkout-adyen-delivery-address.scss'],
+  standalone: false
 })
 export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
   protected busy$ = new BehaviorSubject<boolean>(false);

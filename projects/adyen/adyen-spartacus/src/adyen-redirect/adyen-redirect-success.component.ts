@@ -5,6 +5,7 @@ import {AdyenExpressOrderService} from "../service/adyen-express-order.service";
 @Component({
   selector: 'adyen-redirect-success',
   templateUrl: './adyen-redirect.component.html',
+  standalone: false
 })
 export class AdyenRedirectSuccessComponent implements OnInit {
 
