@@ -7,6 +7,8 @@ import {AdyenRedirectErrorComponent} from "./adyen-redirect-error.component";
 
 const STATIC_ROUTES: Routes = [
   {path: 'adyen/redirect/error/:errorCode', component: AdyenRedirectErrorComponent},
+  {path: 'adyen/redirect/error/:errorCode/productCode/:productCode', component: AdyenRedirectErrorComponent},
+  {path: 'adyen/redirect/error/:errorCode/cart/:isExpressCart', component: AdyenRedirectErrorComponent},
   {path: 'adyen/redirect/:orderCode', component: AdyenRedirectSuccessComponent}
 ]
 
