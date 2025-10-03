@@ -8,6 +8,7 @@ import {AdyenExpressOrderService} from "../../../../service/adyen-express-order.
   templateUrl: './order-confirmation-payment-status.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./order-confirmation-payment-status.scss'],
+  standalone: false
 })
 export class OrderConfirmationPaymentStatusComponent implements OnInit, OnDestroy {
 
