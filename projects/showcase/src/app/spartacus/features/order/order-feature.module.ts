@@ -15,7 +15,7 @@ import {AdyenExpressOrderService, OrderConfirmationPaymentStatusModule} from "@a
     featureModules: {
       [ORDER_FEATURE]: {
         module: () =>
-          import('./order-wrapper.module').then((m) => m.OrderWrapperModule),
+          import('@spartacus/order').then((m) => m.OrderModule),
       },
     }
   }),

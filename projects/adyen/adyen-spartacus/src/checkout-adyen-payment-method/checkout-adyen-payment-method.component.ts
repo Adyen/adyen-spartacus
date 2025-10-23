@@ -35,7 +35,6 @@ import {AdyenExpressOrderService} from "../service/adyen-express-order.service";
   templateUrl: './checkout-adyen-payment-method.component.html',
   styleUrls: ['./checkout-adyen-payment-method.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: false
 })
 export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   protected subscriptions = new Subscription();

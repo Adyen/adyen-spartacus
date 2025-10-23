@@ -14,7 +14,6 @@ import {Subscription} from "rxjs";
 @Component({
   selector: 'adyen-redirect-error',
   templateUrl: './adyen-redirect.component.html',
-  standalone: false
 })
 export class AdyenRedirectErrorComponent implements OnInit, OnDestroy {
   private messageTimeout: number = 20000;

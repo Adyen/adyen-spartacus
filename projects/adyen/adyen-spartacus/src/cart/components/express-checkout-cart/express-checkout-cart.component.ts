@@ -9,8 +9,7 @@ import {CheckoutAdyenConfigurationReloadEvent} from "../../../events/checkout-ad
 @Component({
   selector: 'cx-express-checkout-cart',
   templateUrl: './express-checkout-cart.component.html',
-  styleUrl: './express-checkout-cart.component.scss',
-  standalone: false
+  styleUrl: './express-checkout-cart.component.scss'
 })
 export class ExpressCheckoutCartComponent implements OnInit, OnDestroy {
   protected subscriptions = new Subscription();
