@@ -1,0 +1,30 @@
+<div class="cx-adyen-stored-cards-container">
+  <div class="cx-adyen-stored-cards-body">
+    <p> {{ 'adyenMyAccount.myStoredCards' | cxTranslate }}</p>
+    @if ((cardsWithId$ | async).length == 0 && !(cardsLoading$ | async)) {
+      <p> {{ 'adyenMyAccount.noStoredCards' | cxTranslate }}</p>
+    }
+    @if (!(cardsLoading$ | async)) {
+      <div class="cx-adyen-stored-cards row">
+        @for (card of cardsWithId$ | async; track $index) {
+          <div
+            class="cx-delivery-address-card col-md-6 col-lg-4">
+            <cx-card
+              [border]="true"
+              [index]="$index"
+              [content]="card.card"
+              (deleteCard)="deleteCard(card.id)"></cx-card>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+  @if (cardsLoading$ | async) {
+    <div class="adyen-spinner-overlay">
+      <cx-spinner></cx-spinner>
+    </div>
+  }
+
+</div>

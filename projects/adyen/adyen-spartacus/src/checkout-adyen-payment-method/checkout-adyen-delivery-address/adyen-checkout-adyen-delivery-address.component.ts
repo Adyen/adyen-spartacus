@@ -5,8 +5,9 @@ import {CardWithAddress, CheckoutStepService} from "@spartacus/checkout/base/com
 import {CheckoutDeliveryAddressFacade} from "@spartacus/checkout/base/root";
 import {Address, getLastValueSync, GlobalMessageService, TranslationService, UserAddressService} from "@spartacus/core";
 import {Card, getAddressNumbers} from "@spartacus/storefront";
-import {BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable, of} from "rxjs";
+import {BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable} from "rxjs";
 import {AdyenAddressService} from "../../service/adyen-address.service";
+import {BillingAddress} from "../../core/models/occ.order.models";
 
 @Component({
   selector: "cx-adyen-delivery-address",
@@ -16,6 +17,7 @@ import {AdyenAddressService} from "../../service/adyen-address.service";
 export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
   protected busy$ = new BehaviorSubject<boolean>(false);
   sameAsDeliveryAddress = true;
+  showCompanyDataFields = false;
 
 
   cards$: Observable<CardWithAddress[]>;
@@ -25,6 +27,10 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
   doneAutoSelect = false;
 
   selectedAddress$: BehaviorSubject<Address | undefined> = new BehaviorSubject<Address | undefined>(undefined);
+
+  companyName: string;
+  taxNumber: string;
+  registrationNumber: string;
 
   @Output()
   setBillingAddress = new EventEmitter<any>();
@@ -36,11 +42,8 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
   constructor(
     protected userAddressService: UserAddressService,
     protected checkoutDeliveryAddressFacade: CheckoutDeliveryAddressFacade,
-    protected activatedRoute: ActivatedRoute,
     protected translationService: TranslationService,
     protected activeCartFacade: ActiveCartFacade,
-    protected checkoutStepService: CheckoutStepService,
-    protected globalMessageService: GlobalMessageService,
     protected adyenAddressService: AdyenAddressService
   ) {
   }
@@ -95,17 +98,36 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
     this.setAddress(address);
   }
 
+  onCompanyNameChange(event: Event){
+   this.companyName = (event.target as HTMLInputElement).value
+  }
+
+  onTaxNumberChange(event: Event){
+    this.taxNumber = (event.target as HTMLInputElement).value
+  }
+
+  onRegistrationNumberChange(event: Event){
+    this.registrationNumber = (event.target as HTMLInputElement).value
+  }
+
   addAddress(address: Address | undefined): void {
     if (!address) {
       return;
     }
 
+    let billingAddress: BillingAddress = {
+      ...address,
+      taxNumber: this.taxNumber,
+      registrationNumber: this.registrationNumber,
+      companyName: this.companyName
+    }
+
     this.busy$.next(true);
     this.doneAutoSelect = true;
 
-    this.adyenAddressService.adyenAddUserAddress(address).subscribe({
+    this.adyenAddressService.adyenAddUserAddress(billingAddress).subscribe({
       next: (createdAddress) => {
-        this.setBillingAddress.emit(address);
+        this.setBillingAddress.emit(billingAddress);
         this.loadAddresses();
         this.busy$.next(false);
         this.selectedAddress$.next(createdAddress);
@@ -201,6 +223,10 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
     if (this.sameAsDeliveryAddress) {
       this.setAddress(undefined)
     }
+  }
+
+  toggleShowCompanyDataFields(): void {
+    this.showCompanyDataFields = !this.showCompanyDataFields;
   }
 
   protected onError(): void {

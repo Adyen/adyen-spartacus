@@ -31,6 +31,8 @@ export class AdyenRedirectErrorComponent implements OnInit, OnDestroy {
   private addErrorMessage() {
     let subscribeRouting = this.routingService.getParams().subscribe(params => {
       let errorCode = params['errorCode'];
+      let productCode = params['productCode']
+      let isExpressCart = params['isExpressCart']
 
       if (errorCode) {
         let decodedError = atob(errorCode);
@@ -39,18 +41,26 @@ export class AdyenRedirectErrorComponent implements OnInit, OnDestroy {
           this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
         })
 
-        this.multiCartFacade.reloadCart(OCC_CART_ID_CURRENT)
+        if (productCode) {
+          this.routingService.goByUrl("/p/" + productCode)
+        } else {
+          this.multiCartFacade.reloadCart(OCC_CART_ID_CURRENT)
 
-        let subscribeUser = this.userIdService.takeUserId().subscribe((userId) => {
-          this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId})
+          let subscribeUser = this.userIdService.takeUserId().subscribe((userId) => {
+            this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId})
 
 
-          let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId) => {
-            this.routingService.go({cxRoute: "checkoutAdyenPaymentDetails"})
+            let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId) => {
+              if (isExpressCart && isExpressCart === "true") {
+                this.routingService.go({cxRoute: "cart"})
+              } else {
+                this.routingService.go({cxRoute: "checkoutAdyenPaymentDetails"})
+              }
+            });
+            this.subscriptions.add(subscribeCart);
           });
-          this.subscriptions.add(subscribeCart);
-        });
-        this.subscriptions.add(subscribeUser);
+          this.subscriptions.add(subscribeUser);
+        }
       }
     });
     this.subscriptions.add(subscribeRouting);

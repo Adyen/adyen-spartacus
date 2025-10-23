@@ -1,6 +1,7 @@
 import { PaymentAction,PaymentResponseData } from "@adyen/adyen-web";
 import { Order } from '@spartacus/order/root';
 import {AmountData} from "./occ.config.models";
+import {Address} from "@spartacus/core";
 
 export interface ApplePayExpressRequest {
   cartId?: string;
@@ -52,6 +53,8 @@ export interface PlaceOrderRequest {
   //Billing address related fields
   useAdyenDeliveryAddress?: boolean;
   billingAddress?: AddressData;
+  storefrontType: string;
+  storefrontVersion: string;
 }
 
 export interface PlaceOrderResponse {
@@ -79,4 +82,12 @@ export interface AddressData {
   countryIso: string;
   phoneNumber?: string;
   saveInAddressBook: boolean;
+  companyName?: string;
+  taxNumber?: string;
+  registrationNumber?: string;
+}
+
+export interface BillingAddress extends Address {
+  taxNumber?: string,
+  registrationNumber?: string
 }

@@ -107,6 +107,12 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
             currency: config.amount.currency,
             value: config.amount.value
           },
+          style: {
+            // @ts-ignore
+            borderRadius: 32,
+            height: 48,
+            disableMaxWidth: true,
+          },
           isExpress: true,
           blockPayPalVenmoButton: true,
           blockPayPalCreditButton: true,
@@ -231,13 +237,13 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
 
     let paymentResponse = this.paypalExpressService.submitPayPal(state.data, this.product, PaypalExpressPaymentComponent.cartId);
     let paymentResponseValue = await firstValueFrom(paymentResponse);
-    
+
     // @ts-ignore
     this.pspReference = paymentResponseValue?.pspReference;
     if (paymentResponseValue?.action) {
       component.handleAction(paymentResponseValue.action);
     }
-    
+
   }
 
   protected handleAuthorise(state: any, actions: any) {

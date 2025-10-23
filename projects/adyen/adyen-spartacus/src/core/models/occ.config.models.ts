@@ -88,6 +88,11 @@ interface AllowedCard {
   type: string
 }
 
+export interface AdyenDataCollectionConfig {
+  checkoutShopperHost: string,
+  dataCollectionEnabled: boolean
+}
+
 interface AdyenInstallmentOptions {
     card?: {
         values?: number[];

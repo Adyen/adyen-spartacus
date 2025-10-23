@@ -6,3 +6,12 @@
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
+
+.adyen-company-data {
+  padding: 13px 32px 1px 32px;
+  background-color: var(--cx-color-background);
+
+  input[type='checkbox']:not(:checked) {
+    background-color: rgb(255, 255, 255);
+  }
+}
