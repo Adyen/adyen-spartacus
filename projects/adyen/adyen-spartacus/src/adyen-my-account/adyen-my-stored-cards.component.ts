@@ -12,8 +12,7 @@ interface CardWithId {
 @Component({
   selector: 'cx-adyen-my-stored-cards',
   templateUrl: './adyen-my-stored-cards.component.html',
-  styleUrls: ['adyen-my-stored-cards.component.scss'],
-  standalone: false
+  styleUrls: ['adyen-my-stored-cards.component.scss']
 })
 export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
   subscriptions$ = new Subscription();

@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { wishListTranslationChunksConfig, wishListTranslationsEn } from "@spartacus/cart/wish-list/assets";
+import { wishListTranslationChunksConfig, wishListTranslations } from "@spartacus/cart/wish-list/assets";
 import { ADD_TO_WISHLIST_FEATURE, CART_WISH_LIST_FEATURE, WishListRootModule } from "@spartacus/cart/wish-list/root";
 import { CmsConfig, I18nConfig, provideConfig } from "@spartacus/core";
 
@@ -26,7 +26,7 @@ import { CmsConfig, I18nConfig, provideConfig } from "@spartacus/core";
   }),
   provideConfig(<I18nConfig>{
     i18n: {
-      resources: { en: wishListTranslationsEn },
+      resources: wishListTranslations,
       chunks: wishListTranslationChunksConfig,
     },
   })

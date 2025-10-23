@@ -6,7 +6,6 @@ import {Subscription} from "rxjs";
 @Component({
   selector: 'cx-adyen-data-collection',
   templateUrl: './adyen-data-collection.component.html',
-  standalone: false
 })
 export class AdyenDataCollectionComponent implements AfterViewInit, OnDestroy {
   private subscriptions$ = new Subscription();
