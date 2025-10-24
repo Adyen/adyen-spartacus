@@ -30,6 +30,7 @@ export interface AdyenConfigData {
   shopperEmail: string;
   clickToPayLocale: string;
   expressPaymentConfig: ExpressPaymentConfig;
+  installmentOptions?: AdyenInstallmentOptions;
 }
 
 export interface AdyenExpressConfigData {
@@ -90,4 +91,16 @@ interface AllowedCard {
 export interface AdyenDataCollectionConfig {
   checkoutShopperHost: string,
   dataCollectionEnabled: boolean
+}
+
+interface AdyenInstallmentOptions {
+    card?: {
+        values?: number[];
+        plans?: string[];
+    };
+    showInstallmentAmounts?: {
+        values?: number[];
+        plans?: string[];
+    };
+    [key: string]: any;
 }
