@@ -22,7 +22,6 @@ import {
   AdditionalDetailsActions,
   CoreConfiguration,
   DropinConfiguration,
-  CardConfiguration,
   SubmitActions,
   UIElement
 } from "@adyen/adyen-web";
