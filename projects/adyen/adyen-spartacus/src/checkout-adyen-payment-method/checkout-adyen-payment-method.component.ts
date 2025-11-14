@@ -183,7 +183,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
             shopperEmail:  adyenConfig.shopperEmail,
             locale: adyenConfig.clickToPayLocale,
           },
-          installmentOptions: adyenConfig.installmentOptions,
+          installmentOptions: adyenConfig.installmentOptions ? adyenConfig.installmentOptions : {} ,
         },
         paypal: {
           intent: "authorize"
