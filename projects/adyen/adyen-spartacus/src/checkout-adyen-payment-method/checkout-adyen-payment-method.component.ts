@@ -172,24 +172,26 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private getDropinConfiguration(adyenConfig: AdyenConfigData): DropinConfiguration {
-      const config: CardConfiguration ={
-              type: 'card',
-              hasHolderName: true,
-              holderNameRequired: adyenConfig.cardHolderNameRequired,
-              enableStoreDetails: adyenConfig.showRememberTheseDetails,
-              clickToPayConfiguration: {
-                  merchantDisplayName: adyenConfig.merchantDisplayName,
-                  shopperEmail: adyenConfig.shopperEmail,
-                  locale: adyenConfig.clickToPayLocale,
-              },
-          };
-
-          if (adyenConfig.installmentOptions) {
-              config.installmentOptions = adyenConfig.installmentOptions;
-          }
-          
-          return config;
+    return {
+      paymentMethodsConfiguration: {
+        card: {
+          type: 'card',
+          hasHolderName: true,
+          holderNameRequired: adyenConfig.cardHolderNameRequired,
+          enableStoreDetails: adyenConfig.showRememberTheseDetails,
+          clickToPayConfiguration: {
+            merchantDisplayName: adyenConfig.merchantDisplayName,
+            shopperEmail:  adyenConfig.shopperEmail,
+            locale: adyenConfig.clickToPayLocale,
+          },
+          installmentOptions: adyenConfig.installmentOptions ? adyenConfig.installmentOptions : {} ,
+        },
+        paypal: {
+          intent: "authorize"
+        }
+      },
     }
+  }
 
   next(): void {
     this.checkoutStepService.next(this.activatedRoute);
