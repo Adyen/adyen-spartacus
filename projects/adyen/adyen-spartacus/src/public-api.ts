@@ -9,4 +9,7 @@ export * from './order/components/order-confirmation/order-confirmation-payment-
 export * from './order/components/order-confirmation/order-confirmation-payment-status/order-confirmation-payment-status.component';
 export * from './service/adyen-order.service';
 export * from './service/adyen-express-order.service';
+export * from './service/adyen-partial-payment.service';
+export * from './core/connectors/adyen-partial-payment.connector';
+export * from './core/partial-payment/adyen-partial-payment.module';
 

@@ -9,7 +9,11 @@ import {
   PaypalUpdateOrderRequest,
   PaypalUpdateOrderResponse,
   PlaceOrderRequest,
-  PlaceOrderResponse
+  PlaceOrderResponse,
+  GiftCardBalanceRequest,
+  GiftCardBalanceResponse,
+  PartialPaymentOrderRequest,
+  PartialPaymentOrderResponse
 } from "../../models/occ.order.models";
 import { PaymentResponseData } from "@adyen/adyen-web";
 
@@ -134,6 +138,38 @@ export class OccAdyenOrderAdapter {
 
   protected getPlacePayPalExpressOrderEndpointProduct(userId: string, cartId: string): string {
     return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/express-checkout/paypal/PDP', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  /**
+   * Check gift card balance for partial payments
+   */
+  public checkGiftCardBalance(userId: string, cartId: string, request: GiftCardBalanceRequest): Observable<GiftCardBalanceResponse> {
+    return this.http.post<GiftCardBalanceResponse>(this.getGiftCardBalanceEndpoint(userId, cartId), request);
+  }
+
+  protected getGiftCardBalanceEndpoint(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/giftcard/balance', {
+      urlParams: {
+        userId,
+        cartId,
+      }
+    });
+  }
+
+  /**
+   * Create partial payment order
+   */
+  public createPartialPaymentOrder(userId: string, cartId: string, request: PartialPaymentOrderRequest): Observable<PartialPaymentOrderResponse> {
+    return this.http.post<PartialPaymentOrderResponse>(this.getPartialPaymentOrderEndpoint(userId, cartId), request);
+  }
+
+  protected getPartialPaymentOrderEndpoint(userId: string, cartId: string): string {
+    return this.occEndpoints.buildUrl('users/${userId}/carts/${cartId}/adyen/orders/partial-payment', {
       urlParams: {
         userId,
         cartId,

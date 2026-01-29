@@ -33,6 +33,7 @@ import {AdyenMyAccountModule} from "./adyen-my-account/adyen-my-account.module";
 import {AdyenDataCollectionModule} from "./data-collection/adyen-data-collection.module";
 import {OccAdyenCheckoutBillingAddressAdapter} from "./core/occ/adapters/occ-adyen-checkout-billing-address.adapter";
 import {AdyenCheckoutBillingAddressConnector} from "./core/connectors/adyen-checkout-billing-address.connector";
+import {CheckoutCoreModule} from "./core/checkout-adyen-core.module";
 
 
 @NgModule({
@@ -45,7 +46,8 @@ import {AdyenCheckoutBillingAddressConnector} from "./core/connectors/adyen-chec
     ExpressCheckoutProductModule,
     ExpressCheckoutCartModule,
     AdyenMyAccountModule,
-    AdyenDataCollectionModule
+    AdyenDataCollectionModule,
+    CheckoutCoreModule
   ],
   providers: [
     provideDefaultConfig({

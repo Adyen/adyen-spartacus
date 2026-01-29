@@ -1,10 +1,12 @@
 import {CheckoutConfigurationConnector} from "./connectors/checkout-configuration.connector";
-import {facadeProviders} from "@spartacus/checkout/base/core/facade/facade-providers";
 import {NgModule} from "@angular/core";
+import {AdyenPartialPaymentModule} from "./partial-payment/adyen-partial-payment.module";
 
 @NgModule({
+  imports: [
+    AdyenPartialPaymentModule
+  ],
   providers: [
-    ...facadeProviders,
     CheckoutConfigurationConnector,
   ],
 })
