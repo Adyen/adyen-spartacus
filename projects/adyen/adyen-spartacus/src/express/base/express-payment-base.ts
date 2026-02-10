@@ -75,9 +75,9 @@ export class ExpressPaymentBase implements OnDestroy {
         }).pipe(
           tap((cart) => {
             if (!ExpressPaymentBase.productAdded) {
-              if (cart && cart.code && product?.code) {
+              if (cart && (cart as Cart).code && product?.code) {
                 // Call addEntry here, as it does not return an Observable
-                this.multiCartService.addEntry(userId, cart.code, product.code, 1);
+                this.multiCartService.addEntry(userId, (cart as Cart).code as string, product.code, 1);
                 ExpressPaymentBase.productAdded = true;
               } else {
                 console.error("Unable to add product or cart is invalid.");

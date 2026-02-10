@@ -1,5 +1,5 @@
 import {NgModule} from '@angular/core';
-import {checkoutTranslationChunksConfig, checkoutTranslations} from "@spartacus/checkout/base/assets";
+import {checkoutTranslationChunksConfig} from "@spartacus/checkout/base/assets";
 import {CHECKOUT_CORE_FEATURE, CHECKOUT_FEATURE, CheckoutStepType} from "@spartacus/checkout/base/root";
 import {CmsConfig, I18nConfig, provideConfig,provideDefaultConfigFactory} from "@spartacus/core";
 import {AdyenPaymentsModule} from "@adyen/adyen-spartacus";
@@ -67,7 +67,7 @@ export const translationOverwrites = {
     }),
     provideConfig(<I18nConfig>{
       i18n: {
-        resources: checkoutTranslations,
+        //resources: checkoutTranslations,
         chunks: checkoutTranslationChunksConfig,
       },
       routing: {

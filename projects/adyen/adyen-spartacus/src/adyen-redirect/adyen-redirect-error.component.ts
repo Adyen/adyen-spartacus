@@ -51,7 +51,7 @@ export class AdyenRedirectErrorComponent implements OnInit, OnDestroy {
             this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId})
 
 
-            let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId) => {
+            let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId: string) => {
               if (isExpressCart && isExpressCart === "true") {
                 this.routingService.go({cxRoute: "cart"})
               } else {

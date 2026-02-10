@@ -10,11 +10,11 @@ import {
   TranslationService,
   UserIdService
 } from "@spartacus/core";
-import {OrderConnector, OrderHistoryConnector} from '@spartacus/order/core';
-import {catchError, map, Observable, of, switchMap, tap} from "rxjs";
-import {OrderPlacedEvent} from '@spartacus/order/root';
-import {AdyenOrderConnector} from "../core/connectors/adyen-order-connector.service";
-import {ActiveCartFacade} from '@spartacus/cart/base/root';
+import { OrderConnector, OrderHistoryConnector } from '@spartacus/order/core';
+import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
+import { Order, OrderPlacedEvent } from '@spartacus/order/root';
+import { AdyenOrderConnector } from "../core/connectors/adyen-order-connector.service";
+import { ActiveCartFacade } from '@spartacus/cart/base/root';
 import {
   ApplePayExpressRequest,
   GooglePayExpressRequest,
@@ -60,7 +60,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
           switchMap(([userId, cartId]) =>
             expressCommand.connectorFunction(userId, cartId, expressCommand.paymentData, expressCommand.isPDP).pipe(
               tap((placeOrderResponse) => {
-                this.placedOrder$.next(placeOrderResponse.orderData);
+                this.placedOrder$.next(placeOrderResponse.orderData as Order);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
                 if (!expressCommand.isPDP) {
                   this.eventService.dispatch(
@@ -91,7 +91,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
           switchMap(([userId ]) =>
             this.additionalDetailsConnector.sendAdditionalDetails(userId, commandParam.details).pipe(
               tap((placeOrderResponse) => {
-                this.placedOrder$.next(placeOrderResponse.orderData);
+                this.placedOrder$.next(placeOrderResponse.orderData as Order);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
                 this.eventService.dispatch(
                   {
@@ -248,4 +248,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
     };
   }
 
+  override getOrderDetails(): Observable<Order | undefined> {
+    return this.placedOrder$.asObservable();
+  }
 }

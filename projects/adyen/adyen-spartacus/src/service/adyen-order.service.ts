@@ -10,11 +10,11 @@ import {
   TranslationService,
   UserIdService
 } from "@spartacus/core";
-import {OrderConnector, OrderHistoryConnector, OrderService} from '@spartacus/order/core';
-import {BehaviorSubject, catchError, map, Observable, of, switchMap, tap} from "rxjs";
-import {OrderPlacedEvent} from '@spartacus/order/root';
-import {AdyenOrderConnector} from "../core/connectors/adyen-order-connector.service";
-import {ActiveCartFacade} from '@spartacus/cart/base/root';
+import { OrderConnector, OrderHistoryConnector, OrderService } from '@spartacus/order/core';
+import { BehaviorSubject, catchError, map, Observable, of, switchMap, tap } from "rxjs";
+import { Order, OrderPlacedEvent } from '@spartacus/order/root';
+import { AdyenOrderConnector } from "../core/connectors/adyen-order-connector.service";
+import { ActiveCartFacade } from '@spartacus/cart/base/root';
 import {AddressData, BillingAddress, PlaceOrderRequest, PlaceOrderResponse} from "../core/models/occ.order.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {AdditionalDetailsConnector} from "../core/connectors/additional-details.connector";
@@ -38,9 +38,10 @@ export class AdyenOrderService extends OrderService {
               protected orderHistoryConnector: OrderHistoryConnector,
               protected translationService: TranslationService
   ) {
-    super(activeCartFacade, userIdService, commandService, orderConnector, eventService)
+    super(activeCartFacade, userIdService, commandService, orderConnector, eventService);
   }
 
+  protected override placedOrder$ = new BehaviorSubject<Order | undefined>(undefined);
 
   protected adyenPlaceOrderCommand: Command<any, PlaceOrderResponse> =
     this.commandService.create<any, PlaceOrderResponse>(
@@ -49,7 +50,7 @@ export class AdyenOrderService extends OrderService {
           switchMap(([userId, cartId]) =>
             this.placeOrderConnector.placeOrder(userId, cartId, AdyenOrderService.preparePlaceOrderRequest(paymentData, billingAddress)).pipe(
               tap((placeOrderResponse) => {
-                this.placedOrder$.next(placeOrderResponse.orderData);
+                this.placedOrder$.next(placeOrderResponse.orderData as Order);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber)
                 this.eventService.dispatch(
                   {
@@ -98,7 +99,7 @@ export class AdyenOrderService extends OrderService {
           switchMap(([userId, cartId]) =>
             this.additionalDetailsConnector.sendAdditionalDetails(userId, details).pipe(
               tap((placeOrderResponse) => {
-                this.placedOrder$.next(placeOrderResponse.orderData);
+                this.placedOrder$.next(placeOrderResponse.orderData as Order);
                 this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
                 this.eventService.dispatch(
                   {
@@ -162,7 +163,7 @@ export class AdyenOrderService extends OrderService {
   loadOrderDetails(orderCode: string): void {
     this.userIdService.takeUserId().subscribe(
       (userId) => {
-        return this.orderHistoryConnector.get(userId, orderCode).subscribe((order) => {
+        return this.orderHistoryConnector.get(userId, orderCode).subscribe((order: Order) => {
           this.placedOrder$.next(order);
         })
       }

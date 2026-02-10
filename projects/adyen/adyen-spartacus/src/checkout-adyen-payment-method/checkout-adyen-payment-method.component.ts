@@ -14,7 +14,7 @@ import {
 } from '@spartacus/core';
 import {BehaviorSubject, Subscription,} from 'rxjs';
 import {filter, map, switchMap, take,} from 'rxjs/operators';
-import {CheckoutStepService} from "@spartacus/checkout/base/components";
+import { CheckoutStepService } from "@spartacus/checkout/base/components";
 import {CheckoutAdyenConfigurationService} from "../service/checkout-adyen-configuration.service";
 import {AdyenConfigData} from "../core/models/occ.config.models";
 import {
@@ -89,11 +89,11 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.checkoutDeliveryAddressFacade
       .getDeliveryAddressState()
       .pipe(
-        filter((state) => !state.loading),
+        filter((state: any) => !state.loading),
         take(1),
-        map((state) => state.data)
+        map((state: any) => state.data)
       )
-      .subscribe((address) => {
+      .subscribe((address: Address | undefined) => {
         this.deliveryAddress = address;
       });
 
@@ -125,9 +125,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.activeCartFacade.getActiveCartId().pipe(
       filter(cartId => !!cartId),
       switchMap(cartId => this.userIdService.takeUserId().pipe(
-        switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(userId, cartId))
+        switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(userId, cartId as string))
       ))
-    ).subscribe(async config => {
+    ).subscribe(async (config: AdyenConfigData) => {
       if (config) {
         const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
         this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)
@@ -262,7 +262,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       let subscribeUser = this.userIdService.takeUserId().subscribe((userId) => {
         this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId})
 
-        let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId) => {
+        let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId: string) => {
           this.eventService.dispatch(
             new CheckoutAdyenConfigurationReloadEvent()
           );
