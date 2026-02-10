@@ -208,7 +208,7 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
 
   protected getAddressLoading(): Observable<boolean> {
     return this.checkoutDeliveryAddressFacade.getDeliveryAddressState().pipe(
-      map((state) => state.loading),
+      map((state: any) => state.loading),
       distinctUntilChanged()
     );
   }

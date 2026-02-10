@@ -4,9 +4,9 @@ import {RouterModule} from '@angular/router';
 import {CartValidationGuard} from '@spartacus/cart/base/core';
 import {CmsConfig, I18nModule, provideDefaultConfig} from '@spartacus/core';
 import {CardModule, SpinnerModule} from '@spartacus/storefront';
-import {AddressFormModule} from '@spartacus/user/profile/components';
+import { AddressFormModule } from '@spartacus/user/profile/components';
 import {AdyenCheckoutAdyenDeliveryAddressComponent} from "./adyen-checkout-adyen-delivery-address.component";
-import {CartNotEmptyGuard, CheckoutAuthGuard} from '@spartacus/checkout/base/components';
+import { CartNotEmptyGuard, CheckoutAuthGuard } from '@spartacus/checkout/base/components';
 
 
 @NgModule({

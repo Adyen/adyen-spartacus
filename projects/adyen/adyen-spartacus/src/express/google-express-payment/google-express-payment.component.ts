@@ -6,7 +6,7 @@ import {AdyenCheckout, AdyenCheckoutError, GooglePay} from '@adyen/adyen-web/aut
 import {AdyenExpressConfigData} from "../../core/models/occ.config.models";
 import {AdyenExpressOrderService} from "../../service/adyen-express-order.service";
 import {EventService, Product, RoutingService, UserIdService} from '@spartacus/core';
-import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
+import { ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade } from '@spartacus/cart/base/root';
 import {getAdyenExpressCheckoutConfig} from "../adyenCheckoutConfig.util";
 import {AdyenCartService} from "../../service/adyen-cart-service";
 import {ExpressPaymentBase} from "../base/express-payment-base";
