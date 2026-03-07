@@ -76,6 +76,8 @@ import { OpfFeatureModule } from './features/opf/opf-feature.module';
     WishListFeatureModule,
     CartQuickOrderFeatureModule,
     CartImportExportFeatureModule,
+    OrderFeatureModule,
+    CheckoutFeatureModule,
     PersonalizationFeatureModule,
     StoreFinderFeatureModule,
     AsmFeatureModule,
