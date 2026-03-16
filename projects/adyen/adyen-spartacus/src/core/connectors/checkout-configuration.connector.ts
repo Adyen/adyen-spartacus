@@ -11,6 +11,10 @@ export class CheckoutConfigurationConnector {
     return this.adapter.getCheckoutConfiguration(userId, cartId);
   }
 
+  getMyAccountCheckoutConfiguration(userId: string): Observable<AdyenConfigData> {
+    return this.adapter.getMyAccountCheckoutConfiguration(userId);
+  }
+
   getExpressCheckoutPDPConfiguration(productCode: string, userId: string): Observable<AdyenExpressConfigData> {
     return this.adapter.getExpressCheckoutPDPConfiguration(productCode, userId);
   }
