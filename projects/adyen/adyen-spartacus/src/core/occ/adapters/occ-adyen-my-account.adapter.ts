@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import {HttpClient} from '@angular/common/http';
 import { OccEndpointsService } from "@spartacus/core";
-import {AdyenRecurringDetail} from "../../models/occ.my-account.models";
+import {StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse} from "../../models/occ.my-account.models";
 import { Observable } from "rxjs";
 
 @Injectable()
@@ -12,8 +12,8 @@ export class OccAdyenMyAccountAdapter {
   ) {
   }
 
-  public getStoredCards(userId: string): Observable<AdyenRecurringDetail[]> {
-    return this.http.get<AdyenRecurringDetail[]>(this.getStoredCardsEndpoint(userId))
+  public getStoredCards(userId: string): Observable<StoredPaymentMethodResource[]> {
+    return this.http.get<StoredPaymentMethodResource[]>(this.getStoredCardsEndpoint(userId))
   }
 
   protected getStoredCardsEndpoint(userId: string) {
@@ -28,6 +28,10 @@ export class OccAdyenMyAccountAdapter {
     return this.http.delete(this.getRemoveStoredCardEndpoint(userId, cardId))
   }
 
+  public zeroAuth(requestBody: ZeroAuthRequestBody): Observable<ZeroAuthResponse> {
+    return this.http.post<ZeroAuthResponse>(this.getZeroAuthEndpoint(), requestBody);
+  }
+
   protected getRemoveStoredCardEndpoint(userId: string, cardId: string){
     return this.occEndpoints.buildUrl('users/${userId}/adyen/stored-cards/${cardId}', {
       urlParams:{
@@ -37,4 +41,7 @@ export class OccAdyenMyAccountAdapter {
     })
   }
 
+  protected getZeroAuthEndpoint() {
+    return this.occEndpoints.buildUrl('adyen/zero-auth', undefined, { baseSite: true });
+  }
 }

@@ -1,13 +1,13 @@
 import { Injectable } from "@angular/core";
 import {OccAdyenMyAccountAdapter} from "../occ/adapters/occ-adyen-my-account.adapter";
-import {AdyenRecurringDetail} from "../models/occ.my-account.models";
+import {StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse} from "../models/occ.my-account.models";
 import { Observable } from "rxjs";
 
 @Injectable()
 export class AdyenMyAccountConnector {
   constructor(protected adapter: OccAdyenMyAccountAdapter) {}
 
-  getStoredCards(userId: string): Observable<AdyenRecurringDetail[]>  {
+  getStoredCards(userId: string): Observable<StoredPaymentMethodResource[]>  {
     return this.adapter.getStoredCards(userId);
   }
 
@@ -15,4 +15,7 @@ export class AdyenMyAccountConnector {
     return this.adapter.removeStoredCard(userId, cardId);
   }
 
+  zeroAuth(requestBody: ZeroAuthRequestBody): Observable<ZeroAuthResponse> {
+    return this.adapter.zeroAuth(requestBody);
+  }
 }

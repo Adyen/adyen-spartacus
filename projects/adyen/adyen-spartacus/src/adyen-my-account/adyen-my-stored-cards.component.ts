@@ -1,8 +1,13 @@
-import {Component, OnDestroy, OnInit} from "@angular/core";
-import {AdyenMyAccountService} from "../service/adyen-my-account.service";
-import {BehaviorSubject, combineLatest, firstValueFrom, map, Observable, Subscription} from "rxjs";
-import {Card as UiCard} from "@spartacus/storefront";
-import {TranslationService} from "@spartacus/core";
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
+import { Card as UiCard } from "@spartacus/storefront";
+import { TranslationService, UserIdService } from "@spartacus/core";
+import { BehaviorSubject, combineLatest, EMPTY, firstValueFrom, map, Observable, Subscription } from "rxjs";
+import { catchError, switchMap, take } from "rxjs/operators";
+import { AdyenMyAccountService } from "../service/adyen-my-account.service";
+import { StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse } from "../core/models/occ.my-account.models";
+import { AdyenConfigData } from "../core/models/occ.config.models";
+import { AdditionalDetailsActions, CoreConfiguration, DropinConfiguration, SubmitActions, UIElement } from "@adyen/adyen-web";
+import { AdyenCheckout, AdyenCheckoutError, Dropin } from "@adyen/adyen-web/auto";
 
 interface CardWithId {
   card: UiCard;
@@ -16,74 +21,234 @@ interface CardWithId {
 })
 export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
   subscriptions$ = new Subscription();
+  @ViewChild('hook', { static: true }) hook: ElementRef;
+  dropIn: Dropin;
 
-  constructor(protected adyenMyAccountService: AdyenMyAccountService,
-              protected translationService: TranslationService) {
+  constructor(
+    protected adyenMyAccountService: AdyenMyAccountService,
+    protected translationService: TranslationService,
+    protected userIdService: UserIdService
+  ) {
     this.cardsWithId$ = new BehaviorSubject<CardWithId[]>([]);
     this.cardsLoading$ = new BehaviorSubject<boolean>(true);
+    this.dropinError$ = new BehaviorSubject<string | null>(null);
   }
 
-  cardsWithId$: BehaviorSubject<CardWithId[]>
-  cardsLoading$: BehaviorSubject<boolean>
+  cardsWithId$: BehaviorSubject<CardWithId[]>;
+  cardsLoading$: BehaviorSubject<boolean>;
+  dropinError$: BehaviorSubject<string | null>;
 
   ngOnInit(): void {
-    this.subscriptions$.add(this.createCards().subscribe(cards => {
-      this.cardsWithId$.next(cards);
-      this.cardsLoading$.next(false);
-    }))
+    this.reloadCards();
+    this.initializeDropIn();
   }
 
+  protected initializeDropIn(): void {
+    this.subscriptions$.add(
+      this.userIdService.takeUserId().pipe(
+        take(1),
+        switchMap((userId) => this.adyenMyAccountService.getCheckoutConfiguration(userId)),
+        map((config) => {
+          if (!config?.adyenClientKey?.trim()) {
+            throw new Error('Brak `adyenClientKey` w konfiguracji pobranej z backendu.');
+          }
+          return config;
+        }),
+        catchError((error) => {
+          console.error('Nie udało się pobrać konfiguracji Drop-in dla My Account.', error);
+          this.dropinError$.next('Brak konfiguracji Adyen z endpointa checkout-configuration.');
+          return EMPTY;
+        })
+      ).subscribe(async (config) => {
+        try {
+          const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
+          if (this.dropIn) {
+            this.dropIn.unmount();
+          }
+          this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)).mount(this.hook.nativeElement);
+          this.dropinError$.next(null);
+        } catch (error) {
+          console.error('Nie udało się zainicjalizować Adyen Drop-in dla My Account.', error);
+          this.dropinError$.next('Nie udało się uruchomić Adyen Drop-in. Sprawdź `adyenClientKey` i środowisko.');
+        }
+      })
+    );
+  }
 
   protected createCards(): Observable<CardWithId[]> {
     const storedCards$ = this.adyenMyAccountService.getStoredCards();
-    let translations$ = combineLatest([
+    const translations$ = combineLatest([
       this.translationService.translate('common.remove'),
     ]);
 
-
     return combineLatest([storedCards$, translations$]).pipe(
-      map(([recurringDetails, [removeTranslation]]) => recurringDetails.map(recurringDetail => {
-          return {
-            id: recurringDetail.recurringDetailReference,
-            card: {
-              title: recurringDetail.card.holderName,
-              actions: [{name: removeTranslation, event: 'delete'}],
-              paragraphs: [
-                {
-                  text: [
-                    '****' + recurringDetail.card.number,
-                    Number.parseInt(recurringDetail.card.expiryMonth) < 10 ? '0' + recurringDetail.card.expiryMonth + '/' + recurringDetail.card.expiryYear : ''
-                  ]
-                },
-                {
-                  text: [
-                    recurringDetail.billingAddress ? recurringDetail.billingAddress.street : '',
-                    recurringDetail.billingAddress ? recurringDetail.billingAddress.city : '',
-                    recurringDetail.billingAddress ? recurringDetail.billingAddress.country + '\xa0' + recurringDetail.billingAddress.postalCode : '',
-                  ]
-                }
-              ]
-            }
+      map(([storedPaymentMethods, [removeTranslation]]) =>
+        (storedPaymentMethods as StoredPaymentMethodResource[]).map(
+          (storedPaymentMethod: StoredPaymentMethodResource) => {
+            return {
+              id: storedPaymentMethod.id,
+              card: {
+                title: storedPaymentMethod.holderName || storedPaymentMethod.id || '',
+                actions: [{ name: removeTranslation, event: 'delete' }],
+                paragraphs: [
+                  {
+                    text: [
+                      '****' + storedPaymentMethod.lastFour,
+                      storedPaymentMethod.expiryMonth + '/' + storedPaymentMethod.expiryYear
+                    ]
+                  }
+                ]
+              }
+            };
           }
+        )
+      )
+    );
+  }
+
+  protected reloadCards(): void {
+    this.cardsLoading$.next(true);
+
+    this.subscriptions$.add(
+      this.createCards().subscribe(cards => {
+        this.cardsWithId$.next(cards);
+        this.cardsLoading$.next(false);
+      })
+    );
+  }
+
+  protected getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreConfiguration {
+    return {
+      paymentMethodsResponse: {
+        paymentMethods: adyenConfig.paymentMethods,
+        storedPaymentMethods: adyenConfig.storedPaymentMethodList,
+      },
+      locale: adyenConfig.shopperLocale,
+      countryCode: adyenConfig.countryCode,
+      environment: adyenConfig.environmentMode as CoreConfiguration['environment'],
+      clientKey: adyenConfig.adyenClientKey,
+      amount: { value: 0, currency: "USD"},
+      allowPaymentMethods: adyenConfig.allowedCards?.map(card => card.type) || [],
+      analytics: {
+        enabled: false,
+      },
+      onError: (error: AdyenCheckoutError) => this.handleDropInError(error),
+      onSubmit: (state: any, element: UIElement, actions: SubmitActions) => this.handleDropInSubmit(state?.data, actions),
+    };
+  }
+
+  protected castToEnvironment(env: string): CoreConfiguration['environment'] {
+    const validEnvironments: CoreConfiguration['environment'][] = ['test', 'live', 'live-us', 'live-au', 'live-apse', 'live-in'];
+    if (validEnvironments.includes(env as CoreConfiguration['environment'])) {
+      return env as CoreConfiguration['environment'];
+    }
+    throw new Error(`Invalid environment: ${env}`);
+  }
+
+  protected getDropinConfiguration(adyenConfig: AdyenConfigData): DropinConfiguration {
+    return {
+      paymentMethodsConfiguration: {
+        card: {
+          type: 'card',
+          hasHolderName: true,
+          holderNameRequired: adyenConfig.cardHolderNameRequired,        
+        },
+        paypal: {
+          intent: 'tokenize',
+        },
+      },
+    };
+  }
+  
+private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions | AdditionalDetailsActions) {
+    if (!response) {
+      actions.reject();
+      return;
+    }
+
+    const resultCode = (response.resultCode || '').trim();
+    const action = response.action ? { ...response.action } : undefined;
+
+    if (typeof action?.type === 'string' && action.type.toLowerCase() === 'sdk' && !action.paymentMethodType) {
+      action.paymentMethodType = 'paypal';
+    }
+
+    if (action) {
+      actions.resolve({
+        ...response,
+        action,
+      } as any);
+      return;
+    }
+
+    if (resultCode) {
+      actions.resolve(response as any);
+
+      if (resultCode.toLowerCase() === 'authorised') {
+        this.onSuccess();
+      }
+      return;
+    }
+
+    actions.reject();
+  }
+
+  protected handleDropInSubmit(data: any, actions: SubmitActions) {
+    const paymentMethod = data?.paymentMethod || {};
+    const paymentMethodType = (paymentMethod.type || '').toLowerCase();
+
+    const requestBody: ZeroAuthRequestBody = paymentMethodType === 'paypal'
+      ? {
+          paymentMethodDto: {
+            ...paymentMethod,
+            type: paymentMethod.type || 'paypal',
+          },
         }
-      ))
-    )
+      : {
+          paymentMethodDto: {
+            type: (paymentMethod.type).toUpperCase(),
+            encryptedCardNumber: paymentMethod.encryptedCardNumber || '',
+            encryptedExpiryMonth: paymentMethod.encryptedExpiryMonth || '',
+            encryptedExpiryYear: paymentMethod.encryptedExpiryYear || '',
+            encryptedSecurityCode: paymentMethod.encryptedSecurityCode || '',
+            holderName: paymentMethod.holderName || '',
+          },
+        };
+        
+    this.adyenMyAccountService.zeroAuth(requestBody).subscribe(
+      result => this.handleResponse(result, actions),
+    );
+  }
+
+  protected handleDropInError(error: AdyenCheckoutError): void {
+    console.error('Adyen drop-in error:', error);
   }
 
   async deleteCard(cardId: string): Promise<void> {
-    let object$ = this.adyenMyAccountService.removeStoredCard(cardId);
+    let objects = this.adyenMyAccountService.removeStoredCard(cardId);
     this.cardsLoading$.next(true);
-
-    await firstValueFrom(object$);
+    
+    await firstValueFrom(objects);
 
     this.subscriptions$.add(this.createCards().subscribe(cards => {
       this.cardsWithId$.next(cards);
       this.cardsLoading$.next(false);
-    }))
+    })
+    );
+    
+    await firstValueFrom(this.adyenMyAccountService.removeStoredCard(cardId));
+    this.reloadCards();
   }
 
   ngOnDestroy(): void {
+    if (this.dropIn) {
+      this.dropIn.unmount();
+    }
     this.subscriptions$.unsubscribe();
   }
 
+
+   onSuccess(): void {
+    window.location.reload();
+  }
 }
