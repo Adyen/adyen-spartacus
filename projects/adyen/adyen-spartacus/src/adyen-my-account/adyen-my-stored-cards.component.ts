@@ -235,8 +235,6 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
       this.cardsLoading$.next(false);
     })
     );
-    
-    await firstValueFrom(this.adyenMyAccountService.removeStoredCard(cardId));
     this.reloadCards();
   }
 
