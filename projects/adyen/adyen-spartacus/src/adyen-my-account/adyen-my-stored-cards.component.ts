@@ -1,8 +1,8 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
 import { Card as UiCard } from "@spartacus/storefront";
 import { TranslationService, UserIdService } from "@spartacus/core";
-import { BehaviorSubject, combineLatest, EMPTY, firstValueFrom, map, Observable, Subscription } from "rxjs";
-import { catchError, switchMap, take } from "rxjs/operators";
+import { BehaviorSubject, combineLatest, EMPTY, firstValueFrom, map, Observable, of, Subscription } from "rxjs";
+import { catchError, finalize, switchMap, take } from "rxjs/operators";
 import { AdyenMyAccountService } from "../service/adyen-my-account.service";
 import { StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse } from "../core/models/occ.my-account.models";
 import { AdyenConfigData } from "../core/models/occ.config.models";
@@ -23,6 +23,7 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
   subscriptions$ = new Subscription();
   @ViewChild('hook', { static: true }) hook: ElementRef;
   dropIn: Dropin;
+  latestDropInConfig: AdyenConfigData | null = null;
 
   constructor(
     protected adyenMyAccountService: AdyenMyAccountService,
@@ -50,29 +51,43 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
         switchMap((userId) => this.adyenMyAccountService.getCheckoutConfiguration(userId)),
         map((config) => {
           if (!config?.adyenClientKey?.trim()) {
-            throw new Error('Brak `adyenClientKey` w konfiguracji pobranej z backendu.');
+            throw new Error('Missing `adyenClientKey` in the backend configuration response.');
           }
           return config;
         }),
         catchError((error) => {
-          console.error('Nie udało się pobrać konfiguracji Drop-in dla My Account.', error);
-          this.dropinError$.next('Brak konfiguracji Adyen z endpointa checkout-configuration.');
+          console.error('Failed to load Drop-in configuration for My Account.', error);
+          this.dropinError$.next('Missing Adyen configuration from the checkout-configuration endpoint.');
           return EMPTY;
         })
       ).subscribe(async (config) => {
-        try {
-          const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-          if (this.dropIn) {
-            this.dropIn.unmount();
-          }
-          this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)).mount(this.hook.nativeElement);
-          this.dropinError$.next(null);
-        } catch (error) {
-          console.error('Nie udało się zainicjalizować Adyen Drop-in dla My Account.', error);
-          this.dropinError$.next('Nie udało się uruchomić Adyen Drop-in. Sprawdź `adyenClientKey` i środowisko.');
-        }
+        this.latestDropInConfig = config;
+        await this.mountDropIn(config);
       })
     );
+  }
+
+  protected async mountDropIn(config: AdyenConfigData): Promise<void> {
+    try {
+      const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
+      if (this.dropIn) {
+        this.dropIn.unmount();
+      }
+      this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)).mount(this.hook.nativeElement);
+      this.dropinError$.next(null);
+    } catch (error) {
+      console.error('Failed to initialize Adyen Drop-in for My Account.', error);
+      this.dropinError$.next('Failed to start Adyen Drop-in. Check `adyenClientKey` and environment settings.');
+    }
+  }
+
+  protected refreshDropIn(): void {
+    if (this.latestDropInConfig) {
+      void this.mountDropIn(this.latestDropInConfig);
+      return;
+    }
+
+    this.initializeDropIn();
   }
 
   protected createCards(): Observable<CardWithId[]> {
@@ -110,9 +125,16 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
     this.cardsLoading$.next(true);
 
     this.subscriptions$.add(
-      this.createCards().subscribe(cards => {
+      this.createCards().pipe(
+        take(1),
+        catchError((error) => {
+          console.error('Failed to reload stored cards.', error);
+          this.dropinError$.next('Failed to reload stored cards.');
+          return of([] as CardWithId[]);
+        }),
+        finalize(() => this.cardsLoading$.next(false))
+      ).subscribe(cards => {
         this.cardsWithId$.next(cards);
-        this.cardsLoading$.next(false);
       })
     );
   }
@@ -125,9 +147,9 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
       },
       locale: adyenConfig.shopperLocale,
       countryCode: adyenConfig.countryCode,
-      environment: adyenConfig.environmentMode as CoreConfiguration['environment'],
+      environment: this.castToEnvironment(adyenConfig.environmentMode),
       clientKey: adyenConfig.adyenClientKey,
-      amount: { value: 0, currency: "USD"},
+      amount: adyenConfig.amount,
       allowPaymentMethods: adyenConfig.allowedCards?.map(card => card.type) || [],
       analytics: {
         enabled: false,
@@ -151,7 +173,8 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
         card: {
           type: 'card',
           hasHolderName: true,
-          holderNameRequired: adyenConfig.cardHolderNameRequired,        
+          holderNameRequired: adyenConfig.cardHolderNameRequired,
+          enableStoreDetails: adyenConfig.showRememberTheseDetails,
         },
         paypal: {
           intent: 'tokenize',
@@ -217,6 +240,11 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
         
     this.adyenMyAccountService.zeroAuth(requestBody).subscribe(
       result => this.handleResponse(result, actions),
+      error => {
+        console.error('Failed to submit Zero Auth request.', error);
+        this.dropinError$.next('Failed to save payment details. Please try again.');
+        actions.reject();
+      }
     );
   }
 
@@ -225,16 +253,10 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
   }
 
   async deleteCard(cardId: string): Promise<void> {
-    let objects = this.adyenMyAccountService.removeStoredCard(cardId);
+    const objects = this.adyenMyAccountService.removeStoredCard(cardId);
     this.cardsLoading$.next(true);
     
     await firstValueFrom(objects);
-
-    this.subscriptions$.add(this.createCards().subscribe(cards => {
-      this.cardsWithId$.next(cards);
-      this.cardsLoading$.next(false);
-    })
-    );
     this.reloadCards();
   }
 
@@ -247,6 +269,7 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
 
 
    onSuccess(): void {
-    window.location.reload();
+    this.reloadCards();
+    this.refreshDropIn();
   }
 }
