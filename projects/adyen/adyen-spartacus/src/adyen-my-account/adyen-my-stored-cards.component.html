@@ -21,6 +21,13 @@
 
   </div>
 
+   <div class="payment-container">
+      <div #hook id="dropin" class="payment"></div>
+      @if (dropinError$ | async; as dropinError) {
+        <p class="text-danger">{{ dropinError }}</p>
+      }
+    </div>
+
   @if (cardsLoading$ | async) {
     <div class="adyen-spinner-overlay">
       <cx-spinner></cx-spinner>
