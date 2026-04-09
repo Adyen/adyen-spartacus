@@ -33,6 +33,7 @@
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
     "@google-pay/button-angular": "^3.1.0",
+    "bootstrap": "^4.6.2",
     "@spartacus/asm": "~2211.23.0-1",
     "@spartacus/assets": "~2211.23.0-1",
     "@spartacus/cart": "~2211.23.0-1",
