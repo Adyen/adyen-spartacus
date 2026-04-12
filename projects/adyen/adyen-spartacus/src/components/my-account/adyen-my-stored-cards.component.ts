@@ -5,7 +5,7 @@ import { BehaviorSubject, combineLatest, EMPTY, firstValueFrom, map, Observable,
 import { catchError, finalize, switchMap, take } from "rxjs/operators";
 import { AdyenMyAccountService } from "../service/adyen-my-account.service";
 import { StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse } from "../core/models/occ.my-account.models";
-import { AdyenConfigData } from "../core/models/occ.config.models";
+import { AdyenConfigData } from "../models/occ.config.models";
 import { AdditionalDetailsActions, CoreConfiguration, DropinConfiguration, SubmitActions, UIElement } from "@adyen/adyen-web";
 import { AdyenCheckout, AdyenCheckoutError, Dropin } from "@adyen/adyen-web/auto";
 
@@ -183,7 +183,7 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
       },
     };
   }
-  
+
 private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions | AdditionalDetailsActions) {
     if (!response) {
       actions.reject();
@@ -238,7 +238,7 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
             holderName: paymentMethod.holderName || '',
           },
         };
-        
+
     this.adyenMyAccountService.zeroAuth(requestBody).subscribe(
       result => this.handleResponse(result, actions),
       error => {
@@ -256,7 +256,7 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
   async deleteCard(cardId: string): Promise<void> {
     const objects = this.adyenMyAccountService.removeStoredCard(cardId);
     this.cardsLoading$.next(true);
-    
+
     await firstValueFrom(objects);
     this.reloadCards();
   }

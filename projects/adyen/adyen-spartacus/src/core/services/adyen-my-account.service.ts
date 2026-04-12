@@ -1,14 +1,14 @@
 import { Injectable } from "@angular/core";
-import {AdyenBaseService} from "./adyen-base.service";
+import {AdyenBaseService} from "../../service/adyen-base.service";
 import { ActiveCartFacade } from "@spartacus/cart/base/root";
 import { UserIdService } from "@spartacus/core";
-import { Observable, switchMap } from "rxjs";
-import {AdyenMyAccountConnector} from "../core/connectors/adyen-my-account.connector";
-import {StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse} from "../core/models/occ.my-account.models";
-import { CheckoutConfigurationConnector } from "../core/connectors/checkout-configuration.connector";
-import { AdyenConfigData } from "../core/models/occ.config.models";
-import { AdditionalDetailsConnector } from "../core/connectors/additional-details.connector";
-import { PlaceOrderResponse } from "../core/models/occ.order.models";
+import {Observable, switchMap } from "rxjs";
+import {AdyenMyAccountConnector} from "../connectors/adyen-my-account.connector";
+import {StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse} from "../models/occ.my-account.models";
+import { CheckoutConfigurationConnector } from "../connectors/checkout-configuration.connector";
+import { AdyenConfigData } from "../models/occ.config.models";
+import { AdditionalDetailsConnector } from "../connectors/additional-details.connector";
+import { PlaceOrderResponse } from "../models/occ.order.models";
 
 @Injectable()
 export class AdyenMyAccountService extends AdyenBaseService{
@@ -22,14 +22,14 @@ export class AdyenMyAccountService extends AdyenBaseService{
 
 getStoredCards(): Observable<StoredPaymentMethodResource[]> {
   return this.checkoutPreconditions().pipe(
-    switchMap(([userId]) => 
+    switchMap(([userId]) =>
       this.adyenMyAccountConnector.getStoredCards(userId))
   )
 }
 
   removeStoredCard(cardId: string): Observable<Object> {
 return this.checkoutPreconditions().pipe(
-    switchMap(([userId]) => 
+    switchMap(([userId]) =>
       this.adyenMyAccountConnector.removeStoredCard(userId, cardId))
   )  }
 
