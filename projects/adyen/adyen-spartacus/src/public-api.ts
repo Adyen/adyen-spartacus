@@ -2,6 +2,8 @@
  * Public API Surface of adyen-payments
  */
 
+export * from './components/my-account/adyen-my-account.module';
+
 export * from './adyen-payments.module';
 export * from './root/checkout-adyen-root.module';
 export * from './checkout-adyen-payment-method/checkout-adyen-payment-method.component';

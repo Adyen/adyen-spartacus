@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
-import {AdyenBaseService} from "./adyen-base.service";
+import {AdyenBaseService} from "../../service/adyen-base.service";
 import { ActiveCartFacade } from "@spartacus/cart/base/root";
 import { UserIdService } from "@spartacus/core";
 import {Observable, switchMap } from "rxjs";
-import {AdyenMyAccountConnector} from "../core/connectors/adyen-my-account.connector";
-import {AdyenRecurringDetail} from "../core/models/occ.my-account.models";
+import {AdyenMyAccountConnector} from "../connectors/adyen-my-account.connector";
+import {AdyenRecurringDetail} from "../models/occ.my-account.models";
 
 @Injectable()
 export class AdyenMyAccountService extends AdyenBaseService{

@@ -3,9 +3,9 @@ import {AuthGuard, CmsConfig, I18nModule, provideDefaultConfig} from "@spartacus
 import {AdyenMyStoredCardsComponent} from "./adyen-my-stored-cards.component";
 import {CommonModule} from "@angular/common";
 import { RouterModule } from "@angular/router";
-import {AdyenMyAccountService} from "../service/adyen-my-account.service";
-import {AdyenMyAccountConnector} from "../core/connectors/adyen-my-account.connector";
-import {OccAdyenMyAccountAdapter} from "../core/occ/adapters/occ-adyen-my-account.adapter";
+import {AdyenMyAccountService} from "../../core/services/adyen-my-account.service";
+import {AdyenMyAccountConnector} from "../../core/connectors/adyen-my-account.connector";
+import {OccAdyenMyAccountAdapter} from "../../core/occ/adapters/occ-adyen-my-account.adapter";
 import { CardModule, SpinnerModule } from "@spartacus/storefront";
 
 @NgModule({

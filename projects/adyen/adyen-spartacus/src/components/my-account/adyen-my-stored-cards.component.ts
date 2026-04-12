@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from "@angular/core";
-import {AdyenMyAccountService} from "../service/adyen-my-account.service";
+import {AdyenMyAccountService} from "../../core/services/adyen-my-account.service";
 import {BehaviorSubject, combineLatest, firstValueFrom, map, Observable, Subscription} from "rxjs";
 import {Card as UiCard} from "@spartacus/storefront";
 import {TranslationService} from "@spartacus/core";
