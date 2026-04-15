@@ -4,7 +4,7 @@ import { UserAddressService, TranslationService, GlobalMessageService, Address }
 import { ActiveCartFacade } from '@spartacus/cart/base/root';
 import { CheckoutDeliveryAddressFacade } from '@spartacus/checkout/base/root';
 import { CheckoutStepService } from '@spartacus/checkout/base/components';
-import { AdyenAddressService } from '../../service/adyen-address.service';
+import { AdyenAddressService } from '../../../core/services/adyen-address.service';
 import { of, BehaviorSubject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { Pipe, PipeTransform } from '@angular/core';

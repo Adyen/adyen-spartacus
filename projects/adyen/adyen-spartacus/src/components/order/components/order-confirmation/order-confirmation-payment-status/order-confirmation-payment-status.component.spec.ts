@@ -1,7 +1,7 @@
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { OrderConfirmationPaymentStatusComponent } from './order-confirmation-payment-status.component';
-import { OrderPaymentStatusService } from './service/order-payment-status.service';
-import { AdyenOrderService } from '../../../../service/adyen-order.service';
+import { OrderPaymentStatusService } from '../../../../../core/services/order-payment-status.service';
+import { AdyenOrderService } from '../../../../../core/services/adyen-order.service';
 import { BehaviorSubject, of, timer } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 

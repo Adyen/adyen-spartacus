@@ -8,9 +8,9 @@ import {OrderConfirmationStatusSuccess} from "./statuses/success/order-confirmat
 import {OrderConfirmationStatusFailed} from "./statuses/failed/order-confirmation-status-failed";
 import {OrderConfirmationStatusRejected} from "./statuses/rejected/order-confirmation-status-rejected";
 import {OrderConfirmationStatusTimeout} from "./statuses/timeout/order-confirmation-status-timeout";
-import {OccOrderStatusAdapter} from "./occ/occ-order-status.adapter";
-import {OrderPaymentStatusConnector} from "./connector/order-payment-status.connector";
-import {OrderPaymentStatusService} from "./service/order-payment-status.service";
+import {OccOrderStatusAdapter} from "../../../../../core/occ/occ-order-status.adapter";
+import {OrderPaymentStatusConnector} from "../../../../../core/connectors/order-payment-status.connector";
+import {OrderPaymentStatusService} from "../../../../../core/services/order-payment-status.service";
 
 @NgModule({
   imports: [CommonModule,

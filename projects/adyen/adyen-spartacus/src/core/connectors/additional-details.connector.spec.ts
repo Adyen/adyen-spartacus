@@ -31,7 +31,7 @@ describe('AdditionalDetailsConnector', () => {
     const cartId = 'testCart';
     const orderData: PlaceOrderRequest = {
       paymentRequest: {}
-    };
+    } as any;
     const response: PlaceOrderResponse = {
       success: true,
       executeAction: false,
