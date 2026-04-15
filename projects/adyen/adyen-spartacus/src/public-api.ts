@@ -3,6 +3,10 @@
  */
 
 export * from './components/my-account/adyen-my-account.module';
+export * from './checkout/adyen-checkout.module';
+export * from './express/adyen-express-checkout.module';
+export * from './data-collection/adyen-data-collection.module';
+export * from './data-collection/adyen-data-collection.component';
 
 export * from './adyen-payments.module';
 export * from './root/checkout-adyen-root.module';
