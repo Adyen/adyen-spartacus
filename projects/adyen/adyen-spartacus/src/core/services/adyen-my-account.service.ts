@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import {AdyenBaseService} from "../../service/adyen-base.service";
+import {AdyenBaseService} from "./adyen-base.service";
 import { ActiveCartFacade } from "@spartacus/cart/base/root";
 import { UserIdService } from "@spartacus/core";
 import {Observable, switchMap } from "rxjs";
