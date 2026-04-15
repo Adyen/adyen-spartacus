@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { CheckoutAdyenConfigurationService } from './checkout-adyen-configuration.service';
 import { UserIdService, QueryService, LoginEvent, LogoutEvent, QueryState } from '@spartacus/core';
-import { CheckoutConfigurationConnector } from '../core/connectors/checkout-configuration.connector';
+import { CheckoutConfigurationConnector } from '../connectors/checkout-configuration.connector';
 import { CheckoutAdyenConfigurationReloadEvent } from '../events/checkout-adyen.events';
-import { AdyenConfigData } from '../core/models/occ.config.models';
+import { AdyenConfigData } from '../models/occ.config.models';
 import { ActiveCartFacade } from '@spartacus/cart/base/root';
 
 describe('CheckoutAdyenConfigurationService', () => {
@@ -83,7 +83,7 @@ describe('CheckoutAdyenConfigurationService', () => {
       cardHolderNameRequired: true,
       sepaDirectDebit: false,
       amountDecimal: 1000
-    };
+    } as any;
 
     checkoutConfigurationConnector.getCheckoutConfiguration.and.returnValue(of(mockConfigData));
 

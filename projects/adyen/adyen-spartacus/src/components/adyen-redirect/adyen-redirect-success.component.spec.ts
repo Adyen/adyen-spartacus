@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { AdyenRedirectSuccessComponent } from './adyen-redirect-success.component';
 import { RoutingService } from '@spartacus/core';
-import { AdyenOrderService } from '../service/adyen-order.service';
+import { AdyenOrderService } from '../../core/services/adyen-order.service';
 
 describe('AdyenRedirectSuccessComponent', () => {
   let component: AdyenRedirectSuccessComponent;

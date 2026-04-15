@@ -4,8 +4,8 @@ import { AdyenOrderService } from './adyen-order.service';
 import { UserIdService, CommandService, GlobalMessageService, GlobalMessageType, TranslationService, EventService, Address } from '@spartacus/core';
 import { OrderConnector, OrderHistoryConnector } from '@spartacus/order/core';
 import { ActiveCartFacade } from '@spartacus/cart/base/root';
-import { AdyenOrderConnector } from '../core/connectors/adyen-order-connector.service';
-import { AdditionalDetailsConnector } from '../core/connectors/additional-details.connector';
+import { AdyenOrderConnector } from '../connectors/adyen-order-connector.service';
+import { AdditionalDetailsConnector } from '../connectors/additional-details.connector';
 import { HttpErrorResponse } from '@angular/common/http';
 
 describe('AdyenOrderService', () => {

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { OrderPaymentStatusService } from './order-payment-status.service';
 import { UserIdService, QueryService } from '@spartacus/core';
-import { OrderPaymentStatusConnector } from '../connector/order-payment-status.connector';
+import { OrderPaymentStatusConnector } from '../connectors/order-payment-status.connector';
 
 describe('OrderPaymentStatusService', () => {
   let service: OrderPaymentStatusService;

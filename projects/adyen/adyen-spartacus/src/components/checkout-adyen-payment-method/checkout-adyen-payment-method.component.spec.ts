@@ -18,13 +18,13 @@ import {
   QueryState,
 } from '@spartacus/core';
 import { CheckoutStepService } from '@spartacus/checkout/base/components';
-import { CheckoutAdyenConfigurationService } from '../service/checkout-adyen-configuration.service';
-import { AdyenOrderService } from '../service/adyen-order.service';
-import { CheckoutAdyenConfigurationReloadEvent } from '../events/checkout-adyen.events';
+import { CheckoutAdyenConfigurationService } from '../../core/services/checkout-adyen-configuration.service';
+import { AdyenOrderService } from '../../core/services/adyen-order.service';
+import { CheckoutAdyenConfigurationReloadEvent } from '../../core/events/checkout-adyen.events';
 import { Store, StoreModule } from '@ngrx/store';
-import { AdyenAddressService } from '../service/adyen-address.service';
+import { AdyenAddressService } from '../../core/services/adyen-address.service';
 import { map } from 'rxjs/operators';
-import { AdyenConfigData } from '../core/models/occ.config.models';
+import { AdyenConfigData } from '../../core/models/occ.config.models';
 import { Pipe, PipeTransform } from '@angular/core';
 import { Component } from '@angular/core';
 
@@ -64,7 +64,7 @@ describe('CheckoutAdyenPaymentMethodComponent', () => {
   let mockTranslateService: any;
 
 
-  const mockAdyenConfigData: AdyenConfigData = {
+  const mockAdyenConfigData: any = {
     paymentMethods: [],
     connectedTerminalList: [],
     storedPaymentMethodList: [],

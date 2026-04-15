@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, OnDestroy, OnInit} from "@angular/core";
 import {BehaviorSubject, Subscription, timer} from 'rxjs';
-import {OrderPaymentStatusService} from "./service/order-payment-status.service";
+import {OrderPaymentStatusService} from "../../../../../core/services/order-payment-status.service";
 import {AdyenExpressOrderService} from "../../../../../core/services/adyen-express-order.service";
 
 @Component({

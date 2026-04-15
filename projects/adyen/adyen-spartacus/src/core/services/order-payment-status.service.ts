@@ -1,6 +1,6 @@
 import {Injectable} from "@angular/core";
 import {QueryService, UserIdService} from "@spartacus/core";
-import {OrderPaymentStatusConnector} from "../connector/order-payment-status.connector";
+import {OrderPaymentStatusConnector} from "../connectors/order-payment-status.connector";
 import {Observable, Subject} from "rxjs";
 
 @Injectable()

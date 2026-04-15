@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { GoogleExpressPaymentComponent } from './google-express-payment.component';
-import { CheckoutAdyenConfigurationService } from '../../service/checkout-adyen-configuration.service';
-import { AdyenExpressOrderService } from '../../service/adyen-express-order.service';
+import { CheckoutAdyenConfigurationService } from '../../../core/services/checkout-adyen-configuration.service';
+import { AdyenExpressOrderService } from '../../../core/services/adyen-express-order.service';
 import { RoutingService,   QueryState } from '@spartacus/core';
-import { AdyenConfigData } from '../../core/models/occ.config.models';
+import { AdyenConfigData } from '../../../core/models/occ.config.models';
 
 describe('GoogleExpressPaymentComponent', () => {
   let component: GoogleExpressPaymentComponent;
@@ -13,7 +13,7 @@ describe('GoogleExpressPaymentComponent', () => {
   let mockAdyenExpressOrderService: jasmine.SpyObj<AdyenExpressOrderService>;
   let mockRoutingService: jasmine.SpyObj<RoutingService>;
 
-  const mockAdyenConfigData: AdyenConfigData = {
+  const mockAdyenConfigData: any = {
     paymentMethods: [],
     connectedTerminalList: [],
     storedPaymentMethodList: [],
