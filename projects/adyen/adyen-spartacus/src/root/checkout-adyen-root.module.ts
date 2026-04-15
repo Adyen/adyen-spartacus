@@ -11,8 +11,8 @@ import {
   provideDefaultConfig,
   provideDefaultConfigFactory,
 } from '@spartacus/core';
-import {adyenCheckoutRoutingConfig} from "../config/adyen-checkout-routing-config";
-import {adyenCheckoutConfig} from "../config/adyen-checkout-config";
+import {adyenCheckoutRoutingConfig} from "../core/config/adyen-checkout-routing-config";
+import {adyenCheckoutConfig} from "../core/config/adyen-checkout-config";
 import {CHECKOUT_CORE_FEATURE, CHECKOUT_FEATURE, CheckoutEventModule} from "@spartacus/checkout/base/root";
 //import {interceptors} from "@spartacus/checkout/base/root/http-interceptors";
 
