@@ -3,9 +3,9 @@ import { Card as UiCard } from "@spartacus/storefront";
 import { TranslationService, UserIdService } from "@spartacus/core";
 import { BehaviorSubject, combineLatest, EMPTY, firstValueFrom, map, Observable, of, Subscription } from "rxjs";
 import { catchError, finalize, switchMap, take } from "rxjs/operators";
-import { AdyenMyAccountService } from "../service/adyen-my-account.service";
-import { StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse } from "../core/models/occ.my-account.models";
-import { AdyenConfigData } from "../models/occ.config.models";
+import { AdyenMyAccountService } from "../../core/services/adyen-my-account.service";
+import { StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse } from "../../core/models/occ.my-account.models";
+import { AdyenConfigData } from "../../core/models/occ.config.models";
 import { AdditionalDetailsActions, CoreConfiguration, DropinConfiguration, SubmitActions, UIElement } from "@adyen/adyen-web";
 import { AdyenCheckout, AdyenCheckoutError, Dropin } from "@adyen/adyen-web/auto";
 
