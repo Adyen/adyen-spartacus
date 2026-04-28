@@ -14,7 +14,6 @@ import {
 import {adyenCheckoutRoutingConfig} from "../core/config/adyen-checkout-routing-config";
 import {adyenCheckoutConfig} from "../core/config/adyen-checkout-config";
 import {CHECKOUT_CORE_FEATURE, CHECKOUT_FEATURE, CheckoutEventModule} from "@spartacus/checkout/base/root";
-//import {interceptors} from "@spartacus/checkout/base/root/http-interceptors";
 
 export const CHECKOUT_BASE_CMS_COMPONENTS: string[] = [
   'CheckoutOrchestrator',

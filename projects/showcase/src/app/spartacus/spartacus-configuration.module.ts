@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { translationChunksConfig, translationsEn } from "@spartacus/assets";
 import { 
-  AuthConfig, // [!] Import AuthConfig
+  AuthConfig, 
   FeaturesConfig, 
   I18nConfig, 
   OccConfig, 
@@ -18,7 +18,6 @@ import { defaultCmsContentProviders, layoutConfig, mediaConfig } from "@spartacu
     provideConfig(mediaConfig), 
     ...defaultCmsContentProviders, 
     
-    // 1. OCC Configuration
     provideConfig(<OccConfig>{
       backend: {
         occ: {
@@ -27,7 +26,6 @@ import { defaultCmsContentProviders, layoutConfig, mediaConfig } from "@spartacu
       },
     }), 
 
-    // 2. Authentication Configuration (The Fix)
     provideConfig(<AuthConfig>{
       authentication: {
         client_id: 'mobile_android', 
@@ -52,12 +50,10 @@ import { defaultCmsContentProviders, layoutConfig, mediaConfig } from "@spartacu
       }
     }),
 
-    // 3. Context Configuration
     provideConfig(<SiteContextConfig>{
       context: {},
     }), 
     
-    // 4. I18n Configuration
     provideConfig(<I18nConfig>{
       i18n: {
         resources: { en: translationsEn },
