@@ -1,12 +1,12 @@
 # SAP Composable Storefront - Adyen Payments Library
 
-This repository contains an Angular library that integrates Adyen payments into the SAP Composable Storefront, specifically designed for the Spartacus framework. 
+This repository contains an Angular library that integrates Adyen payments into the SAP Composable Storefront, specifically designed for the Spartacus framework.
 
 Latest stable version: https://github.com/Adyen/adyen-spartacus/releases
 
 ## Requirements
 
-- Angular version: `17.3.0`
+- Angular version: 21.1.0
 - Spartacus version: `2211.23.0-1`
 
 ## Installation
@@ -18,20 +18,22 @@ Before installing the Adyen Payments library, ensure that you have a local npm r
 ### Build and Publish the Library
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/Adyen/adyen-spartacus/
    cd adyen-spartacus/projects/adyen-payments
    ```
 2. **Build the package**:
 
-    ```bash
-    npm run build
-    ```
+   ```bash
+   npm run build
+   ```
 3. **Publish the package to the local npm registry**:
 
-    ```bash
-    npm --registry http://localhost:4873 publish --access public
-    ```
+   ```bash
+   npm --registry http://localhost:4873 publish --access public
+   ```
+
 ### Installation on SAP Composable Storefront
 
 **Install the Adyen Payments library**:
@@ -46,8 +48,10 @@ If your Spartacus storefront already has modifications, you might need to manual
 Refer to the templates provided in the schematics directory of the Adyen Payments library for the correct configurations.
 
 ## Known Issues
+
 This is an alpha release and may contain bugs. Please report any issues you encounter.
 The library has been tested with the specified versions of Angular and Spartacus only. Compatibility with other versions is not guaranteed.
 
 ## License
+
 This project is licensed under the MIT License - see the LICENSE file for details.

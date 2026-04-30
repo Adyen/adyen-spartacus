@@ -1,7 +1,7 @@
-import {PaymentMethod} from "@adyen/adyen-web";
+import {RawPaymentMethod} from "@adyen/adyen-web";
 
 export interface AdyenConfigData {
-  paymentMethods: PaymentMethod[];
+  paymentMethods: RawPaymentMethod[];
   connectedTerminalList: string[];
   storedPaymentMethodList: StoredPaymentMethodData[];
   issuerLists: Map<string, string>;
@@ -30,6 +30,7 @@ export interface AdyenConfigData {
   shopperEmail: string;
   clickToPayLocale: string;
   expressPaymentConfig: ExpressPaymentConfig;
+  installmentOptions?: AdyenInstallmentOptions;
 }
 
 export interface AdyenExpressConfigData {
@@ -90,4 +91,16 @@ interface AllowedCard {
 export interface AdyenDataCollectionConfig {
   checkoutShopperHost: string,
   dataCollectionEnabled: boolean
+}
+
+interface AdyenInstallmentOptions {
+    card?: {
+        values?: number[];
+        plans?: string[];
+    };
+    showInstallmentAmounts?: {
+        values?: number[];
+        plans?: string[];
+    };
+    [key: string]: any;
 }

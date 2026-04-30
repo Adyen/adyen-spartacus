@@ -1,26 +1,26 @@
-export interface AdyenRecurringDetail {
-  card: Card
-  billingAddress: Address
-  recurringDetailReference: string
+export interface StoredPaymentMethodResource {
+  holderName: string;
+  expiryMonth: string;
+  expiryYear: string;
+  number: string;
+  lastFour: string;
+  id: string
   variant: string
 }
 
-export interface Card {
-  cvc: string;
-  expiryMonth: string;
-  expiryYear: string;
-  holderName: string;
-  issueNumber: string;
-  number: string;
-  startMonth: string;
-  startYear: string;
+export interface ZeroAuthRequestBody {
+  paymentMethodDto: {
+    type: string;
+    encryptedCardNumber: string;
+    encryptedExpiryMonth: string;
+    encryptedExpiryYear: string;
+    encryptedSecurityCode: string;
+    holderName: string;
+  };
 }
 
-export interface Address {
-  city: string;
-  country: string;
-  houseNumberOrName: string;
-  postalCode: string;
-  stateOrProvince: string;
-  street: string;
+export interface ZeroAuthResponse {
+  resultCode?: string;
+  action?: any;
+  [key: string]: any;
 }

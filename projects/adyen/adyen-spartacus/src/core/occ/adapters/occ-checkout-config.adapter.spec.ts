@@ -64,7 +64,7 @@ describe('OccCheckoutConfigAdapter', () => {
       countryCode: 'US',
       cardHolderNameRequired: true,
       sepaDirectDebit: false
-    };
+    } as any;
 
     occEndpointsService.buildUrl.and.returnValue(`users/${userId}/carts/${cartId}/adyen/checkout-configuration`);
 

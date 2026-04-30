@@ -18,6 +18,10 @@ export class OccCheckoutConfigAdapter {
     return this.http.get<AdyenConfigData>(this.getCheckoutConfigurationEndpoint(userId, cartId));
   }
 
+  public getMyAccountCheckoutConfiguration(userId: string): Observable<AdyenConfigData> {
+    return this.http.get<AdyenConfigData>(this.getMyAccountCheckoutConfigurationEndpoint(userId));
+  }
+
   protected getCheckoutConfigurationEndpoint(
     userId: string,
     cartId: string,
@@ -26,6 +30,16 @@ export class OccCheckoutConfigAdapter {
       urlParams: {
         userId,
         cartId,
+      }
+    })
+  }
+
+  protected getMyAccountCheckoutConfigurationEndpoint(
+    userId: string,
+  ): string {
+    return this.occEndpoints.buildUrl('users/${userId}/adyen/checkout-configuration', {
+      urlParams: {
+        userId,
       }
     })
   }
