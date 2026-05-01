@@ -2,6 +2,7 @@ import {NgModule} from '@angular/core';
 import {checkoutTranslationChunksConfig, checkoutTranslationsEn} from "@spartacus/checkout/base/assets";
 import {CHECKOUT_CORE_FEATURE, CHECKOUT_FEATURE, CheckoutStepType} from "@spartacus/checkout/base/root";
 import {CmsConfig, I18nConfig, provideConfig,provideDefaultConfigFactory} from "@spartacus/core";
+import {AdyenPaymentsModule} from "@adyen/adyen-spartacus";
 import {CART_BASE_FEATURE} from '@spartacus/cart/base/root';
 
 
@@ -48,7 +49,9 @@ export const translationOverwrites = {
 
 @NgModule({
   declarations: [],
-  imports: [],
+  imports: [
+    AdyenPaymentsModule
+  ],
   providers: [
     provideDefaultConfigFactory(adyenCheckoutComponentsConfig),
     provideConfig(<CmsConfig>{
