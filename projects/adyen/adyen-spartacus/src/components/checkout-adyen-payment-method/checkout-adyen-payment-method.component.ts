@@ -25,10 +25,11 @@ import {
   SubmitActions,
   UIElement
 } from "@adyen/adyen-web";
-import {BillingAddress, PlaceOrderResponse} from "../../core/models/occ.order.models";
+import {BillingAddress, PlaceOrderResponse, PaymentState} from "../../core/models/occ.order.models";
 import {CheckoutAdyenConfigurationReloadEvent} from "../../core/events/checkout-adyen.events";
 import {AdyenCheckout, AdyenCheckoutError, Dropin} from '@adyen/adyen-web/auto'
 import {AdyenExpressOrderService} from "../../core/services/adyen-express-order.service";
+import {AdyenPartialPaymentService} from "../../core/services/adyen-partial-payment.service";
 
 @Component({
   selector: 'cx-payment-method',
@@ -52,6 +53,15 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   paymentDetails?: PaymentDetails;
   billingAddress?: BillingAddress = undefined;
 
+  // Partial payment state
+  paymentState: PaymentState = {
+    errorCode: '',
+    errorFieldCodes: [],
+    orderNumber: '',
+    partialPaymentId: undefined,
+    redirectToNextStep: false
+  };
+  partialPaymentIdRef?: string;
 
   get backBtnText() {
     return this.checkoutStepService.getBackBntText(this.activatedRoute);
@@ -70,6 +80,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected eventService: EventService,
     private userIdService: UserIdService,
     protected multiCartFacade: MultiCartFacade,
+    protected partialPaymentService: AdyenPartialPaymentService,
   ) {
   }
 
@@ -118,6 +129,18 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       })
     );
 
+    // Subscribe to partial payment state changes
+    this.subscriptions.add(
+      this.partialPaymentService.getPaymentState().subscribe(state => {
+        this.paymentState = state;
+        this.partialPaymentIdRef = state.partialPaymentId;
+
+        // Redirect to next step if payment is completed
+        if (state.redirectToNextStep) {
+          this.onSuccess();
+        }
+      })
+    );
   }
 
   protected handleConfigurationReload(event: CheckoutAdyenConfigurationReloadEvent): void {
@@ -157,6 +180,10 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       onError: (error: AdyenCheckoutError) => this.handleError(error),
       onSubmit: (state: any, element: UIElement, actions: SubmitActions) => this.handlePayment(state.data,actions),
       onAdditionalDetails: (state: any, element: UIElement, actions: AdditionalDetailsActions ) => this.handleAdditionalDetails(state.data,actions),
+      onBalanceCheck: async (resolve: any, reject: any, data: any) =>
+        this.partialPaymentService.handleBalanceCheck(resolve, reject, {...data, amount: adyenConfig.amount}),
+      onOrderRequest: async (resolve: any, reject: any, data: any) =>
+        this.partialPaymentService.handleOrderRequest(resolve, reject, {...data, amount: adyenConfig.amount, shopperReference: adyenConfig.shopperEmail}),
       onActionHandled(data: ActionHandledReturnObject) {
         console.log("onActionHandled", data);
       }
@@ -186,10 +213,19 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
           },
           installmentOptions: adyenConfig.installmentOptions ? adyenConfig.installmentOptions : {} ,
         },
+        giftcard: {
+          // Gift card configuration
+        },
         paypal: {
           intent: "authorize"
         }
       },
+      showPayButton: true,
+      showRemovePaymentMethodButton: true,
+      //@ts-ignore
+      isPartialPayment: true,
+      //@ts-ignore
+      showRemainingAmount: true
     }
   }
 
@@ -219,7 +255,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handlePayment(paymentData: any, actions: SubmitActions) {
-    this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress).subscribe(
+    this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress, this.partialPaymentIdRef).subscribe(
       result => {
         this.handleResponse(result, actions);
       }
@@ -240,10 +276,26 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         if (response.executeAction === true && !!response.paymentsAction) {
           this.dropIn.handleAction(response.paymentsAction)
         } else if (!!response.paymentsResponse) {
-          actions.resolve({
-            resultCode: response.paymentsResponse.resultCode
-          });
-          this.onSuccess();
+          // Check if this is a partial payment with remaining amount
+          if (response.paymentsResponse.order &&
+            response.paymentsResponse.order.remainingAmount &&
+            response.paymentsResponse.order.remainingAmount.value > 0) {
+
+            // Partial payment completed, inform DropIn to continue
+            actions.resolve(response.paymentsResponse);
+
+          } else {
+            // Complete payment (no remaining amount)
+            actions.resolve({
+              resultCode: response.paymentsResponse.resultCode || 'Authorised'
+            });
+
+            // Only redirect if payment is fully completed
+            if (response.orderNumber) {
+              this.partialPaymentService.resetPaymentState();
+              this.onSuccess();
+            }
+          }
         } else if (!!response.paymentDetailsResponse) {
           actions.resolve({
             resultCode: response.paymentDetailsResponse.resultCode

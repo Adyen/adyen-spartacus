@@ -31,6 +31,30 @@ export const paymentErrors = {
           "formentry": {
             "invalid": "Please check your payment details are correct or provide a different payment method."
           }
+        },
+        "giftcard": {
+          "balance": {
+            "insufficient": "Gift card has insufficient balance for this transaction.",
+            "invalid": "Invalid gift card number or PIN. Please check your details.",
+            "expired": "This gift card has expired.",
+            "not": {
+              "found": "Gift card not found. Please check the card number."
+            }
+          }
+        },
+        "partial": {
+          "payment": {
+            "failed": "Partial payment processing failed. Please try again.",
+            "invalid": {
+              "amount": "Invalid payment amount for partial payment.",
+              "method": "Invalid payment method for partial payment."
+            },
+            "order": {
+              "creation": {
+                "failed": "Failed to create partial payment order. Please try again."
+              }
+            }
+          }
         }
       }
     }
