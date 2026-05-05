@@ -50,17 +50,19 @@ export class AdyenOrderService extends OrderService {
           switchMap(([userId, cartId]) =>
             this.placeOrderConnector.placeOrder(userId, cartId, AdyenOrderService.preparePlaceOrderRequest(paymentData, billingAddress, partialPaymentId)).pipe(
               tap((placeOrderResponse) => {
-                this.placedOrder$.next(placeOrderResponse.orderData as Order);
-                this.placedOrderNumber$.next(placeOrderResponse.orderNumber)
-                this.eventService.dispatch(
-                  {
-                    userId,
-                    cartId,
-                    cartCode: cartId,
-                    order: placeOrderResponse.orderData!,
-                  },
-                  OrderPlacedEvent
-                );
+                if (placeOrderResponse.orderNumber) {
+                  this.placedOrder$.next(placeOrderResponse.orderData as Order);
+                  this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
+                  this.eventService.dispatch(
+                    {
+                      userId,
+                      cartId,
+                      cartCode: cartId,
+                      order: placeOrderResponse.orderData!,
+                    },
+                    OrderPlacedEvent
+                  );
+                }
               }),
               map((response) => {
                 return {...response, success: true}

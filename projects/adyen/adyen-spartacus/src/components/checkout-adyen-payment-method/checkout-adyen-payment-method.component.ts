@@ -274,28 +274,35 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     if (!!response) {
       if (response.success) {
         if (response.executeAction === true && !!response.paymentsAction) {
-          this.dropIn.handleAction(response.paymentsAction)
+          this.dropIn.handleAction(response.paymentsAction);
+
         } else if (!!response.paymentsResponse) {
-          // Check if this is a partial payment with remaining amount
-          if (response.paymentsResponse.order &&
-            response.paymentsResponse.order.remainingAmount &&
-            response.paymentsResponse.order.remainingAmount.value > 0) {
-
-            // Partial payment completed, inform DropIn to continue
+          const remainingAmount = response.paymentsResponse.order?.remainingAmount;
+          if (remainingAmount && remainingAmount.value > 0) {
+            // Partial payment step — giftcard applied, remaining amount still due
             actions.resolve(response.paymentsResponse);
-
           } else {
-            // Complete payment (no remaining amount)
+            // Payment fully covered by paymentsResponse
             actions.resolve({
               resultCode: response.paymentsResponse.resultCode || 'Authorised'
             });
-
-            // Only redirect if payment is fully completed
             if (response.orderNumber) {
               this.partialPaymentService.resetPaymentState();
               this.onSuccess();
             }
           }
+
+        } else if (response.remainingAmount && response.remainingAmount.value > 0) {
+          // Backend returned remainingAmount at top level instead of inside paymentsResponse
+          actions.resolve({
+            resultCode: 'Authorised',
+            order: {
+              remainingAmount: response.remainingAmount,
+              pspReference: response.pspReference ?? '',
+              orderData: ''
+            }
+          } as any);
+
         } else if (!!response.paymentDetailsResponse) {
           actions.resolve({
             resultCode: response.paymentDetailsResponse.resultCode
@@ -303,7 +310,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
           this.onSuccess();
         }
       } else {
-        this.resetDropInComponent()
+        this.resetDropInComponent();
       }
     }
   }
