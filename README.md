@@ -7,7 +7,7 @@ Latest stable version: https://github.com/Adyen/adyen-spartacus/releases
 ## Requirements
 
 - Angular version: 21.1.0
-- Spartacus version: `2211.23.0-1`
+- Spartacus version: 221121.7.0
 
 ## Installation
 
