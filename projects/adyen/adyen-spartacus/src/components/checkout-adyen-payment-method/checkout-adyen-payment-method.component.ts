@@ -210,9 +210,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
           },
           installmentOptions: adyenConfig.installmentOptions ? adyenConfig.installmentOptions : {} ,
         },
-        giftcard: {
-          // Gift card configuration
-        },
         paypal: {
           intent: "authorize"
         }
