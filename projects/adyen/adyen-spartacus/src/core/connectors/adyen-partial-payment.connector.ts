@@ -7,9 +7,7 @@ import {
   PartialPaymentOrderResponse
 } from '../models/occ.order.models';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export abstract class AdyenPartialPaymentConnector {
   /**
    * Check gift card balance

@@ -61,7 +61,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     partialPaymentId: undefined,
     redirectToNextStep: false
   };
-  partialPaymentIdRef?: string;
 
   get backBtnText() {
     return this.checkoutStepService.getBackBntText(this.activatedRoute);
@@ -133,9 +132,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.partialPaymentService.getPaymentState().subscribe(state => {
         this.paymentState = state;
-        this.partialPaymentIdRef = state.partialPaymentId;
 
-        // Redirect to next step if payment is completed
         if (state.redirectToNextStep) {
           this.onSuccess();
         }
@@ -183,7 +180,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       onBalanceCheck: async (resolve: any, reject: any, data: any) =>
         this.partialPaymentService.handleBalanceCheck(resolve, reject, {...data, amount: adyenConfig.amount}),
       onOrderRequest: async (resolve: any, reject: any, data: any) =>
-        this.partialPaymentService.handleOrderRequest(resolve, reject, {...data, amount: adyenConfig.amount, shopperReference: adyenConfig.shopperEmail}),
+        this.partialPaymentService.handleOrderRequest(resolve, reject, {...data, amount: adyenConfig.amount, shopperReference: adyenConfig.shopperReference}),
       onActionHandled(data: ActionHandledReturnObject) {
         console.log("onActionHandled", data);
       }
@@ -255,7 +252,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handlePayment(paymentData: any, actions: SubmitActions) {
-    this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress, this.partialPaymentIdRef).subscribe(
+    this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress, this.paymentState.partialPaymentId).subscribe(
       result => {
         this.handleResponse(result, actions);
       }
