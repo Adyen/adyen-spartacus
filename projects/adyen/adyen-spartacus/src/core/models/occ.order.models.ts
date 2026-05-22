@@ -55,6 +55,9 @@ export interface PlaceOrderRequest {
   billingAddress?: AddressData;
   storefrontType: string;
   storefrontVersion: string;
+
+  // Partial payment fields
+  partialPaymentId?: string;
 }
 
 export interface PlaceOrderResponse {
@@ -67,6 +70,13 @@ export interface PlaceOrderResponse {
   errorFieldCodes?: string[]
   orderNumber?: string,
   orderData?: Order
+
+  // Partial payment specific fields
+  isPartialPayment?: boolean;
+  partialPaymentId?: string;
+  remainingAmount?: AmountData;
+  chargedAmount?: AmountData;
+  pspReference?: string;
 }
 
 export interface AddressData {
@@ -90,4 +100,44 @@ export interface AddressData {
 export interface BillingAddress extends Address {
   taxNumber?: string,
   registrationNumber?: string
+}
+
+// Partial Payment Models
+export interface GiftCardBalanceRequest {
+  cardNumber: string;
+  pin?: string;
+  amount: AmountData;
+  type: string;
+  brand: string;
+}
+
+export interface GiftCardBalanceResponse {
+  balance: AmountData;
+  transactionLimit?: AmountData;
+  currentBalance?: AmountData;
+  partialPaymentId?: string;
+  chargedAmount?: AmountData;
+  remainingAmount?: AmountData;
+}
+
+export interface PartialPaymentOrderRequest {
+  amount: AmountData;
+  paymentMethod: any;
+  shopperReference?: string;
+  partialPaymentId?: string;
+}
+
+export interface PartialPaymentOrderResponse {
+  pspReference: string;
+  orderData: string;
+  amount: AmountData;
+  paymentMethod: any;
+}
+
+export interface PaymentState {
+  errorCode: string;
+  errorFieldCodes: string[];
+  orderNumber: string;
+  partialPaymentId?: string;
+  redirectToNextStep: boolean;
 }

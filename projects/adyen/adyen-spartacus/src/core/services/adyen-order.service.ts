@@ -45,22 +45,24 @@ export class AdyenOrderService extends OrderService {
 
   protected adyenPlaceOrderCommand: Command<any, PlaceOrderResponse> =
     this.commandService.create<any, PlaceOrderResponse>(
-      ({paymentData, billingAddress}) =>
+      ({paymentData, billingAddress, partialPaymentId}) =>
         this.checkoutPreconditions().pipe(
           switchMap(([userId, cartId]) =>
-            this.placeOrderConnector.placeOrder(userId, cartId, AdyenOrderService.preparePlaceOrderRequest(paymentData, billingAddress)).pipe(
+            this.placeOrderConnector.placeOrder(userId, cartId, AdyenOrderService.preparePlaceOrderRequest(paymentData, billingAddress, partialPaymentId)).pipe(
               tap((placeOrderResponse) => {
-                this.placedOrder$.next(placeOrderResponse.orderData as Order);
-                this.placedOrderNumber$.next(placeOrderResponse.orderNumber)
-                this.eventService.dispatch(
-                  {
-                    userId,
-                    cartId,
-                    cartCode: cartId,
-                    order: placeOrderResponse.orderData!,
-                  },
-                  OrderPlacedEvent
-                );
+                if (placeOrderResponse.orderNumber) {
+                  this.placedOrder$.next(placeOrderResponse.orderData as Order);
+                  this.placedOrderNumber$.next(placeOrderResponse.orderNumber);
+                  this.eventService.dispatch(
+                    {
+                      userId,
+                      cartId,
+                      cartCode: cartId,
+                      order: placeOrderResponse.orderData!,
+                    },
+                    OrderPlacedEvent
+                  );
+                }
               }),
               map((response) => {
                 return {...response, success: true}
@@ -86,8 +88,8 @@ export class AdyenOrderService extends OrderService {
       }
     );
 
-  adyenPlaceOrder(paymentData: any, billingAddress?: BillingAddress): Observable<PlaceOrderResponse> {
-    return this.adyenPlaceOrderCommand.execute({paymentData, billingAddress});
+  adyenPlaceOrder(paymentData: any, billingAddress?: BillingAddress, partialPaymentId?: string): Observable<PlaceOrderResponse> {
+    return this.adyenPlaceOrderCommand.execute({paymentData, billingAddress, partialPaymentId});
   }
 
 
@@ -171,13 +173,14 @@ export class AdyenOrderService extends OrderService {
   }
 
 
-  static preparePlaceOrderRequest(paymentData: any, billingAddress?: BillingAddress): PlaceOrderRequest {
+  static preparePlaceOrderRequest(paymentData: any, billingAddress?: BillingAddress, partialPaymentId?: string): PlaceOrderRequest {
     return {
-      paymentRequest: paymentData,
+      paymentRequest: {...paymentData, reference: partialPaymentId},
       storefrontType: STOREFRONT_TYPE,
       storefrontVersion: STOREFRONT_VERSION,
       useAdyenDeliveryAddress: billingAddress === undefined,
       billingAddress: this.mapBillingAddress(billingAddress),
+      partialPaymentId: partialPaymentId,
     }
   }
 

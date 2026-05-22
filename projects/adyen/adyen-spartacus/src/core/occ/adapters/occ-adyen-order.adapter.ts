@@ -9,7 +9,7 @@ import {
   PaypalUpdateOrderRequest,
   PaypalUpdateOrderResponse,
   PlaceOrderRequest,
-  PlaceOrderResponse
+  PlaceOrderResponse,
 } from "../../models/occ.order.models";
 import { PaymentResponseData } from "@adyen/adyen-web";
 
