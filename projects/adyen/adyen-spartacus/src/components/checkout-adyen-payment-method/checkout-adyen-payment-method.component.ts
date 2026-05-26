@@ -182,7 +182,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       onOrderRequest: async (resolve: any, reject: any, data: any) =>
         this.partialPaymentService.handleOrderRequest(resolve, reject, {...data, amount: adyenConfig.amount, shopperReference: adyenConfig.shopperReference}),
       onActionHandled(data: ActionHandledReturnObject) {
-        console.log("onActionHandled", data);
       }
     }
   }
@@ -232,7 +231,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   onSuccess(): void {
-    console.log("Redirect to orderConfirmation..");
     this.routingService.go({cxRoute: 'orderConfirmation'});
   }
 
@@ -281,6 +279,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
               resultCode: response.paymentsResponse.resultCode || 'Authorised'
             });
             if (response.orderNumber) {
+              this.partialPaymentService.markPaymentCompleted();
               this.partialPaymentService.resetPaymentState();
               this.onSuccess();
             }
