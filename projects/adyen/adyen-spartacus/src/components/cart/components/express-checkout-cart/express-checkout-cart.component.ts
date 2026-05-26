@@ -27,7 +27,6 @@ export class ExpressCheckoutCartComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subscriptions.add(
       this.eventService.get(CheckoutAdyenConfigurationReloadEvent).subscribe(event => {
-        console.log(event);
         this.configuration$.next(null);
 
         this.subscriptions.add(

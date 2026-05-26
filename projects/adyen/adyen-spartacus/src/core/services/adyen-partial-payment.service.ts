@@ -129,7 +129,6 @@ export class AdyenPartialPaymentService {
     // Guard: if payment was already completed (order placed, redirect pending),
     // don't check balance — the cart is gone and this call is spurious.
     if (this.paymentCompleted) {
-      console.log('Balance check skipped — payment already completed.');
       resolve({
         balance: { value: 0, currency: '' },
         transactionLimit: { value: 0, currency: '' }
@@ -175,7 +174,6 @@ export class AdyenPartialPaymentService {
 
     // Guard: if payment was already completed, skip order request
     if (this.paymentCompleted) {
-      console.log('Order request skipped — payment already completed.');
       reject();
       return;
     }
