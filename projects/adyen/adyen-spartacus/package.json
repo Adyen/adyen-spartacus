@@ -3,11 +3,11 @@
   "version": "1.5.0",
   "schematics": "./schematics/collection.json",
   "peerDependencies": {
-    "@angular/common": "^19.2.0",
-    "@angular/core": "^19.2.0"
+    "@angular/common": "^21.1.0",
+    "@angular/core": "^21.1.0"
   },
   "dependencies": {
-    "@angular-devkit/schematics-cli": "^19.2.0",
+    "@angular-devkit/schematics-cli": "^21.1.0",
     "tslib": "^2.3.0"
   },
   "ng-add": {
