@@ -281,6 +281,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
               resultCode: response.paymentsResponse.resultCode || 'Authorised'
             });
             if (response.orderNumber) {
+              this.partialPaymentService.markPaymentCompleted();
               this.partialPaymentService.resetPaymentState();
               this.onSuccess();
             }

@@ -37,6 +37,10 @@ export class AdyenPartialPaymentService {
     redirectToNextStep: false
   });
 
+  // Separate flag that persists across resets — prevents spurious balance/order
+  // checks after the final card payment in a partial payment flow.
+  protected paymentCompleted = false;
+
   constructor(
     protected partialPaymentConnector: AdyenPartialPaymentConnector,
     protected activeCartFacade: ActiveCartFacade,
@@ -122,6 +126,17 @@ export class AdyenPartialPaymentService {
    * Handle balance check for Adyen DropIn
    */
   handleBalanceCheck(resolve: any, reject: any, data: any): void {
+    // Guard: if payment was already completed (order placed, redirect pending),
+    // don't check balance — the cart is gone and this call is spurious.
+    if (this.paymentCompleted) {
+      console.log('Balance check skipped — payment already completed.');
+      resolve({
+        balance: { value: 0, currency: '' },
+        transactionLimit: { value: 0, currency: '' }
+      });
+      return;
+    }
+
     const paymentMethod = data.paymentMethod || {};
     const cardNumber = paymentMethod.number || paymentMethod.encryptedCardNumber || paymentMethod.cardNumber;
     const pin = paymentMethod.cvc || paymentMethod.encryptedSecurityCode || paymentMethod.pin;
@@ -157,6 +172,13 @@ export class AdyenPartialPaymentService {
    */
   handleOrderRequest(resolve: any, reject: any, data: any): void {
     const currentState = this.paymentState$.value;
+
+    // Guard: if payment was already completed, skip order request
+    if (this.paymentCompleted) {
+      console.log('Order request skipped — payment already completed.');
+      reject();
+      return;
+    }
 
     const request: PartialPaymentOrderRequest = {
       amount: data.amount,
@@ -207,6 +229,7 @@ export class AdyenPartialPaymentService {
 
       // Payment fully completed
       if (response.orderNumber) {
+        this.paymentCompleted = true;
         this.updatePaymentState({
           orderNumber: response.orderNumber,
           redirectToNextStep: true
@@ -219,6 +242,15 @@ export class AdyenPartialPaymentService {
         errorFieldCodes: response.errorFieldCodes || []
       });
     }
+  }
+
+  /**
+   * Mark the payment as fully completed — prevents spurious balance/order
+   * checks from the Dropin after the final card payment.
+   * Call this BEFORE resetPaymentState() when the order is placed.
+   */
+  markPaymentCompleted(): void {
+    this.paymentCompleted = true;
   }
 
   /**
