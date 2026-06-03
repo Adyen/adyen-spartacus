@@ -21,16 +21,18 @@ Before installing the Adyen Payments library, ensure that you have a local npm r
 
    ```bash
    git clone https://github.com/Adyen/adyen-spartacus/
-   cd adyen-spartacus/projects/adyen-payments
+   cd adyen-spartacus
    ```
 2. **Build the package**:
 
    ```bash
-   npm run build
+   npm install
+   npm run lib:build
    ```
 3. **Publish the package to the local npm registry**:
 
    ```bash
+   cd dist/adyen/adyen-spartacus
    npm --registry http://localhost:4873 publish --access public
    ```
 
@@ -38,7 +40,7 @@ Before installing the Adyen Payments library, ensure that you have a local npm r
 
 **Install the Adyen Payments library**:
 
-    ng add adyen-payments --registry http://localhost:4873
+    ng add @adyen/adyen-spartacus --registry http://localhost:4873
 
 This will automatically configure your storefront to include Adyen Payments functionality if it is a clean installation.
 

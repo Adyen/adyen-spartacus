@@ -271,7 +271,12 @@ export class AdyenPartialPaymentService {
     return this.userIdService.takeUserId().pipe(
       switchMap((userId) =>
         this.activeCartFacade.getActiveCartId().pipe(
-          map((cartId) => [userId, cartId] as [string, string])
+          map((cartId) => {
+            if (!cartId) {
+              throw new Error('No active cart found — order already completed');
+            }
+            return [userId, cartId] as [string, string];
+          })
         )
       )
     );
