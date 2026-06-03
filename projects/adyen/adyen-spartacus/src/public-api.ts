@@ -13,6 +13,7 @@ export * from './root/checkout-adyen-root.module';
 export * from './components/checkout-adyen-payment-method/checkout-adyen-payment-method.component';
 export * from './components/order/components/order-confirmation/order-confirmation-payment-status/order-confirmation-payment-status.module';
 export * from './components/order/components/order-confirmation/order-confirmation-payment-status/order-confirmation-payment-status.component';
+export * from './core/services/adyen-logger.service';
 export * from './core/services/adyen-order.service';
 export * from './core/services/adyen-express-order.service';
 export * from './core/services/adyen-partial-payment.service';

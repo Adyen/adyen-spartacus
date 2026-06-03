@@ -1,12 +1,15 @@
-import {Injectable, OnDestroy} from "@angular/core";
+import {inject, Injectable, OnDestroy} from "@angular/core";
 import {Address, EventService, Product, RoutingService, UserIdService} from '@spartacus/core';
 import {ActiveCartFacade, Cart, DeliveryMode, MultiCartFacade} from '@spartacus/cart/base/root';
 import {firstValueFrom, Observable, of, Subject, Subscription} from 'rxjs';
 import {catchError, filter, map, switchMap, take, takeUntil, tap} from 'rxjs/operators';
 import {AdyenCartService} from "../../../core/services/adyen-cart-service";
+import {AdyenLoggerService} from "../../../core/services/adyen-logger.service";
 
 @Injectable()
 export class ExpressPaymentBase implements OnDestroy {
+
+  protected logger = inject(AdyenLoggerService);
 
   constructor(protected multiCartService: MultiCartFacade,
               protected userIdService: UserIdService,
@@ -30,14 +33,14 @@ export class ExpressPaymentBase implements OnDestroy {
         this.activeCartService.getActive().pipe(
           take(1),
           catchError((error) => {
-            console.error("Error fetching the active cart:", error);
+            this.logger.error("Error fetching the active cart:", error);
             throw error; 
           })
         )
       );
 
       if (!activeCart) {
-        console.warn("No active cart found, emitting null.");
+        this.logger.warn("No active cart found, emitting null.");
         return; // Gracefully handle missing active cart
       }
 
@@ -55,11 +58,11 @@ export class ExpressPaymentBase implements OnDestroy {
           ExpressPaymentBase.cartId = cart.code;
 
         } else {
-          console.warn("Cart not available or invalid.");
+          this.logger.warn("Cart not available or invalid.");
         }
       }
     } catch (error) {
-      console.error("Error in async cart initialization:", error);
+      this.logger.error("Error in async cart initialization:", error);
     }
   }
 
@@ -80,7 +83,7 @@ export class ExpressPaymentBase implements OnDestroy {
                 this.multiCartService.addEntry(userId, (cart as Cart).code as string, product.code, 1);
                 ExpressPaymentBase.productAdded = true;
               } else {
-                console.error("Unable to add product or cart is invalid.");
+                this.logger.error("Unable to add product or cart is invalid.");
               }
             }
           }),
@@ -103,17 +106,17 @@ export class ExpressPaymentBase implements OnDestroy {
 
               resolve(update)
             } catch (e) {
-              console.error("Delivery mode selection issue")
+              this.logger.error("Delivery mode selection issue")
               reject();
             }
           },
           error: err => {
-            console.error('Error updating delivery mode:', err);
+            this.logger.error('Error updating delivery mode:', err);
             reject()
           },
         }));
     } else {
-      console.error("Undefined cart id")
+      this.logger.error("Undefined cart id")
     }
   }
 
@@ -148,12 +151,12 @@ export class ExpressPaymentBase implements OnDestroy {
 
                     resolve(update);
                   } catch (e) {
-                    console.error("Delivery mode mapping issue")
+                    this.logger.error("Delivery mode mapping issue")
                     reject();
                   }
                 },
                 error: err => {
-                  console.error('Error updating delivery mode:', err);
+                  this.logger.error('Error updating delivery mode:', err);
                   reject()
                 },
               }));
@@ -161,7 +164,7 @@ export class ExpressPaymentBase implements OnDestroy {
         }))
       }))
     } else{
-      console.error("Undefined cart id")
+      this.logger.error("Undefined cart id")
     }
   }
 

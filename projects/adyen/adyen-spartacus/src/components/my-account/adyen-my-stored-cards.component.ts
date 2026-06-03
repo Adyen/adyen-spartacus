@@ -4,6 +4,7 @@ import { TranslationService, UserIdService } from "@spartacus/core";
 import { BehaviorSubject, combineLatest, EMPTY, firstValueFrom, map, Observable, of, Subscription } from "rxjs";
 import { catchError, finalize, switchMap, take } from "rxjs/operators";
 import { AdyenMyAccountService } from "../../core/services/adyen-my-account.service";
+import { AdyenLoggerService } from "../../core/services/adyen-logger.service";
 import { StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse } from "../../core/models/occ.my-account.models";
 import { AdyenConfigData } from "../../core/models/occ.config.models";
 import { AdditionalDetailsActions, CoreConfiguration, DropinConfiguration, SubmitActions, UIElement } from "@adyen/adyen-web";
@@ -29,7 +30,8 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
   constructor(
     protected adyenMyAccountService: AdyenMyAccountService,
     protected translationService: TranslationService,
-    protected userIdService: UserIdService
+    protected userIdService: UserIdService,
+    protected logger: AdyenLoggerService
   ) {
     this.cardsWithId$ = new BehaviorSubject<CardWithId[]>([]);
     this.cardsLoading$ = new BehaviorSubject<boolean>(true);
@@ -57,7 +59,7 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
           return config;
         }),
         catchError((error) => {
-          console.error('Failed to load Drop-in configuration for My Account.', error);
+          this.logger.error('Failed to load Drop-in configuration for My Account.', error);
           this.dropinError$.next('Missing Adyen configuration from the checkout-configuration endpoint.');
           return EMPTY;
         })
@@ -77,7 +79,7 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
       this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)).mount(this.hook.nativeElement);
       this.dropinError$.next(null);
     } catch (error) {
-      console.error('Failed to initialize Adyen Drop-in for My Account.', error);
+      this.logger.error('Failed to initialize Adyen Drop-in for My Account.', error);
       this.dropinError$.next('Failed to start Adyen Drop-in. Check `adyenClientKey` and environment settings.');
     }
   }
@@ -129,7 +131,7 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
       this.createCards().pipe(
         take(1),
         catchError((error) => {
-          console.error('Failed to reload stored cards.', error);
+          this.logger.error('Failed to reload stored cards.', error);
           this.dropinError$.next('Failed to reload stored cards.');
           return of([] as CardWithId[]);
         }),
@@ -242,7 +244,7 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
     this.adyenMyAccountService.zeroAuth(requestBody).subscribe(
       result => this.handleResponse(result, actions),
       error => {
-        console.error('Failed to submit Zero Auth request.', error);
+        this.logger.error('Failed to submit Zero Auth request.', error);
         this.dropinError$.next('Failed to save payment details. Please try again.');
         actions.reject();
       }
@@ -250,7 +252,7 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
   }
 
   protected handleDropInError(error: AdyenCheckoutError): void {
-    console.error('Adyen drop-in error:', error);
+    this.logger.error('Adyen drop-in error:', error);
   }
 
   async deleteCard(cardId: string): Promise<void> {
