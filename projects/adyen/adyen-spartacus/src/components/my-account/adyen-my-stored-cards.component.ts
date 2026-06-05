@@ -2,16 +2,25 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/co
 import { Card as UiCard } from "@spartacus/storefront";
 import { TranslationService, UserIdService } from "@spartacus/core";
 import { BehaviorSubject, combineLatest, EMPTY, firstValueFrom, map, Observable, of, Subscription } from "rxjs";
-import { catchError, finalize, switchMap, take } from "rxjs/operators";
+import { catchError, filter, finalize, switchMap, take, timeout } from "rxjs/operators";
 import { AdyenMyAccountService } from "../../core/services/adyen-my-account.service";
 import { StoredPaymentMethodResource, ZeroAuthRequestBody, ZeroAuthResponse } from "../../core/models/occ.my-account.models";
 import { AdyenConfigData } from "../../core/models/occ.config.models";
 import { AdditionalDetailsActions, CoreConfiguration, DropinConfiguration, SubmitActions, UIElement } from "@adyen/adyen-web";
 import { AdyenCheckout, AdyenCheckoutError, Dropin } from "@adyen/adyen-web/auto";
+import { t } from "i18next";
 
 interface CardWithId {
   card: UiCard;
   id: string;
+  lastFour: string;
+  scheme: string;
+}
+
+interface CardToDelete {
+  id: string;
+  lastFour: string;
+  scheme: string;
 }
 
 @Component({
@@ -34,11 +43,13 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
     this.cardsWithId$ = new BehaviorSubject<CardWithId[]>([]);
     this.cardsLoading$ = new BehaviorSubject<boolean>(true);
     this.dropinError$ = new BehaviorSubject<string | null>(null);
+    this.cardToDelete$ = new BehaviorSubject<CardToDelete | null>(null);
   }
 
   cardsWithId$: BehaviorSubject<CardWithId[]>;
   cardsLoading$: BehaviorSubject<boolean>;
   dropinError$: BehaviorSubject<string | null>;
+  cardToDelete$: BehaviorSubject<CardToDelete | null>;
 
   ngOnInit(): void {
     this.reloadCards();
@@ -68,6 +79,24 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
     );
   }
 
+
+  confirmDelete(cardId: string): void {
+    const cards = this.cardsWithId$.getValue();
+    const card = cards.find(c => c.id === cardId);
+    if (!card) return;
+
+    this.cardToDelete$.next({
+      id: card.id,
+      lastFour: card.lastFour,
+      scheme: card.scheme,
+    });
+  }
+
+
+  cancelDelete(): void {
+    this.cardToDelete$.next(null);
+  }
+
   protected async mountDropIn(config: AdyenConfigData): Promise<void> {
     try {
       const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
@@ -91,32 +120,34 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
     this.initializeDropIn();
   }
 
-  protected createCards(): Observable<CardWithId[]> {
-    const storedCards$ = this.adyenMyAccountService.getStoredCards();
-    const translations$ = combineLatest([
-      this.translationService.translate('common.remove'),
-    ]);
 
-    return combineLatest([storedCards$, translations$]).pipe(
-      map(([storedPaymentMethods, [removeTranslation]]) =>
+  protected createCards(): Observable<CardWithId[]> {
+    const storedCards$ = this.adyenMyAccountService.getStoredCards().pipe(
+      filter((cards) => Array.isArray(cards) && cards.length > 0),
+      timeout(15000),
+      catchError(() => of([] as StoredPaymentMethodResource[]))
+    );
+
+    const removeLabel$ = this.translationService.translate('common.remove').pipe(take(1));
+
+    return combineLatest([storedCards$, removeLabel$]).pipe(
+      map(([storedPaymentMethods, removeTranslation]) =>
         (storedPaymentMethods as StoredPaymentMethodResource[]).map(
-          (storedPaymentMethod: StoredPaymentMethodResource) => {
-            return {
-              id: storedPaymentMethod.id,
-              card: {
-                title: storedPaymentMethod.holderName || storedPaymentMethod.id || '',
-                actions: [{ name: removeTranslation, event: 'delete' }],
-                paragraphs: [
-                  {
-                    text: [
-                      '****' + storedPaymentMethod.lastFour,
-                      storedPaymentMethod.expiryMonth + '/' + storedPaymentMethod.expiryYear
-                    ]
-                  }
+          (sp) => ({
+            id: sp.id,
+            lastFour: sp.lastFour || '',
+            scheme: sp.variant || '',
+            card: {
+              title: sp.holderName || sp.id || '',
+              actions: [{ name: removeTranslation, event: 'delete' }],
+              paragraphs: [{
+                text: [
+                  '****' + sp.lastFour,
+                  sp.expiryMonth + '/' + sp.expiryYear
                 ]
-              }
-            };
-          }
+              }]
+            }
+          })
         )
       )
     );
@@ -184,7 +215,7 @@ export class AdyenMyStoredCardsComponent implements OnInit, OnDestroy {
     };
   }
 
-private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions | AdditionalDetailsActions) {
+  private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions | AdditionalDetailsActions) {
     if (!response) {
       actions.reject();
       return;
@@ -223,21 +254,21 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
 
     const requestBody: ZeroAuthRequestBody = paymentMethodType === 'paypal'
       ? {
-          paymentMethodDto: {
-            ...paymentMethod,
-            type: paymentMethod.type || 'paypal',
-          },
-        }
+        paymentMethodDto: {
+          ...paymentMethod,
+          type: paymentMethod.type || 'paypal',
+        },
+      }
       : {
-          paymentMethodDto: {
-            type: (paymentMethod.type).toUpperCase(),
-            encryptedCardNumber: paymentMethod.encryptedCardNumber || '',
-            encryptedExpiryMonth: paymentMethod.encryptedExpiryMonth || '',
-            encryptedExpiryYear: paymentMethod.encryptedExpiryYear || '',
-            encryptedSecurityCode: paymentMethod.encryptedSecurityCode || '',
-            holderName: paymentMethod.holderName || '',
-          },
-        };
+        paymentMethodDto: {
+          type: (paymentMethod.type).toUpperCase(),
+          encryptedCardNumber: paymentMethod.encryptedCardNumber || '',
+          encryptedExpiryMonth: paymentMethod.encryptedExpiryMonth || '',
+          encryptedExpiryYear: paymentMethod.encryptedExpiryYear || '',
+          encryptedSecurityCode: paymentMethod.encryptedSecurityCode || '',
+          holderName: paymentMethod.holderName || '',
+        },
+      };
 
     this.adyenMyAccountService.zeroAuth(requestBody).subscribe(
       result => this.handleResponse(result, actions),
@@ -253,12 +284,41 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
     console.error('Adyen drop-in error:', error);
   }
 
-  async deleteCard(cardId: string): Promise<void> {
-    const objects = this.adyenMyAccountService.removeStoredCard(cardId);
+  async deleteCard(): Promise<void> {
+    const toDelete = this.cardToDelete$.getValue();
+    if (!toDelete?.id) return;
+
+    this.cardToDelete$.next(null);
+
+    const currentCards = this.cardsWithId$.getValue() ?? [];
+    const removedIndex = currentCards.findIndex(c => c.id === toDelete.id);
+    let removedCard: CardWithId | null = null;
+
+    if (removedIndex > -1) {
+      removedCard = currentCards[removedIndex];
+      const nextCards = currentCards.slice(0, removedIndex).concat(currentCards.slice(removedIndex + 1));
+      this.cardsWithId$.next(nextCards);
+    }
+
     this.cardsLoading$.next(true);
 
-    await firstValueFrom(objects);
-    this.reloadCards();
+    try {
+      await firstValueFrom(this.adyenMyAccountService.removeStoredCard(toDelete.id));
+      this.reloadCards();
+      this.refreshDropIn();
+    } catch (error) {
+      console.error('Failed to delete stored card.', error);
+      if (removedCard) {
+        const rollbackCards = this.cardsWithId$.getValue() ?? [];
+        const idx = Math.min(Math.max(removedIndex, 0), rollbackCards.length);
+        const restored = rollbackCards.slice();
+        restored.splice(idx, 0, removedCard);
+        this.cardsWithId$.next(restored);
+      }
+      this.dropinError$.next('Failed to remove payment method. Please try again.');
+    } finally {
+      this.cardsLoading$.next(false);
+    }
   }
 
   ngOnDestroy(): void {
@@ -269,7 +329,7 @@ private handleResponse(response: ZeroAuthResponse | void, actions: SubmitActions
   }
 
 
-   onSuccess(): void {
+  onSuccess(): void {
     this.reloadCards();
     this.refreshDropIn();
   }
