@@ -113,8 +113,8 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
   }
 
   private handleOnSubmit(state: SubmitData, actions: any) {
-    if(!!AppleExpressPaymentComponent.cartId){
-      this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, AppleExpressPaymentComponent.cartId).subscribe(
+    if(!!this.cartId){
+      this.adyenOrderService.adyenPlaceAppleExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
         result => {
           if (result?.success) {
             if (result.executeAction && result.paymentsAction !== undefined) {
@@ -140,7 +140,7 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
   }
 
   handleError(error: AdyenCheckoutError) {
-    this.clearStaticState();
+    this.clearState();
   }
 
   override ngOnDestroy(): void {
