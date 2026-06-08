@@ -1,5 +1,6 @@
 import {AfterViewInit, Component, ElementRef, OnDestroy} from "@angular/core";
 import {AdyenDataCollectionConfigurationService} from "../../core/services/adyen-data-collection-configuration.service";
+import {AdyenLoggerService} from "../../core/services/adyen-logger.service";
 import {Subscription} from "rxjs";
 
 
@@ -12,7 +13,7 @@ export class AdyenDataCollectionComponent implements AfterViewInit, OnDestroy {
   private subscriptions$ = new Subscription();
 
 
-  constructor(protected dataCollectionService: AdyenDataCollectionConfigurationService, private elementRef: ElementRef<HTMLElement>) {
+  constructor(protected dataCollectionService: AdyenDataCollectionConfigurationService, private elementRef: ElementRef<HTMLElement>, protected logger: AdyenLoggerService) {
   }
 
   ngAfterViewInit(): void {
@@ -28,7 +29,7 @@ export class AdyenDataCollectionComponent implements AfterViewInit, OnDestroy {
           if (dataCollectionElements.length == 1) {
             dataCollectionElements[0].appendChild(s)
           } else {
-            console.error("Invalid data collection nodes number")
+            this.logger.error("Invalid data collection nodes number")
           }
 
         }
