@@ -1,37 +1,65 @@
 <div class="cx-adyen-stored-cards-container">
   <div class="cx-adyen-stored-cards-body">
-    <p> {{ 'adyenMyAccount.myStoredCards' | cxTranslate }}</p>
+    <p>{{ 'adyenMyAccount.myStoredCards' | cxTranslate }}</p>
     @if ((cardsWithId$ | async).length == 0 && !(cardsLoading$ | async)) {
-      <p> {{ 'adyenMyAccount.noStoredCards' | cxTranslate }}</p>
+    <p>{{ 'adyenMyAccount.noStoredCards' | cxTranslate }}</p>
     }
     @if (!(cardsLoading$ | async)) {
-      <div class="cx-adyen-stored-cards row">
-        @for (card of cardsWithId$ | async; track $index) {
-          <div
-            class="cx-delivery-address-card col-md-6 col-lg-4">
-            <cx-card
-              [border]="true"
-              [index]="$index"
-              [content]="card.card"
-              (deleteCard)="deleteCard(card.id)"></cx-card>
-          </div>
-        }
+    <div class="cx-adyen-stored-cards row">
+      @for (card of cardsWithId$ | async; track $index) {
+      <div class="cx-delivery-address-card col-md-6 col-lg-4">
+        <cx-card [border]="true" [index]="$index" [content]="card.card" (deleteCard)="confirmDelete(card.id)"></cx-card>
       </div>
-    }
-
-  </div>
-
-   <div class="payment-container">
-      <div #hook id="dropin" class="payment"></div>
-      @if (dropinError$ | async; as dropinError) {
-        <p class="text-danger">{{ dropinError }}</p>
       }
     </div>
+    }
+  </div>
+
+  <div class="payment-container">
+    <div #hook id="dropin" class="payment"></div>
+    @if (dropinError$ | async; as dropinError) {
+    <p class="text-danger">{{ dropinError }}</p>
+    }
+  </div>
 
   @if (cardsLoading$ | async) {
-    <div class="adyen-spinner-overlay">
-      <cx-spinner></cx-spinner>
-    </div>
+  <div class="adyen-spinner-overlay">
+    <cx-spinner></cx-spinner>
+  </div>
   }
 
+  <!-- Delete Confirmation Modal Popup -->
+  @if (cardToDelete$ | async; as cardToDelete) {
+  <div class="cx-delete-modal-backdrop" (click)="cancelDelete()">
+    <div class="cx-delete-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <button class="cx-delete-modal__close" type="button" (click)="cancelDelete()" aria-label="Close">
+        &times;
+      </button>
+
+      <h3 class="cx-delete-modal__title">
+        Remove payment method
+      </h3>
+
+      <div class="cx-delete-modal__card-info">
+        <span class="cx-delete-modal__scheme">{{ cardToDelete.scheme }}</span>
+        <span class="cx-delete-modal__dots">••••</span>
+        <span class="cx-delete-modal__last4">{{ cardToDelete.lastFour }}</span>
+      </div>
+
+      <p class="cx-delete-modal__message">
+        Are you sure you want to remove your {{ cardToDelete.scheme }} card ending in {{ cardToDelete.lastFour }}? This
+        action cannot be undone.
+      </p>
+
+      <div class="cx-delete-modal__actions">
+        <button class="btn btn-secondary" type="button" (click)="cancelDelete()">
+          {{ 'common.cancel' | cxTranslate }}
+        </button>
+        <button class="btn btn-danger" type="button" (click)="deleteCard()">
+          {{ 'common.remove' | cxTranslate }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
 </div>
