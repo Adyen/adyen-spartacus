@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
-import { AnonymousConsentsModule, AuthModule, CostCenterOccModule, ExternalRoutesModule, ProductModule, ProductOccModule, UserModule, UserOccModule } from "@spartacus/core";
-import { AnonymousConsentManagementBannerModule, AnonymousConsentsDialogModule, BannerCarouselModule, BannerModule, BreadcrumbModule, CategoryNavigationModule, CmsParagraphModule, ConsentManagementModule, FooterNavigationModule, HamburgerMenuModule, HomePageEventModule, LinkModule, LoginRouteModule, LogoutModule, MyAccountV2Module, MyCouponsModule, MyInterestsModule, NavigationEventModule, NavigationModule, NotificationPreferenceModule, PageTitleModule, PaymentMethodsModule, PDFModule, ProductCarouselModule, ProductDetailsPageModule, ProductFacetNavigationModule, ProductImagesModule, ProductIntroModule, ProductListingPageModule, ProductListModule, ProductPageEventModule, ProductReferencesModule, ProductSummaryModule, ProductTabsModule, ScrollToTopModule, SearchBoxModule, SiteContextSelectorModule, StockNotificationModule, TabParagraphContainerModule, VideoModule } from "@spartacus/storefront";
+import { AnonymousConsentsModule, AuthModule, CostCenterOccModule, ExternalRoutesModule, Occ, ProductModule, ProductOccModule, provideFeatureToggles, UserModule, UserOccModule } from "@spartacus/core";
+import { AnonymousConsentManagementBannerModule, AnonymousConsentsDialogModule, BannerCarouselModule, BannerModule, BreadcrumbModule, CategoryNavigationModule, CmsParagraphModule, ConsentManagementModule, FooterNavigationModule, HamburgerMenuModule, HomePageEventModule, LinkModule, LoginRouteModule, LogoutModule, MyAccountV2Module, MyCouponsModule, MyInterestsModule, NavigationEventModule, NavigationModule, NotificationPreferenceModule, PageTitleModule, PaymentMethodsModule, PDFModule, ProductCarouselModule, ProductDetailsPageModule, ProductFacetNavigationModule, ProductImagesModule, ProductIntroModule, ProductListingPageModule, ProductListModule, ProductPageEventModule, ProductReferencesModule, ProductSummaryModule, ProductTabsModule, ScrollToTopModule, SearchBoxModule, SiteContextSelectorModule, SiteThemeSwitcherModule, StockNotificationModule, TabParagraphContainerModule, VideoModule } from "@spartacus/storefront";
 import { UserFeatureModule } from './features/user/user-feature.module';
 import { CartBaseFeatureModule } from './features/cart/cart-base-feature.module';
 import { CartSavedCartFeatureModule } from './features/cart/cart-saved-cart-feature.module';
@@ -16,7 +16,12 @@ import { AsmCustomer360FeatureModule } from './features/asm/asm-customer360-feat
 import { SmartEditFeatureModule } from './features/smartedit/smart-edit-feature.module';
 import { ProductVariantsFeatureModule } from './features/product/product-variants-feature.module';
 import { ProductImageZoomFeatureModule } from './features/product/product-image-zoom-feature.module';
-
+import { OpfFeatureModule } from './features/opf/opf-feature.module';
+import { AdyenMyAccountModule } from '../../../../adyen/adyen-spartacus/src/components/my-account/adyen-my-account.module';
+import { CheckoutConfigurationConnector } from '../../../../adyen/adyen-spartacus/src/core/connectors/checkout-configuration.connector';
+import { OccCheckoutConfigAdapter } from '../../../../adyen/adyen-spartacus/src/core/occ/adapters/occ-checkout-config.adapter';
+import { AdditionalDetailsConnector } from '../../../../adyen/adyen-spartacus/src/core/connectors/additional-details.connector';
+import { OccAdditionalDetailsAdapter } from '../../../../adyen/adyen-spartacus/src/core/occ/adapters/occ-additionaldetails.adapter';
 @NgModule({
   declarations: [],
   imports: [
@@ -38,6 +43,7 @@ import { ProductImageZoomFeatureModule } from './features/product/product-image-
     PageTitleModule,
     VideoModule,
     PDFModule,
+    SiteThemeSwitcherModule,
     UserModule,
     UserOccModule,
     PaymentMethodsModule,
@@ -82,7 +88,34 @@ import { ProductImageZoomFeatureModule } from './features/product/product-image-
     AsmCustomer360FeatureModule,
     SmartEditFeatureModule,
     ProductVariantsFeatureModule,
-    ProductImageZoomFeatureModule
-  ]
+    ProductImageZoomFeatureModule,
+    OpfFeatureModule,
+    AdyenMyAccountModule
+  ],
+  providers: [
+    CheckoutConfigurationConnector,
+    OccCheckoutConfigAdapter,
+    AdditionalDetailsConnector,
+    OccAdditionalDetailsAdapter,
+    
+    provideFeatureToggles({
+    "a11yKeyboardAccessibleZoom": true,
+    "a11yPreventCartItemsFormRedundantRecreation": true,
+    "a11yStoreFinderLabel": true,
+    "a11yImprovedErrorMessage": true,
+    "a11yLinkBtnsToTertiaryBtns": true,
+    "a11ySelectImprovementsCustomerTicketingCreateSelectbox": true,
+    "a11yAddPaddingToCarouselPanel": true,
+    "a11yWideScreenImprovements": true,
+    "a11yOptimizedMenuSpacing": true,
+    "a11yNgSelectLayering": true,
+    "a11yNgSelectAriaControls": true,
+    "enableReadDomainValuesOnDemand": true,
+    "opfEnablePreventingFromCheckoutWithoutEmail": true,
+    "storeFinderFacadeCleanup": true,
+    "defaultProductPageRouteAllowsNoProductName": true,
+    "reserveHorizontalSpaceStarRating": true,
+    "topProgressBarUseTransformAnimation": true
+  })]
 })
 export class SpartacusFeaturesModule { }

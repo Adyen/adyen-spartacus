@@ -38,7 +38,7 @@ describe('OccAdditionalDetailsAdapter', () => {
     const cartId = 'testCart';
     const details: PlaceOrderRequest = {
       paymentRequest: { /* mock payment request data */ }
-    };
+    } as any;
     const mockResponse: PlaceOrderResponse = {
       success: true,
       executeAction: false,

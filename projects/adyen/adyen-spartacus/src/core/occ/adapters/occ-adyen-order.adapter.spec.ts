@@ -38,7 +38,7 @@ describe('OccAdyenOrderAdapter', () => {
     const cartId = 'testCart';
     const orderData: PlaceOrderRequest = {
       paymentRequest: { /* mock payment request data */ }
-    };
+    } as any;
     const mockResponse: PlaceOrderResponse = {
       success: true,
       executeAction: false,
