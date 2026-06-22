@@ -123,18 +123,18 @@ export class AppleExpressPaymentComponent extends ExpressPaymentBase implements 
               this.onSuccess();
             }
           } else {
-            console.error(result?.error);
+            this.logger.error(result?.error);
             actions.reject();
           }
           actions.resolve({resultCode: 'Authorised'});
         },
         error => {
-          console.error(error);
+          this.logger.error(error);
           actions.reject();
         }
       );
     } else {
-      console.error("Undefined cart id")
+      this.logger.error("Undefined cart id")
     }
 
   }

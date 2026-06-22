@@ -81,7 +81,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
                 .map((deliveryMode) => {
                   const deliveryCurrency = deliveryMode.deliveryCost?.currencyIso;
                   if (deliveryCurrency === undefined) {
-                    console.warn(`Invalid delivery cost for mode: ${deliveryMode.code}`);
+                    this.logger.warn(`Invalid delivery cost for mode: ${deliveryMode.code}`);
                     throw "Invalid delivery cost";
                   }
 
@@ -97,7 +97,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
             }
             return this.paypalExpressService.updatePaypalOrder(cart.code, request);
           } else {
-            console.error("cartId is undefined");
+            this.logger.error("cartId is undefined");
             throw "cartId is undefined"
           }
         }
@@ -152,7 +152,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
         }).mount("#paypal-button");
       }
     }catch (error) {
-      console.error('Failed to setup Adyen checkout:', error);
+      this.logger.error('Failed to setup Adyen checkout:', error);
     }
   }
 
@@ -170,17 +170,17 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
                 const update =  mappingFunction(cart, this.deliveryModes, this.paypal, deliveryModeId);
                 resolve(update)
               } catch (e) {
-                console.error("Delivery mode selection issue")
+                this.logger.error("Delivery mode selection issue")
                 reject();
               }
             },
             error: err => {
-              console.error('Error updating delivery mode:', err);
+              this.logger.error('Error updating delivery mode:', err);
               reject()
             },
           }));
       } else {
-        console.error("Undefined cart id")
+        this.logger.error("Undefined cart id")
       }
     })
   }
@@ -215,7 +215,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
                     resolve(paypalUpdateOrderResponse);
                   },
                   error: err => {
-                    console.error('Error updating delivery mode:', err);
+                    this.logger.error('Error updating delivery mode:', err);
                     reject()
                   },
                 }));
@@ -223,14 +223,14 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
           }))
         }))
       } else{
-        console.error("Undefined cart id")
+        this.logger.error("Undefined cart id")
       }
     });
   }
 
   protected async handlePayPalSubmit(state: SubmitData, component: UIElement, actions: SubmitActions) {
     if (!this.cartId) {
-      console.error("cartId is undefined");
+      this.logger.error("cartId is undefined");
       actions.reject();
       return;
     }
@@ -255,18 +255,18 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
               this.paypal.handleAction(result.paymentsAction);
             }
           } else {
-            console.error(result?.error);
+            this.logger.error(result?.error);
             actions.reject();
           }
           actions.resolve({resultCode: result.paymentsResponse?.resultCode});
         },
         error => {
-          console.error(error);
+          this.logger.error(error);
           actions.reject();
         }
       );
     } else {
-      console.error("cartId is undefined");
+      this.logger.error("cartId is undefined");
       actions.reject();
     }
   }
@@ -279,7 +279,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
         }
       );
     } else {
-      console.error("cartId is undefined");
+      this.logger.error("cartId is undefined");
       actions.reject();
     }
   }
