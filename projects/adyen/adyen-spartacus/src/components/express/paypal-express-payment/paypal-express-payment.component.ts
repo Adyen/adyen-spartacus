@@ -160,10 +160,10 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
                                                       mappingFunction: (cart: Cart, deliveryModes: DeliveryMode[], component: any, deliveryModeId: string) => T,
                                                       resolve: any, reject: any): Promise<T> {
     return new Promise(async (resolve, reject) => {
-      if(!!PaypalExpressPaymentComponent.cartId) {
-        this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, PaypalExpressPaymentComponent.cartId)
+      if(!!this.cartId) {
+        this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
           .pipe(
-            switchMap(() => !!product ? this.adyenCartService.takeStable(PaypalExpressPaymentComponent.cart$) : this.activeCartService.takeActive())
+            switchMap(() => this.getStableCart(product))
           ).subscribe({
             next: cart => {
               try {
@@ -198,8 +198,8 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
       line1: "placeholder"
     }
     return new Promise((resolve, reject) => {
-      if(!!PaypalExpressPaymentComponent.cartId) {
-        const cartCode = PaypalExpressPaymentComponent.cartId;
+      if(!!this.cartId) {
+        const cartCode = this.cartId;
         this.subscriptions.add(this.adyenCartService.createAndSetAddress(cartCode, shippingAddress).subscribe(() => {
           this.subscriptions.add(this.adyenCartService.getSupportedDeliveryModesForCart(cartCode).subscribe((deliveryModes) => {
             const validDeliveryModes = deliveryModes.filter(mode => mode.code);
@@ -208,7 +208,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
               this.subscriptions.add(this.adyenCartService
                 .setDeliveryMode(validDeliveryModes[0].code!, cartCode)
                 .pipe(
-                  switchMap(() => !!product ? this.adyenCartService.takeStable(PaypalExpressPaymentComponent.cart$) : this.activeCartService.takeActive())
+                  switchMap(() => this.getStableCart(product))
                 ).subscribe({
                   next: cart => {
                     let paypalUpdateOrderResponse = mappingFunction(cart, validDeliveryModes, component);
@@ -229,13 +229,13 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   protected async handlePayPalSubmit(state: SubmitData, component: UIElement, actions: SubmitActions) {
-    if (!PaypalExpressPaymentComponent.cartId) {
+    if (!this.cartId) {
       this.logger.error("cartId is undefined");
       actions.reject();
       return;
     }
 
-    let paymentResponse = this.paypalExpressService.submitPayPal(state.data, this.product, PaypalExpressPaymentComponent.cartId);
+    let paymentResponse = this.paypalExpressService.submitPayPal(state.data, this.product, this.cartId);
     let paymentResponseValue = await firstValueFrom(paymentResponse);
 
     // @ts-ignore
@@ -247,8 +247,8 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   protected handleAuthorise(state: any, actions: any) {
-    if (PaypalExpressPaymentComponent.cartId) {
-      this.adyenOrderService.adyenPlacePayPalExpressOrder(state.data, this.authorizedPaymentData, this.product, PaypalExpressPaymentComponent.cartId).subscribe(
+    if (this.cartId) {
+      this.adyenOrderService.adyenPlacePayPalExpressOrder(state.data, this.authorizedPaymentData, this.product, this.cartId).subscribe(
         result => {
           if (result?.success) {
             if (result.executeAction && result.paymentsAction !== undefined) {
@@ -272,8 +272,8 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   protected handleAdditionalDetails(details: any, actions: AdditionalDetailsActions) {
-    if (PaypalExpressPaymentComponent.cartId) {
-      this.adyenOrderService.sendAdditionalExpressDetails(details, PaypalExpressPaymentComponent.cartId).subscribe(
+    if (this.cartId) {
+      this.adyenOrderService.sendAdditionalExpressDetails(details, this.cartId).subscribe(
         result => {
           this.handleResponse(result, actions);
         }
@@ -305,7 +305,7 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
   }
 
   protected handleError(error: AdyenCheckoutError) {
-    this.clearStaticState();
+    this.clearState();
   }
 
 }
