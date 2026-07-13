@@ -130,11 +130,16 @@ export class PaypalExpressPaymentComponent extends ExpressPaymentBase implements
             component.updatePaymentData(paypalUpdateOrderResponseValue.paymentData);
           },
           onShippingOptionsChange: async (data, actions, component) => {
-            let paypalUpdateOrderResponse =
-              await this.handleDeliveryModeSelectedPaypal<Observable<PaypalUpdateOrderResponse>>(data.selectedShippingOption.id, this.product,
-               mappingFunction, component, actions.reject);
-            let paypalUpdateOrderResponseValue = await firstValueFrom(paypalUpdateOrderResponse);
-            component.updatePaymentData(paypalUpdateOrderResponseValue.paymentData);
+            if (data.selectedShippingOption?.id) {
+              let paypalUpdateOrderResponse =
+                await this.handleDeliveryModeSelectedPaypal<Observable<PaypalUpdateOrderResponse>>(data.selectedShippingOption.id, this.product,
+                 mappingFunction, component, actions.reject);
+              let paypalUpdateOrderResponseValue = await firstValueFrom(paypalUpdateOrderResponse);
+              component.updatePaymentData(paypalUpdateOrderResponseValue.paymentData);
+            } else {
+              this.logger.error("selectedShippingOption is undefined");
+              actions.reject();
+            }
 
           },
           onSubmit: async (state: SubmitData, component: UIElement, actions: SubmitActions) => {
