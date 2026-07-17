@@ -30,6 +30,8 @@ import {CheckoutAdyenConfigurationReloadEvent} from "../../core/events/checkout-
 import {AdyenCheckout, AdyenCheckoutError, Dropin} from '@adyen/adyen-web/auto'
 import {AdyenExpressOrderService} from "../../core/services/adyen-express-order.service";
 import {AdyenPartialPaymentService} from "../../core/services/adyen-partial-payment.service";
+import {AdyenMyAccountService} from "../../core/services/adyen-my-account.service";
+import {LoggerService} from "@spartacus/core";
 
 @Component({
   selector: 'cx-payment-method',
@@ -61,7 +63,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     partialPaymentId: undefined,
     redirectToNextStep: false
   };
-
   get backBtnText() {
     return this.checkoutStepService.getBackBntText(this.activatedRoute);
   }
@@ -80,6 +81,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     private userIdService: UserIdService,
     protected multiCartFacade: MultiCartFacade,
     protected partialPaymentService: AdyenPartialPaymentService,
+    protected adyenMyAccountService: AdyenMyAccountService,
+    protected logger: LoggerService,
   ) {
   }
 
@@ -215,6 +218,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       },
       showPayButton: true,
       showRemovePaymentMethodButton: true,
+      onDisableStoredPaymentMethod: (storedPaymentMethodId: string, resolve: () => void, reject: () => void) => this.onDisableStoredPaymentMethod(storedPaymentMethodId, resolve, reject),
       //@ts-ignore
       isPartialPayment: true,
       //@ts-ignore
@@ -245,6 +249,27 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   setBillingAddress(address?: BillingAddress) {
     this.billingAddress = address;
   }
+
+  onDisableStoredPaymentMethod(
+  storedPaymentMethodId: string,
+  resolve: () => void,
+  reject: () => void
+): void {
+  this.subscriptions.add(
+    this.adyenMyAccountService
+      .removeStoredCard(storedPaymentMethodId)
+      .subscribe({
+        next: () => resolve(),
+        error: (error: any) => {
+          this.logger.error(
+            'Failed to remove stored payment method from Drop-in.',
+            error
+          );
+          reject();
+        },
+      })
+  );
+}
 
   private handlePayment(paymentData: any, actions: SubmitActions) {
     this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress, this.paymentState.partialPaymentId).subscribe(

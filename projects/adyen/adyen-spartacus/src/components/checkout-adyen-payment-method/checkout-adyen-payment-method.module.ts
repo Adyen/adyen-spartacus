@@ -8,6 +8,9 @@ import {CardModule, SpinnerModule} from "@spartacus/storefront";
 import {
   AdyenCheckoutDeliveryAddressModule
 } from "./checkout-adyen-delivery-address/checkout-adyen-delivery-address.module";
+import {AdyenMyAccountService} from "../../core/services/adyen-my-account.service";
+import {AdyenMyAccountConnector} from "../../core/connectors/adyen-my-account.connector";
+import {OccAdyenMyAccountAdapter} from "../../core/occ/adapters/occ-adyen-my-account.adapter";
 
 
 @NgModule({
@@ -20,6 +23,9 @@ import {
     AdyenCheckoutDeliveryAddressModule
   ],
   providers: [
+    AdyenMyAccountService,
+    AdyenMyAccountConnector,
+    OccAdyenMyAccountAdapter,
     provideDefaultConfig(<CmsConfig>{
       cmsComponents: {
         CheckoutAdyenPaymentDetails: {
