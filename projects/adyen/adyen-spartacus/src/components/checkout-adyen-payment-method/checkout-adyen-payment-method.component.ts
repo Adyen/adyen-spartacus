@@ -190,6 +190,11 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
           intent: "authorize"
         }
       },
+      showPayButton: true,
+      //@ts-ignore
+      isPartialPayment: true,
+      //@ts-ignore
+      showRemainingAmount: true
     }
   }
 
