@@ -214,7 +214,6 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         }
       },
       showPayButton: true,
-      showRemovePaymentMethodButton: true,
       //@ts-ignore
       isPartialPayment: true,
       //@ts-ignore
