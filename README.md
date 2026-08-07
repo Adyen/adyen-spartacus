@@ -21,7 +21,7 @@ Before installing the Adyen Payments library, ensure that you have a local npm r
 
    ```bash
    git clone https://github.com/Adyen/adyen-spartacus/
-   cd adyen-spartacus/projects/adyen-payments
+   cd adyen-spartacus/projects/adyen/adyen-spartacus
    ```
 2. **Build the package**:
 
