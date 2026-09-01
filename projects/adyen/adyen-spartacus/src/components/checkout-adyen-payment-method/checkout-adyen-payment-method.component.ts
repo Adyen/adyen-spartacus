@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild,} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {ActiveCartFacade, CartType, MultiCartFacade} from '@spartacus/cart/base/root';
+import {ActiveCartFacade, MultiCartFacade} from '@spartacus/cart/base/root';
 import {CheckoutDeliveryAddressFacade,} from '@spartacus/checkout/base/root';
 import {
   Address,
@@ -308,22 +308,23 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handleError(error: AdyenCheckoutError) {
-    let subscribeCancel = this.adyenOrderService.sendPaymentCancelled().subscribe(() => {
-      this.multiCartFacade.reloadCart(OCC_CART_ID_CURRENT)
-
-      let subscribeUser = this.userIdService.takeUserId().subscribe((userId) => {
-        this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId})
-
-        let subscribeCart = this.multiCartFacade.getCartIdByType(CartType.ACTIVE).subscribe((cartId: string) => {
-          this.eventService.dispatch(
-            new CheckoutAdyenConfigurationReloadEvent()
-          );
-        });
-        subscribeCart.unsubscribe();
-      });
-      subscribeUser.unsubscribe();
-      subscribeCancel.unsubscribe();
-    });
+    // Adyen Drop-in surfaces errors (including failed partial-payment steps) via onError.
+    // Recover without cascading: cancel any placed order on the backend (the service
+    // no-ops when there is no order number, so we never POST payment-canceled/undefined),
+    // refresh the cart, then remount the Drop-in so the shopper can retry. Tracked in
+    // this.subscriptions to avoid the nested-subscribe leak/race this used to have.
+    this.busy$.next(false);
+    this.subscriptions.add(
+      this.adyenOrderService.sendPaymentCancelled().pipe(
+        switchMap(() => this.userIdService.takeUserId().pipe(take(1)))
+      ).subscribe((userId) => {
+        this.multiCartFacade.reloadCart(OCC_CART_ID_CURRENT);
+        this.multiCartFacade.loadCart({cartId: OCC_CART_ID_CURRENT, userId});
+        this.eventService.dispatch(
+          new CheckoutAdyenConfigurationReloadEvent()
+        );
+      })
+    );
   }
 
   private resetDropInComponent() {

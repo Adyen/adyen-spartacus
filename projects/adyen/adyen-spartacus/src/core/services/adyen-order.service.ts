@@ -11,7 +11,7 @@ import {
   UserIdService
 } from "@spartacus/core";
 import { OrderConnector, OrderHistoryConnector, OrderService } from '@spartacus/order/core';
-import { BehaviorSubject, catchError, map, Observable, of, switchMap, tap } from "rxjs";
+import { BehaviorSubject, catchError, map, Observable, of, switchMap, take, tap } from "rxjs";
 import { Order, OrderPlacedEvent } from '@spartacus/order/root';
 import { AdyenOrderConnector } from "../connectors/adyen-order-connector.service";
 import { ActiveCartFacade } from '@spartacus/cart/base/root';
@@ -145,12 +145,15 @@ export class AdyenOrderService extends OrderService {
     this.commandService.create<any, void>(
       () =>
         this.checkoutPreconditions().pipe(
-          switchMap(([userId, cartId]) => {
-               return this.placedOrderNumber$.pipe(
-                map((orderNumber) => {
-                  this.placeOrderConnector.paymentCanceled(userId, cartId, orderNumber!).subscribe()
-                }))
-            }
+          switchMap(([userId, cartId]) =>
+            this.placedOrderNumber$.pipe(
+              take(1),
+              switchMap((orderNumber) =>
+                orderNumber
+                  ? this.placeOrderConnector.paymentCanceled(userId, cartId, orderNumber)
+                  : of(void 0)
+              )
+            )
           )
         ),
       {
