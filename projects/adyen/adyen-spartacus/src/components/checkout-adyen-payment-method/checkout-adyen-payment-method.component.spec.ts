@@ -89,7 +89,8 @@ describe('CheckoutAdyenPaymentMethodComponent', () => {
     immediateCapture: false,
     countryCode: 'US',
     cardHolderNameRequired: true,
-    sepaDirectDebit: false
+    sepaDirectDebit: false,
+    shopperEmail: 'john.doe@example.com'
   };
 
   const mockStateData = {
@@ -103,6 +104,7 @@ describe('CheckoutAdyenPaymentMethodComponent', () => {
       line1: '123 Main St',
       town: 'Anytown',
       postalCode: '12345',
+      phone: '+81 90 1234 5678',
       country: { isocode: 'US', name: 'United States' }
     }
   };
@@ -186,5 +188,44 @@ describe('CheckoutAdyenPaymentMethodComponent', () => {
     spyOn(component['subscriptions'], 'unsubscribe');
     component.ngOnDestroy();
     expect(component['subscriptions'].unsubscribe).toHaveBeenCalled();
+  });
+
+  it('should hide personal detail fields for all econtext payment methods', () => {
+    const configuration = component['getDropinConfiguration'](mockAdyenConfigData);
+    const paymentMethodsConfiguration = configuration.paymentMethodsConfiguration as any;
+
+    [
+      'econtext',
+      'econtext_atm',
+      'econtext_online',
+      'econtext_seven_eleven',
+      'econtext_stores'
+    ].forEach(paymentMethod => {
+      expect(paymentMethodsConfiguration[paymentMethod].personalDetailsRequired).toBeFalse();
+    });
+  });
+
+  it('should add shopper details to an econtext payment request', () => {
+    component['deliveryAddress'] = mockStateData.data;
+    component['shopperEmail'] = mockAdyenConfigData.shopperEmail;
+
+    const paymentData = component['preparePaymentData']({
+      paymentMethod: {type: 'econtext_stores'}
+    });
+
+    expect(paymentData).toEqual(jasmine.objectContaining({
+      shopperName: {
+        firstName: 'John',
+        lastName: 'Doe'
+      },
+      shopperEmail: 'john.doe@example.com',
+      telephoneNumber: '+81 90 1234 5678'
+    }));
+  });
+
+  it('should not modify payment data for non-econtext payment methods', () => {
+    const paymentData = {paymentMethod: {type: 'scheme'}};
+
+    expect(component['preparePaymentData'](paymentData)).toBe(paymentData);
   });
 });

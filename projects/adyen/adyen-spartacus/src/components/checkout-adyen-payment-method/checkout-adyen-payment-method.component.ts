@@ -12,7 +12,11 @@ import {
   UserIdService,
   UserPaymentService,
 } from '@spartacus/core';
-import {BehaviorSubject, Subscription,} from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  Subscription
+} from 'rxjs';
 import {filter, map, switchMap, take,} from 'rxjs/operators';
 import { CheckoutStepService } from "@spartacus/checkout/base/components";
 import {CheckoutAdyenConfigurationService} from "../../core/services/checkout-adyen-configuration.service";
@@ -22,9 +26,11 @@ import {
   AdditionalDetailsActions,
   CoreConfiguration,
   DropinConfiguration,
+  EcontextConfiguration,
+  EcontextInputSchema,
   SubmitActions,
   UIElement
-} from "@adyen/adyen-web";
+} from '@adyen/adyen-web';
 import {BillingAddress, PlaceOrderResponse, PaymentState} from "../../core/models/occ.order.models";
 import {CheckoutAdyenConfigurationReloadEvent} from "../../core/events/checkout-adyen.events";
 import {AdyenCheckout, AdyenCheckoutError, Dropin} from '@adyen/adyen-web/auto'
@@ -41,6 +47,7 @@ import {AdyenPartialPaymentService} from "../../core/services/adyen-partial-paym
 export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   protected subscriptions = new Subscription();
   protected deliveryAddress: Address | undefined;
+  protected shopperEmail: string | undefined;
   protected busy$ = new BehaviorSubject<boolean>(false);
 
   //Adyen properties
@@ -96,6 +103,45 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       this.isGuestCheckout = true;
     }
 
+    const deliveryAddress$ = this.checkoutDeliveryAddressFacade
+      .getDeliveryAddressState()
+      .pipe(
+        filter(state => !state.loading),
+        map(state => state.data)
+      );
+
+    const checkoutConfiguration$ =
+      this.checkoutAdyenConfigurationService
+        .getCheckoutConfigurationState()
+        .pipe(
+          filter(state => !state.loading),
+          map(state => state.data),
+          filter(
+            (config): config is AdyenConfigData => !!config
+          )
+        );
+
+    this.subscriptions.add(
+      combineLatest([
+        deliveryAddress$,
+        checkoutConfiguration$
+      ])
+        .pipe(take(1))
+        .subscribe(async ([address, config]) => {
+          this.deliveryAddress = address;
+          this.shopperEmail = config.shopperEmail;
+
+          const adyenCheckout = await AdyenCheckout(
+            this.getAdyenCheckoutConfig(config)
+          );
+
+          this.dropIn = new Dropin(
+            adyenCheckout,
+            this.getDropinConfiguration(config)
+          ).mount(this.hook.nativeElement);
+        })
+    );
+
     this.checkoutDeliveryAddressFacade
       .getDeliveryAddressState()
       .pipe(
@@ -120,6 +166,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         map((state) => state.data)
       ).subscribe((async config => {
         if (config) {
+          this.shopperEmail = config.shopperEmail;
           const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
           this.dropIn = new Dropin(adyenCheckout,  this.getDropinConfiguration(config)
           ).mount(this.hook.nativeElement);
@@ -149,6 +196,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       ))
     ).subscribe(async (config: AdyenConfigData) => {
       if (config) {
+        this.shopperEmail = config.shopperEmail;
         const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
         this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)
         ).mount(this.hook.nativeElement);
@@ -194,7 +242,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     throw new Error(`Invalid environment: ${env}`);
   }
 
-  private getDropinConfiguration(adyenConfig: AdyenConfigData): DropinConfiguration {
+  private getDropinConfiguration(adyenConfig: AdyenConfigData, ): DropinConfiguration {
+    const econtextConfiguration =
+      this.getEcontextConfiguration(adyenConfig);
     return {
       paymentMethodsConfiguration: {
         card: {
@@ -211,6 +261,21 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         },
         paypal: {
           intent: "authorize"
+        },
+        econtext: {
+          ...econtextConfiguration
+        },
+        econtext_atm: {
+          ...econtextConfiguration
+        },
+        econtext_online: {
+          ...econtextConfiguration
+        },
+        econtext_seven_eleven: {
+          ...econtextConfiguration
+        },
+        econtext_stores: {
+          ...econtextConfiguration
         }
       },
       showPayButton: true,
@@ -247,11 +312,33 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handlePayment(paymentData: any, actions: SubmitActions) {
-    this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress, this.paymentState.partialPaymentId).subscribe(
+    const preparedPaymentData = this.preparePaymentData(paymentData);
+
+    this.adyenOrderService.adyenPlaceOrder(preparedPaymentData, this.billingAddress, this.paymentState.partialPaymentId).subscribe(
       result => {
         this.handleResponse(result, actions);
       }
     );
+  }
+
+  private preparePaymentData(paymentData: any): any {
+    const paymentMethodType = paymentData?.paymentMethod?.type;
+
+    if (typeof paymentMethodType !== 'string' || !paymentMethodType.startsWith('econtext')) {
+      return paymentData;
+    }
+
+    const shopperAddress = this.billingAddress ?? this.deliveryAddress;
+
+    return {
+      ...paymentData,
+      shopperName: {
+        firstName: paymentData.shopperName?.firstName || paymentData.firstName || shopperAddress?.firstName,
+        lastName: paymentData.shopperName?.lastName || paymentData.lastName || shopperAddress?.lastName
+      },
+      shopperEmail: paymentData.shopperEmail || shopperAddress?.email || this.shopperEmail,
+      telephoneNumber: paymentData.telephoneNumber || shopperAddress?.phone || shopperAddress?.cellphone
+    };
   }
 
   private handleAdditionalDetails(details: any, actions: AdditionalDetailsActions) {
@@ -325,6 +412,31 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       subscribeUser.unsubscribe();
       subscribeCancel.unsubscribe();
     });
+  }
+
+  private getEcontextConfiguration(
+    adyenConfig: AdyenConfigData
+  ): EcontextConfiguration {
+    const address = this.deliveryAddress;
+
+    const data: EcontextInputSchema = {
+      firstName: address?.firstName,
+      lastName: address?.lastName,
+      shopperEmail: address?.email || adyenConfig.shopperEmail,
+      telephoneNumber: address?.phone || address?.cellphone
+    };
+
+    const personalDetailsRequired = [
+      data.firstName,
+      data.lastName,
+      data.shopperEmail,
+      data.telephoneNumber
+    ].some(value => !value?.trim());
+
+    return {
+      personalDetailsRequired,
+      data
+    };
   }
 
   private resetDropInComponent() {
