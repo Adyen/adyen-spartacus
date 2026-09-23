@@ -8,24 +8,22 @@ import {AdyenLoggerService} from "../../../core/services/adyen-logger.service";
 
 @Injectable()
 export class ExpressPaymentBase implements OnDestroy {
-
-  protected logger = inject(AdyenLoggerService);
-
-  constructor(protected multiCartService: MultiCartFacade,
-              protected userIdService: UserIdService,
-              protected activeCartService: ActiveCartFacade,
-              protected adyenCartService: AdyenCartService,
-              protected eventService: EventService,
-              protected routingService: RoutingService) {
-  }
-
   private unsubscribe$ = new Subject<void>();
   protected subscriptions = new Subscription();
+  protected logger = inject(AdyenLoggerService);
 
-  static productAdded = false;
-  static cartId: string | undefined;
-  static cart$: Observable<Cart>;
+  protected productAdded = false;
+  protected cartId: string | undefined;
+  protected cart$?: Observable<Cart>;
 
+  constructor(
+    protected multiCartService: MultiCartFacade,
+    protected userIdService: UserIdService,
+    protected activeCartService: ActiveCartFacade,
+    protected adyenCartService: AdyenCartService,
+    protected eventService: EventService,
+    protected routingService: RoutingService
+  ) {}
 
   async initializeCart(product: Product): Promise<void> {
     try {
@@ -34,7 +32,7 @@ export class ExpressPaymentBase implements OnDestroy {
           take(1),
           catchError((error) => {
             this.logger.error("Error fetching the active cart:", error);
-            throw error; 
+            throw error;
           })
         )
       );
@@ -45,18 +43,19 @@ export class ExpressPaymentBase implements OnDestroy {
       }
 
 
-      if (!ExpressPaymentBase.cartId) {
+      if (!this.cartId) {
         const cart = product
           ? await firstValueFrom(this.createAndAddProductToCart(product))
           : activeCart;
 
+        if (cart?.code) {
+          this.cart$ = this.multiCartService.getCart(cart.code);
 
-        if (cart && cart.code) {
-          ExpressPaymentBase.cart$ = this.multiCartService.getCart(cart.code);
-          if(product)
-             await firstValueFrom(this.adyenCartService.takeStable(ExpressPaymentBase.cart$))
-          ExpressPaymentBase.cartId = cart.code;
+          if (product) {
+            await firstValueFrom(this.adyenCartService.takeStable(this.cart$));
+          }
 
+          this.cartId = cart.code;
         } else {
           this.logger.warn("Cart not available or invalid.");
         }
@@ -64,6 +63,18 @@ export class ExpressPaymentBase implements OnDestroy {
     } catch (error) {
       this.logger.error("Error in async cart initialization:", error);
     }
+  }
+
+  protected getStableCart(product?: Product): Observable<Cart> {
+    if (product) {
+      if (!this.cart$) {
+        throw new Error('cart$ is undefined for express product cart');
+      }
+
+      return this.adyenCartService.takeStable(this.cart$);
+    }
+
+    return this.activeCartService.takeActive();
   }
 
   private createAndAddProductToCart(product: Product): Observable<Cart> {
@@ -77,11 +88,11 @@ export class ExpressPaymentBase implements OnDestroy {
           extraData: {active: false},
         }).pipe(
           tap((cart) => {
-            if (!ExpressPaymentBase.productAdded) {
+            if (!this.productAdded) {
               if (cart && (cart as Cart).code && product?.code) {
                 // Call addEntry here, as it does not return an Observable
                 this.multiCartService.addEntry(userId, (cart as Cart).code as string, product.code, 1);
-                ExpressPaymentBase.productAdded = true;
+                this.productAdded = true;
               } else {
                 this.logger.error("Unable to add product or cart is invalid.");
               }
@@ -95,10 +106,10 @@ export class ExpressPaymentBase implements OnDestroy {
 
 
   setDeliveryMode<T>(deliveryModeId: string, product: Product, mappingFunction: (cart: Cart) => T, resolve: any, reject: any): void {
-    if(!!ExpressPaymentBase.cartId) {
-      this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, ExpressPaymentBase.cartId)
+    if(!!this.cartId) {
+      this.subscriptions.add(this.adyenCartService.setDeliveryMode(deliveryModeId, this.cartId)
         .pipe(
-          switchMap(() => !!product ? this.adyenCartService.takeStable(ExpressPaymentBase.cart$) : this.activeCartService.takeActive())
+          switchMap(() => this.getStableCart(product))
         ).subscribe({
           next: cart => {
             try {
@@ -133,8 +144,8 @@ export class ExpressPaymentBase implements OnDestroy {
       town: "placeholder",
       line1: "placeholder"
     }
-    if(!!ExpressPaymentBase.cartId) {
-      const cartCode = ExpressPaymentBase.cartId;
+    if(!!this.cartId) {
+      const cartCode = this.cartId;
       this.subscriptions.add(this.adyenCartService.createAndSetAddress(cartCode, shippingAddress).subscribe(() => {
         this.subscriptions.add(this.adyenCartService.getSupportedDeliveryModesForCart(cartCode).subscribe((deliveryModes) => {
           const validDeliveryModes = deliveryModes.filter(mode => mode.code);
@@ -143,7 +154,7 @@ export class ExpressPaymentBase implements OnDestroy {
             this.subscriptions.add(this.adyenCartService
               .setDeliveryMode(validDeliveryModes[0].code!, cartCode)
               .pipe(
-                switchMap(() => !!product ? this.adyenCartService.takeStable(ExpressPaymentBase.cart$) : this.activeCartService.takeActive())
+                switchMap(() => this.getStableCart(product))
               ).subscribe({
                 next: cart => {
                   try {
@@ -169,24 +180,26 @@ export class ExpressPaymentBase implements OnDestroy {
   }
 
   onSuccess(): void {
-    if (ExpressPaymentBase.cartId) {
-      this.multiCartService.removeCart(ExpressPaymentBase.cartId);
-    }
+    this.removeCurrentCart();
+    this.clearState();
 
-    this.clearStaticState();
-
-    this.routingService.go({cxRoute: 'orderConfirmation'});
+    this.routingService.go({ cxRoute: 'orderConfirmation' });
   }
 
+  protected removeCurrentCart(): void {
+    if (this.cartId) {
+      this.multiCartService.removeCart(this.cartId);
+    }
+  }
 
-  clearStaticState(): void {
-    this.multiCartService.removeCart(ExpressPaymentBase.cartId!);
-    ExpressPaymentBase.cartId = undefined;
-    ExpressPaymentBase.productAdded = false;
+  protected clearState(): void {
+    this.cartId = undefined;
+    this.cart$ = undefined;
+    this.productAdded = false;
   }
 
   ngOnDestroy(): void {
-    this.clearStaticState();
+    this.clearState();
     this.subscriptions.unsubscribe();
     this.unsubscribe$.next();
     this.unsubscribe$.complete();

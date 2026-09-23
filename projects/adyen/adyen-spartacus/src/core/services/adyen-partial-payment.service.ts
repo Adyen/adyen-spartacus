@@ -10,7 +10,7 @@ import {
   UserIdService
 } from '@spartacus/core';
 import { ActiveCartFacade } from '@spartacus/cart/base/root';
-import { BehaviorSubject, catchError, map, Observable, of, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, catchError, filter, map, Observable, of, switchMap, take, tap } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   GiftCardBalanceRequest,
@@ -271,6 +271,8 @@ export class AdyenPartialPaymentService {
     return this.userIdService.takeUserId().pipe(
       switchMap((userId) =>
         this.activeCartFacade.getActiveCartId().pipe(
+          filter((cartId) => !!cartId),
+          take(1),
           map((cartId) => [userId, cartId] as [string, string])
         )
       )

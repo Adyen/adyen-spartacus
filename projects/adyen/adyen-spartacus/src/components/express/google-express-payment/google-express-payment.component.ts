@@ -164,9 +164,14 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
 
   }
 
-  private handleOnSubmit(state: any, actions: any) {
-    if(!!GoogleExpressPaymentComponent.cartId) {
-      this.adyenOrderService.adyenPlaceGoogleExpressOrder(state.data, this.authorizedPaymentData, this.product, GoogleExpressPaymentComponent.cartId).subscribe(
+  private handleOnSubmit(state: any, actions: any): void {
+    if (this.cartId) {
+      this.adyenOrderService.adyenPlaceGoogleExpressOrder(
+        state.data,
+        this.authorizedPaymentData,
+        this.product,
+        this.cartId
+      ).subscribe(
         result => {
           if (result?.success) {
             if (result.executeAction && result.paymentsAction !== undefined) {
@@ -186,12 +191,13 @@ export class GoogleExpressPaymentComponent extends ExpressPaymentBase implements
         }
       );
     } else {
-      this.logger.error("Undefined cart id")
+      this.logger.error("Undefined cart id");
+      actions.reject();
     }
   }
 
   handleError(error: AdyenCheckoutError) {
-    this.clearStaticState();
+    this.clearState();
   }
 
   override ngOnDestroy(): void {

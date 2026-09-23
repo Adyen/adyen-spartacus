@@ -3,6 +3,7 @@
   "version": "1.5.0",
   "schematics": "./schematics/collection.json",
   "peerDependencies": {
+    "@adyen/adyen-web": "^6.40.2",
     "@angular/common": "^21.1.0",
     "@angular/core": "^21.1.0"
   },
