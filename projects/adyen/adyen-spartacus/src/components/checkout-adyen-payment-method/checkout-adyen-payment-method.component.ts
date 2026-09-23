@@ -12,13 +12,9 @@ import {
   UserIdService,
   UserPaymentService,
 } from '@spartacus/core';
-import {
-  BehaviorSubject,
-  combineLatest,
-  Subscription
-} from 'rxjs';
+import {BehaviorSubject, combineLatest, Subscription} from 'rxjs';
 import {filter, map, switchMap, take,} from 'rxjs/operators';
-import { CheckoutStepService } from "@spartacus/checkout/base/components";
+import {CheckoutStepService} from "@spartacus/checkout/base/components";
 import {CheckoutAdyenConfigurationService} from "../../core/services/checkout-adyen-configuration.service";
 import {AdyenConfigData} from "../../core/models/occ.config.models";
 import {
@@ -31,11 +27,12 @@ import {
   SubmitActions,
   UIElement
 } from '@adyen/adyen-web';
-import {BillingAddress, PlaceOrderResponse, PaymentState} from "../../core/models/occ.order.models";
+import {BillingAddress, PaymentState, PlaceOrderResponse} from "../../core/models/occ.order.models";
 import {CheckoutAdyenConfigurationReloadEvent} from "../../core/events/checkout-adyen.events";
 import {AdyenCheckout, AdyenCheckoutError, Dropin} from '@adyen/adyen-web/auto'
 import {AdyenExpressOrderService} from "../../core/services/adyen-express-order.service";
 import {AdyenPartialPaymentService} from "../../core/services/adyen-partial-payment.service";
+import {AdyenLoggerService} from "../../core/services/adyen-logger.service";
 
 @Component({
   selector: 'cx-payment-method',
@@ -87,6 +84,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     private userIdService: UserIdService,
     protected multiCartFacade: MultiCartFacade,
     protected partialPaymentService: AdyenPartialPaymentService,
+    protected logger: AdyenLoggerService
   ) {
   }
 
@@ -142,36 +140,9 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         })
     );
 
-    this.checkoutDeliveryAddressFacade
-      .getDeliveryAddressState()
-      .pipe(
-        filter((state: any) => !state.loading),
-        take(1),
-        map((state: any) => state.data)
-      )
-      .subscribe((address: Address | undefined) => {
-        this.deliveryAddress = address;
-      });
-
     this.subscriptions.add(
       this.eventService.get(CheckoutAdyenConfigurationReloadEvent).subscribe(event => {
         this.handleConfigurationReload(event);
-      })
-    );
-
-    this.checkoutAdyenConfigurationService.getCheckoutConfigurationState()
-      .pipe(
-        filter((state) => !state.loading),
-        take(1),
-        map((state) => state.data)
-      ).subscribe((async config => {
-        if (config) {
-          this.shopperEmail = config.shopperEmail;
-          const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-          this.dropIn = new Dropin(adyenCheckout,  this.getDropinConfiguration(config)
-          ).mount(this.hook.nativeElement);
-
-        }
       })
     );
 
@@ -400,6 +371,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     // no-ops when there is no order number, so we never POST payment-canceled/undefined),
     // refresh the cart, then remount the Drop-in so the shopper can retry. Tracked in
     // this.subscriptions to avoid the nested-subscribe leak/race this used to have.
+    this.logger.error('Adyen Drop-in error:', error);
     this.busy$.next(false);
     this.subscriptions.add(
       this.adyenOrderService.sendPaymentCancelled().pipe(
