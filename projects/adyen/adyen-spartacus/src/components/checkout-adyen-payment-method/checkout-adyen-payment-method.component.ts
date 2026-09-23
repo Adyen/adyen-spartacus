@@ -242,7 +242,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     throw new Error(`Invalid environment: ${env}`);
   }
 
-  private getDropinConfiguration(adyenConfig: AdyenConfigData, ): DropinConfiguration {
+  private getDropinConfiguration(adyenConfig: AdyenConfigData): DropinConfiguration {
     const econtextConfiguration =
       this.getEcontextConfiguration(adyenConfig);
     return {
