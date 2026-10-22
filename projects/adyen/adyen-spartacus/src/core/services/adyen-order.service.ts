@@ -1,4 +1,5 @@
-import {Injectable} from "@angular/core";
+import {inject, Injectable} from "@angular/core";
+import {AdyenPlaceOrderErrorService} from '../subscription/adyen-place-order-error.service';
 import {
   Address,
   Command,
@@ -23,6 +24,7 @@ import {STOREFRONT_VERSION, STOREFRONT_TYPE} from '../../package.const';
 
 @Injectable()
 export class AdyenOrderService extends OrderService {
+  protected placeOrderErrorService: AdyenPlaceOrderErrorService = inject(AdyenPlaceOrderErrorService);
   protected messageTimeout: number = 20000;
   protected placedOrderNumber$ = new BehaviorSubject<string | undefined>(undefined);
   protected placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
@@ -67,19 +69,7 @@ export class AdyenOrderService extends OrderService {
               map((response) => {
                 return {...response, success: true}
               }),
-              catchError((error: HttpErrorResponse) => {
-                  this.translationService.translate(this.placeOrderErrorCodePrefix + error.error.errorCode).subscribe((message) => {
-                    this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
-                  })
-
-                  let response: PlaceOrderResponse = {
-                    success: false,
-                    error: error.error.errorCode,
-                    errorFieldCodes: error.error.invalidFields
-                  }
-                  return of(response);
-                }
-              )
+              catchError((error: HttpErrorResponse) => this.placeOrderErrorService.handle(error, {messageTimeout: this.messageTimeout, errorCodePrefix: this.placeOrderErrorCodePrefix}))
             )
           )
         ),
@@ -116,19 +106,7 @@ export class AdyenOrderService extends OrderService {
               map((response) => {
                 return {...response, success: true}
               }),
-              catchError((error: HttpErrorResponse) => {
-                  this.translationService.translate(this.placeOrderErrorCodePrefix + error.error.errorCode).subscribe((message) => {
-                    this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
-                  })
-
-                  let response: PlaceOrderResponse = {
-                    success: false,
-                    error: error.error.errorCode,
-                    errorFieldCodes: error.error.invalidFields
-                  }
-                  return of(response);
-                }
-              )
+              catchError((error: HttpErrorResponse) => this.placeOrderErrorService.handle(error, {messageTimeout: this.messageTimeout, errorCodePrefix: this.placeOrderErrorCodePrefix}))
             )
           )
         ),

@@ -13,6 +13,7 @@ import {OccOrderAdapter, OccOrderHistoryAdapter} from "@spartacus/order/occ"
 import {AdyenAddressService} from "../../core/services/adyen-address.service";
 import {AdditionalDetailsConnector} from "../../core/connectors/additional-details.connector";
 import {OccAdditionalDetailsAdapter} from "../../core/occ/adapters/occ-additionaldetails.adapter";
+import {AdyenCartModificationModule} from "../../core/subscription/adyen-cart-modification.module";
 import {AdyenRedirectModule} from "../adyen-redirect/adyen-redirect.module";
 import {I18nConfig, provideConfig, provideDefaultConfig} from '@spartacus/core';
 import {adyenCheckoutTranslationChunksConfig, adyenCheckoutTranslations} from "../../assets/translations/translations";
@@ -31,7 +32,8 @@ import {AdyenCheckoutBillingAddressConnector} from "../../core/connectors/adyen-
     CheckoutAdyenPaymentMethodModule,
     CheckoutAdyenEventModule,
     CheckoutAdyenRootModule,
-    AdyenRedirectModule
+    AdyenRedirectModule,
+    AdyenCartModificationModule
   ],
   providers: [
     provideDefaultConfig({

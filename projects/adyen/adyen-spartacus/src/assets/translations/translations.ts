@@ -14,5 +14,11 @@ export const adyenCheckoutTranslationChunksConfig: TranslationChunksConfig = {
   ],
   paymentErrors: [
     errorCodePrefix
+  ],
+  adyenCartModification: [
+    'adyenCartModification'
+  ],
+  adyenMySubscriptions: [
+    'adyenMySubscriptions'
   ]
 }

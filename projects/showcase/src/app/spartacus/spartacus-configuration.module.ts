@@ -8,6 +8,8 @@ import {
   provideConfig, 
   SiteContextConfig 
 } from "@spartacus/core";
+import { CartConfig } from "@spartacus/cart/base/root";
+import { adyenCartValidationTranslationsEn } from "@adyen/adyen-spartacus";
 import { defaultCmsContentProviders, layoutConfig, mediaConfig } from "@spartacus/storefront";
 
 @NgModule({
@@ -63,6 +65,22 @@ import { defaultCmsContentProviders, layoutConfig, mediaConfig } from "@spartacu
     }), 
     
     provideConfig(<FeaturesConfig>{
+    }),
+
+    // Static resources: merge the library's cart-validation texts into the `cart` chunk (see library README)
+    provideConfig(<I18nConfig>{
+      i18n: {
+        resources: { en: { cart: adyenCartValidationTranslationsEn } }
+      },
+    }),
+
+    // Required for the Adyen duplicate-subscription messages to surface on checkout start (see library README)
+    provideConfig(<CartConfig>{
+      cart: {
+        validation: {
+          enabled: true
+        }
+      }
     })
   ]
 })

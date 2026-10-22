@@ -27,6 +27,9 @@ export const paymentErrors = {
             }
           }
         },
+        "subscriptionAlreadyOwned": "Your order could not be placed because you already have this subscription. You can see your subscriptions under My Subscriptions in your account.",
+        "subscriptionLimitPerCart": "Your order could not be placed because a cart can contain only one subscription. Please remove the other subscription from your cart.",
+        "subscriptionQuantityLimit": "Your order could not be placed because a subscription can only be ordered with a quantity of 1. Please correct the quantity in your cart.",
         "paymentethod": {
           "formentry": {
             "invalid": "Please check your payment details are correct or provide a different payment method."
