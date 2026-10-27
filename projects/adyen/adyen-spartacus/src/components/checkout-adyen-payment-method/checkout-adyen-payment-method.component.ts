@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild,} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild,} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {ActiveCartFacade, MultiCartFacade} from '@spartacus/cart/base/root';
 import {CheckoutDeliveryAddressFacade,} from '@spartacus/checkout/base/root';
@@ -47,11 +47,14 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   @ViewChild('hook', {static: true}) hook: ElementRef;
   sessionId: string = '';
   redirectResult: string = '';
-  dropIn: Dropin;
+  dropIn?: Dropin;
 
   isGuestCheckout = false;
   paymentDetails?: PaymentDetails;
   billingAddress?: BillingAddress = undefined;
+  checkoutConfig?: AdyenConfigData;
+  protected configurationRequestId = 0;
+  protected configurationCountryCode?: string;
 
   // Partial payment state
   paymentState: PaymentState = {
@@ -61,6 +64,29 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     partialPaymentId: undefined,
     redirectToNextStep: false
   };
+
+  get showDisclaimer(): boolean {
+    const config = this.checkoutConfig;
+    return !!config?.disclaimerMessage?.trim()
+      && (config.openInvoiceMethods || []).length > 0;
+  }
+
+  get safeDisclaimerLink(): string | undefined {
+    const value = this.checkoutConfig?.disclaimerLink?.trim();
+    if (!value) {
+      return undefined;
+    }
+    try {
+      const url = new URL(value, window.location.origin);
+      return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  get showInlineDisclaimer(): boolean {
+    return this.showDisclaimer && !this.safeDisclaimerLink;
+  }
 
   get backBtnText() {
     return this.checkoutStepService.getBackBntText(this.activatedRoute);
@@ -80,6 +106,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     private userIdService: UserIdService,
     protected multiCartFacade: MultiCartFacade,
     protected partialPaymentService: AdyenPartialPaymentService,
+    protected changeDetectorRef: ChangeDetectorRef,
   ) {
   }
 
@@ -105,6 +132,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       )
       .subscribe((address: Address | undefined) => {
         this.deliveryAddress = address;
+        this.configurationCountryCode ??= address?.country?.isocode;
       });
 
     this.subscriptions.add(
@@ -118,15 +146,14 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         filter((state) => !state.loading),
         take(1),
         map((state) => state.data)
-      ).subscribe((async config => {
-        if (config) {
-          const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-          this.dropIn = new Dropin(adyenCheckout,  this.getDropinConfiguration(config)
-          ).mount(this.hook.nativeElement);
-
+      ).subscribe(config => {
+        const requestId = this.configurationRequestId;
+        if (config && requestId === 0) {
+          this.checkoutConfig = config;
+          this.changeDetectorRef.markForCheck();
+          this.mountDropIn(config, requestId);
         }
-      })
-    );
+      });
 
     // Subscribe to partial payment state changes
     this.subscriptions.add(
@@ -141,19 +168,52 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   protected handleConfigurationReload(event: CheckoutAdyenConfigurationReloadEvent): void {
-    this.dropIn.unmount();
-    this.activeCartFacade.getActiveCartId().pipe(
+    this.reloadCheckoutConfiguration(
+      this.billingAddress?.country?.isocode || this.deliveryAddress?.country?.isocode
+    );
+  }
+
+  onBillingCountryChange(countryCode?: string): void {
+    const shopperCountryCode = countryCode || this.deliveryAddress?.country?.isocode;
+    if (!shopperCountryCode || shopperCountryCode === this.configurationCountryCode) {
+      return;
+    }
+    this.configurationCountryCode = shopperCountryCode;
+    this.reloadCheckoutConfiguration(shopperCountryCode);
+  }
+
+  protected reloadCheckoutConfiguration(countryCode?: string): void {
+    const requestId = ++this.configurationRequestId;
+    this.checkoutConfig = undefined;
+    this.dropIn?.unmount();
+    this.dropIn = undefined;
+    this.changeDetectorRef.markForCheck();
+    const requestSubscription = this.activeCartFacade.getActiveCartId().pipe(
       filter(cartId => !!cartId),
       switchMap(cartId => this.userIdService.takeUserId().pipe(
-        switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(userId, cartId as string))
+        switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(
+          userId, cartId as string, countryCode || this.deliveryAddress?.country?.isocode
+        ))
       ))
-    ).subscribe(async (config: AdyenConfigData) => {
-      if (config) {
-        const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
-        this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config)
-        ).mount(this.hook.nativeElement);
+    ).subscribe((config: AdyenConfigData) => {
+      if (config && requestId === this.configurationRequestId) {
+        this.checkoutConfig = config;
+        this.changeDetectorRef.markForCheck();
+        this.mountDropIn(config, requestId);
       }
     });
+    this.subscriptions.add(requestSubscription);
+  }
+
+  protected async mountDropIn(config: AdyenConfigData, requestId: number): Promise<void> {
+    const adyenCheckout = await AdyenCheckout(this.getAdyenCheckoutConfig(config));
+    if (requestId !== this.configurationRequestId) {
+      return;
+    }
+    this.dropIn?.unmount();
+    this.dropIn = new Dropin(adyenCheckout, this.getDropinConfiguration(config))
+      .mount(this.hook.nativeElement);
+    this.changeDetectorRef.markForCheck();
   }
 
   protected getAdyenCheckoutConfig(adyenConfig: AdyenConfigData): CoreConfiguration {
@@ -195,8 +255,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private getDropinConfiguration(adyenConfig: AdyenConfigData): DropinConfiguration {
-    return {
-      paymentMethodsConfiguration: {
+    const paymentMethodsConfiguration: Record<string, any> = {
         card: {
           type: 'card',
           hasHolderName: true,
@@ -212,7 +271,24 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         paypal: {
           intent: "authorize"
         }
-      },
+      };
+
+    if (this.showDisclaimer && this.safeDisclaimerLink) {
+      const disclaimerMessage = {
+        message: `${adyenConfig.disclaimerMessage!.trim()} %{linkText}`,
+        linkText: 'Learn more...',
+        link: this.safeDisclaimerLink,
+      };
+      (adyenConfig.openInvoiceMethods || []).forEach(method => {
+        paymentMethodsConfiguration[method] = {
+          ...paymentMethodsConfiguration[method],
+          disclaimerMessage,
+        };
+      });
+    }
+
+    return {
+      paymentMethodsConfiguration,
       showPayButton: true,
       //@ts-ignore
       isPartialPayment: true,
@@ -238,6 +314,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.configurationRequestId++;
+    this.dropIn?.unmount();
     this.subscriptions.unsubscribe();
   }
 
@@ -265,7 +343,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     if (!!response) {
       if (response.success) {
         if (response.executeAction === true && !!response.paymentsAction) {
-          this.dropIn.handleAction(response.paymentsAction);
+          this.dropIn?.handleAction(response.paymentsAction);
 
         } else if (!!response.paymentsResponse) {
           const remainingAmount = response.paymentsResponse.order?.remainingAmount;
@@ -328,8 +406,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private resetDropInComponent() {
-    this.dropIn.unmount();
-    this.dropIn.mount(this.hook.nativeElement)
+    this.dropIn?.unmount();
+    this.dropIn?.mount(this.hook.nativeElement);
   }
 
 }

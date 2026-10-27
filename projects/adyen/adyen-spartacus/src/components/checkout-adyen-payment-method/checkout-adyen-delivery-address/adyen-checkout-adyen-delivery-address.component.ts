@@ -1,11 +1,12 @@
-import {Component, EventEmitter, OnInit, Output} from "@angular/core";
+import {Component, EventEmitter, OnDestroy, OnInit, Output, ViewChild} from "@angular/core";
 import {ActivatedRoute} from "@angular/router";
 import {ActiveCartFacade} from "@spartacus/cart/base/root";
 import {CardWithAddress, CheckoutStepService} from "@spartacus/checkout/base/components";
 import {CheckoutDeliveryAddressFacade} from "@spartacus/checkout/base/root";
 import {Address, getLastValueSync, GlobalMessageService, TranslationService, UserAddressService} from "@spartacus/core";
+import {AddressFormComponent} from "@spartacus/user/profile/components";
 import {Card, getAddressNumbers} from "@spartacus/storefront";
-import {BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable} from "rxjs";
+import {BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable, Subscription} from "rxjs";
 import {AdyenAddressService} from "../../../core/services/adyen-address.service";
 import {BillingAddress} from "../../../core/models/occ.order.models";
 
@@ -15,7 +16,7 @@ import {BillingAddress} from "../../../core/models/occ.order.models";
   styleUrls: ['./checkout-adyen-delivery-address.scss'],
   standalone: false
 })
-export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
+export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit, OnDestroy {
   protected busy$ = new BehaviorSubject<boolean>(false);
   sameAsDeliveryAddress = true;
   showCompanyDataFields = false;
@@ -36,6 +37,24 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
   @Output()
   setBillingAddress = new EventEmitter<any>();
 
+  @Output()
+  billingCountryChanged = new EventEmitter<string>();
+
+  protected addressFormCountrySubscription?: Subscription;
+
+  @ViewChild(AddressFormComponent)
+  set addressFormComponent(component: AddressFormComponent | undefined) {
+    this.addressFormCountrySubscription?.unsubscribe();
+    const countryControl = component?.addressForm?.get('country.isocode');
+    if (countryControl) {
+      this.addressFormCountrySubscription = countryControl.valueChanges
+        .pipe(distinctUntilChanged())
+        .subscribe((countryCode: string | undefined) => {
+          this.billingCountryChanged.emit(countryCode || '');
+        });
+    }
+  }
+
   get isGuestCheckout(): boolean {
     return !!getLastValueSync(this.activeCartFacade.isGuestCart());
   }
@@ -54,6 +73,10 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
 
     this.cards$ = this.createCards();
     this.isUpdating$ = this.createIsUpdating();
+  }
+
+  ngOnDestroy(): void {
+    this.addressFormCountrySubscription?.unsubscribe();
   }
 
   getCardContent(
@@ -128,7 +151,8 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
 
     this.adyenAddressService.adyenAddUserAddress(billingAddress).subscribe({
       next: (createdAddress) => {
-        this.setBillingAddress.emit(billingAddress);
+        this.setBillingAddress.emit(createdAddress);
+        this.billingCountryChanged.emit(createdAddress.country?.isocode || '');
         this.loadAddresses();
         this.busy$.next(false);
         this.selectedAddress$.next(createdAddress);
@@ -216,6 +240,7 @@ export class AdyenCheckoutAdyenDeliveryAddressComponent implements OnInit {
   protected setAddress(address?: Address): void {
     this.selectedAddress$.next(address);
     this.setBillingAddress.emit(address);
+    this.billingCountryChanged.emit(address?.country?.isocode || '');
   }
 
   toggleSameAsDeliveryAddress(): void {

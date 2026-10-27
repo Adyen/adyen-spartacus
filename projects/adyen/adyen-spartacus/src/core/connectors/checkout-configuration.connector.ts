@@ -7,8 +7,8 @@ import {Observable} from "rxjs";
 export class CheckoutConfigurationConnector {
   constructor(protected adapter: OccCheckoutConfigAdapter) {}
 
-  getCheckoutConfiguration(userId: string, cartId: string): Observable<AdyenConfigData> {
-    return this.adapter.getCheckoutConfiguration(userId, cartId);
+  getCheckoutConfiguration(userId: string, cartId: string, shopperCountryCode?: string): Observable<AdyenConfigData> {
+    return this.adapter.getCheckoutConfiguration(userId, cartId, shopperCountryCode);
   }
 
   getMyAccountCheckoutConfiguration(userId: string): Observable<AdyenConfigData> {

@@ -2,7 +2,14 @@
   {{ 'paymentForm.payment' | cxTranslate }}
 </h2>
 
-<cx-adyen-delivery-address (setBillingAddress)="setBillingAddress($event)"/>
+<cx-adyen-delivery-address
+  (setBillingAddress)="setBillingAddress($event)"
+  (billingCountryChanged)="onBillingCountryChange($event)"
+/>
+
+@if (showInlineDisclaimer && checkoutConfig?.disclaimerMessage) {
+  <p class="adyen-disclaimer">{{ checkoutConfig.disclaimerMessage }}</p>
+}
 
 <div class="payment-container">
   <div #hook id="dropin" class="payment"></div>

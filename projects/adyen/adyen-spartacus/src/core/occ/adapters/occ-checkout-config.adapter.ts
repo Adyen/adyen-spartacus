@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {OccEndpointsService} from "@spartacus/core";
-import {HttpClient} from "@angular/common/http";
+import {HttpClient, HttpParams} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {AdyenConfigData, AdyenExpressConfigData} from "../../models/occ.config.models";
 
@@ -14,8 +14,12 @@ export class OccCheckoutConfigAdapter {
   ) {
   }
 
-  public getCheckoutConfiguration(userId: string, cartId: string): Observable<AdyenConfigData> {
-    return this.http.get<AdyenConfigData>(this.getCheckoutConfigurationEndpoint(userId, cartId));
+  public getCheckoutConfiguration(userId: string, cartId: string, shopperCountryCode?: string): Observable<AdyenConfigData> {
+    let params = new HttpParams();
+    if (shopperCountryCode) {
+      params = params.set('shopperCountryCode', shopperCountryCode);
+    }
+    return this.http.get<AdyenConfigData>(this.getCheckoutConfigurationEndpoint(userId, cartId), {params});
   }
 
   public getMyAccountCheckoutConfiguration(userId: string): Observable<AdyenConfigData> {
