@@ -1,9 +1,11 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {GlobalMessageService, GlobalMessageType, TranslationService} from '@spartacus/core';
-import {Observable, of} from 'rxjs';
+import {Observable, of, take} from 'rxjs';
 import {errorCodePrefix} from '../../assets/translations/translations';
 import {PlaceOrderResponse} from '../models/occ.order.models';
+import {SUBSCRIPTION_ERROR_CODE} from './subscription-guard.const';
+import {AdyenSubscriptionLinkService} from './adyen-subscription-link.service';
 
 export interface PlaceOrderErrorOptions {
   /** Global message timeout in ms (default 20000). */
@@ -21,6 +23,7 @@ export interface PlaceOrderErrorOptions {
 export class AdyenPlaceOrderErrorService {
   protected translationService: TranslationService = inject(TranslationService);
   protected globalMessageService: GlobalMessageService = inject(GlobalMessageService);
+  protected subscriptionLinkService: AdyenSubscriptionLinkService = inject(AdyenSubscriptionLinkService);
 
   protected messageTimeout: number = 20000;
   protected placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
@@ -30,11 +33,12 @@ export class AdyenPlaceOrderErrorService {
    * `messageTimeout` / `placeOrderErrorCodePrefix` (merchant subclasses) keep their overrides effective.
    */
   showMessage(error: HttpErrorResponse, options?: PlaceOrderErrorOptions): void {
-    const linkPath: string | undefined = error.error.linkPath;
+    const errorCode: string | undefined = error.error.errorCode;
     const prefix = options?.errorCodePrefix ?? this.placeOrderErrorCodePrefix;
     const timeout = options?.messageTimeout ?? this.messageTimeout;
-    this.translationService.translate(prefix + error.error.errorCode).subscribe((message) => {
-      this.globalMessageService.add(this.decorateMessage(message, linkPath), GlobalMessageType.MSG_TYPE_ERROR, timeout);
+    this.translationService.translate(prefix + errorCode).pipe(take(1)).subscribe((message) => {
+      this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, timeout);
+      this.showLink(errorCode, message, timeout);
     });
   }
 
@@ -53,11 +57,14 @@ export class AdyenPlaceOrderErrorService {
   }
 
   /**
-   * DEFERRED: `linkPath` (e.g. `/my-account/subscriptions`) is carried in the error model
-   * but NOT rendered, because My Subscriptions does not exist on Spartacus yet. When that page exists, render the
-   * link here (the translated text already names "My Subscriptions"); this is the only place to change.
+   * `cx-global-message` renders translated text only, so the already-owned refusal (`checkout.error.subscriptionAlreadyOwned`)
+   * gets a "Manage your subscriptions" link from {@link AdyenSubscriptionLinkService} below the message, tied to it.
+   * The trigger is the error code only (other codes get no link, even with a `linkPath`); the target is always the
+   * semantic route `mySubscriptions`.
    */
-  protected decorateMessage(message: string, linkPath?: string): string {
-    return message;
+  protected showLink(errorCode: string | undefined, message: string, timeout: number): void {
+    if (errorCode === SUBSCRIPTION_ERROR_CODE.ALREADY_OWNED) {
+      this.subscriptionLinkService.show(timeout, {raw: message});
+    }
   }
 }

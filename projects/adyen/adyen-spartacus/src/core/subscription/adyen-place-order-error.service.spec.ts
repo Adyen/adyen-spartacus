@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
 import {HttpErrorResponse} from '@angular/common/http';
 import {GlobalMessageService, GlobalMessageType, TranslationService} from '@spartacus/core';
-import {of} from 'rxjs';
+import {of, Subject} from 'rxjs';
 import {AdyenPlaceOrderErrorService} from './adyen-place-order-error.service';
+import {AdyenSubscriptionLinkService} from './adyen-subscription-link.service';
 import {SUBSCRIPTION_ERROR_CODE} from './subscription-guard.const';
 import {en} from '../../assets/translations/en';
 
@@ -14,12 +15,14 @@ describe('AdyenPlaceOrderErrorService', () => {
   let service: AdyenPlaceOrderErrorService;
   let translationService: jasmine.SpyObj<TranslationService>;
   let globalMessageService: jasmine.SpyObj<GlobalMessageService>;
+  let linkService: AdyenSubscriptionLinkService;
 
   const httpError = (body: any) => new HttpErrorResponse({status: 400, error: body});
 
   beforeEach(() => {
     translationService = jasmine.createSpyObj('TranslationService', ['translate']);
-    globalMessageService = jasmine.createSpyObj('GlobalMessageService', ['add']);
+    globalMessageService = jasmine.createSpyObj('GlobalMessageService', ['add', 'get']);
+    globalMessageService.get.and.returnValue(of({}));
     translationService.translate.and.callFake((key: string | string[]) => of('T:' + key));
     TestBed.configureTestingModule({
       providers: [
@@ -28,6 +31,8 @@ describe('AdyenPlaceOrderErrorService', () => {
       ]
     });
     service = TestBed.inject(AdyenPlaceOrderErrorService);
+    linkService = TestBed.inject(AdyenSubscriptionLinkService);
+    spyOn(linkService, 'show');
   });
 
   Object.values(SUBSCRIPTION_ERROR_CODE).forEach((code) => {
@@ -42,13 +47,40 @@ describe('AdyenPlaceOrderErrorService', () => {
     });
   });
 
-  it('names My Subscriptions in plain text and renders no link while the Spartacus page does not exist', () => {
+  it('keeps the message text plain (no markup)', () => {
     const text: string = lookup(en.paymentErrors, 'adyenPlaceOrderError.' + SUBSCRIPTION_ERROR_CODE.ALREADY_OWNED);
     expect(text).toContain('My Subscriptions');
     expect(text).not.toMatch(/<a |href|\/my-account/);
   });
 
-  it('keeps linkPath in the response but does not render it into the message', () => {
+  it('shows the My Subscriptions link for the already-owned code, tied to its message, with or without linkPath', () => {
+    service.showMessage(httpError({errorCode: SUBSCRIPTION_ERROR_CODE.ALREADY_OWNED}));
+    service.showMessage(httpError({errorCode: SUBSCRIPTION_ERROR_CODE.ALREADY_OWNED, linkPath: '/my-account/subscriptions'}));
+    expect(linkService.show).toHaveBeenCalledTimes(2);
+    expect(linkService.show).toHaveBeenCalledWith(20000, {raw: 'T:adyenPlaceOrderError.' + SUBSCRIPTION_ERROR_CODE.ALREADY_OWNED});
+  });
+
+  it('shows no link for other error codes, even when they carry linkPath', () => {
+    service.showMessage(httpError({errorCode: SUBSCRIPTION_ERROR_CODE.LIMIT_PER_CART, linkPath: '/my-account/subscriptions'}));
+    service.showMessage(httpError({errorCode: 'checkout.error.authorization.failed', linkPath: '/my-account/subscriptions'}));
+    expect(linkService.show).not.toHaveBeenCalled();
+    expect(globalMessageService.add).toHaveBeenCalledTimes(2);
+  });
+
+  it('takes the translation once: a later language change does not re-add the message or re-show the link', () => {
+    const translation = new Subject<string>();
+    translationService.translate.and.returnValue(translation);
+
+    service.showMessage(httpError({errorCode: SUBSCRIPTION_ERROR_CODE.ALREADY_OWNED}));
+    translation.next('first');
+    translation.next('second');
+
+    expect(globalMessageService.add).toHaveBeenCalledOnceWith('first', GlobalMessageType.MSG_TYPE_ERROR, 20000);
+    expect(linkService.show).toHaveBeenCalledTimes(1);
+    expect(translation.observed).toBeFalse();
+  });
+
+  it('keeps linkPath in the response and leaves the message text untouched', () => {
     const error = httpError({errorCode: SUBSCRIPTION_ERROR_CODE.ALREADY_OWNED, linkPath: '/my-account/subscriptions'});
 
     service.showMessage(error);

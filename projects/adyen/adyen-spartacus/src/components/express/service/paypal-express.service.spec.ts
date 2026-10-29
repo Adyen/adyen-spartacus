@@ -18,7 +18,8 @@ describe('PaypalExpressService subscription refusals', () => {
 
   beforeEach(() => {
     connector = jasmine.createSpyObj('AdyenOrderConnector', ['handlePayPalSubmit', 'updatePaypalOrder']);
-    globalMessageService = jasmine.createSpyObj('GlobalMessageService', ['add']);
+    globalMessageService = jasmine.createSpyObj('GlobalMessageService', ['add', 'get']);
+    globalMessageService.get.and.returnValue(of({}));
     translationService = jasmine.createSpyObj('TranslationService', ['translate']);
     translationService.translate.and.callFake((key: string | string[]) => of('T:' + key));
     const userIdService = jasmine.createSpyObj('UserIdService', ['takeUserId']);

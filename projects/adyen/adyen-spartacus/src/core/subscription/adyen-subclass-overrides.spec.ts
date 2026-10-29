@@ -37,7 +37,8 @@ describe('merchant overrides of messageTimeout / placeOrderErrorCodePrefix', () 
   const httpError = new HttpErrorResponse({status: 400, error: {errorCode: 'some.code'}});
 
   beforeEach(() => {
-    globalMessageService = jasmine.createSpyObj('GlobalMessageService', ['add']);
+    globalMessageService = jasmine.createSpyObj('GlobalMessageService', ['add', 'get']);
+    globalMessageService.get.and.returnValue(of({}));
     translationService = jasmine.createSpyObj('TranslationService', ['translate']);
     translationService.translate.and.callFake((key: string | string[]) => of('T:' + key));
     additionalDetailsConnector = jasmine.createSpyObj('AdditionalDetailsConnector', ['sendAdditionalDetails']);

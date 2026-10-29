@@ -25,5 +25,8 @@ export * from './core/subscription/adyen-cart-modification.service';
 export * from './core/subscription/adyen-cart-modification.listener';
 export * from './core/subscription/adyen-cart-modification.interceptor';
 export * from './core/subscription/adyen-cart-modification.module';
+export * from './core/subscription/adyen-subscription-link.service';
+export * from './core/subscription/adyen-subscription-link.component';
+export * from './core/config/adyen-subscriptions-routing-config';
 export * from './core/subscription/subscription-guard.const';
 export {adyenCartValidationTranslationsEn} from './assets/translations/en/adyen-cart-modification';
