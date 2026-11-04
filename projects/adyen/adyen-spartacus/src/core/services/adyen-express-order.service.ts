@@ -104,19 +104,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
               map((response) => {
                 return {...response, success: true}
               }),
-              catchError((error: HttpErrorResponse) => {
-                  this.translationService.translate(this.placeOrderErrorCodePrefix + error.error.errorCode).subscribe((message) => {
-                    this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
-                  })
-
-                  let response: PlaceOrderResponse = {
-                    success: false,
-                    error: error.error.errorCode,
-                    errorFieldCodes: error.error.invalidFields
-                  }
-                  return of(response);
-                }
-              )
+              catchError((error: HttpErrorResponse) => this.placeOrderErrorService.handle(error, {messageTimeout: this.messageTimeout, errorCodePrefix: this.placeOrderErrorCodePrefix}))
             )
           )
         ),
@@ -166,15 +154,7 @@ export class AdyenExpressOrderService extends AdyenOrderService {
   }
 
   private handlePlaceOrderError(error: HttpErrorResponse): Observable<PlaceOrderResponse> {
-    this.translationService.translate(this.placeOrderErrorCodePrefix + error.error.errorCode).subscribe((message) => {
-      this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
-    });
-
-    return of({
-      success: false,
-      error: error.error.errorCode,
-      errorFieldCodes: error.error.invalidFields
-    });
+    return this.placeOrderErrorService.handle(error, {messageTimeout: this.messageTimeout, errorCodePrefix: this.placeOrderErrorCodePrefix});
   }
 
   prepareDataGoogle(paymentData: any, authorizedPaymentData: any, cartId: string): GooglePayExpressRequest {

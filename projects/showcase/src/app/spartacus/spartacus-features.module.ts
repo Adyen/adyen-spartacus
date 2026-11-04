@@ -18,6 +18,7 @@ import { ProductVariantsFeatureModule } from './features/product/product-variant
 import { ProductImageZoomFeatureModule } from './features/product/product-image-zoom-feature.module';
 import { OpfFeatureModule } from './features/opf/opf-feature.module';
 import { AdyenMyAccountModule } from '../../../../adyen/adyen-spartacus/src/components/my-account/adyen-my-account.module';
+import { AdyenMySubscriptionsModule } from '../../../../adyen/adyen-spartacus/src/components/my-subscriptions/adyen-my-subscriptions.module';
 import { CheckoutConfigurationConnector } from '../../../../adyen/adyen-spartacus/src/core/connectors/checkout-configuration.connector';
 import { OccCheckoutConfigAdapter } from '../../../../adyen/adyen-spartacus/src/core/occ/adapters/occ-checkout-config.adapter';
 import { AdditionalDetailsConnector } from '../../../../adyen/adyen-spartacus/src/core/connectors/additional-details.connector';
@@ -90,7 +91,8 @@ import { OccAdditionalDetailsAdapter } from '../../../../adyen/adyen-spartacus/s
     ProductVariantsFeatureModule,
     ProductImageZoomFeatureModule,
     OpfFeatureModule,
-    AdyenMyAccountModule
+    AdyenMyAccountModule,
+    AdyenMySubscriptionsModule
   ],
   providers: [
     CheckoutConfigurationConnector,
