@@ -32,6 +32,8 @@ export interface AdyenConfigData {
   clickToPayLocale: string;
   expressPaymentConfig: ExpressPaymentConfig;
   installmentOptions?: AdyenInstallmentOptions;
+  disclaimerMessage?: string;
+  disclaimerLink?: string;
 }
 
 export interface AdyenExpressConfigData {
