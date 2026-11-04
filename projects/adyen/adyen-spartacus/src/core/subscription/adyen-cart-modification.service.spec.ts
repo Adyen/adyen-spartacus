@@ -1,5 +1,7 @@
+import {TestBed} from '@angular/core/testing';
 import {GlobalMessageService, GlobalMessageType} from '@spartacus/core';
 import {AdyenCartModificationService} from './adyen-cart-modification.service';
+import {AdyenSubscriptionLinkService} from './adyen-subscription-link.service';
 import {en} from '../../assets/translations/en';
 import {adyenCartValidationTranslationsEn} from '../../assets/translations/en/adyen-cart-modification';
 import {adyenCheckoutTranslationChunksConfig} from '../../assets/translations/translations';
@@ -7,11 +9,14 @@ import {adyenCheckoutTranslationChunksConfig} from '../../assets/translations/tr
 describe('AdyenCartModificationService', () => {
   let globalMessageService: jasmine.SpyObj<GlobalMessageService>;
   let service: AdyenCartModificationService;
+  let linkService: jasmine.SpyObj<AdyenSubscriptionLinkService>;
   const texts = en.adyenCartModification.adyenCartModification;
 
   beforeEach(() => {
     globalMessageService = jasmine.createSpyObj('GlobalMessageService', ['add']);
-    service = new AdyenCartModificationService(globalMessageService);
+    linkService = jasmine.createSpyObj('AdyenSubscriptionLinkService', ['show']);
+    TestBed.configureTestingModule({providers: [{provide: AdyenSubscriptionLinkService, useValue: linkService}]});
+    service = TestBed.runInInjectionContext(() => new AdyenCartModificationService(globalMessageService));
   });
 
   ['subscriptionAlreadyOwned', 'subscriptionLimitPerCart'].forEach((code) => {
@@ -66,9 +71,23 @@ describe('AdyenCartModificationService', () => {
     expect(globalMessageService.add).not.toHaveBeenCalled();
   });
 
-  it('does not render My Subscriptions as a link while the Spartacus page does not exist', () => {
-    expect(texts.add.subscriptionAlreadyOwned).toContain('My Subscriptions');
+  ['add', 'cart'].forEach((context) => {
+    it('shows the My Subscriptions link for subscriptionAlreadyOwned in the ' + context + ' context', () => {
+      service.notify({statusCode: 'subscriptionAlreadyOwned', quantityAdded: 0}, context as 'add' | 'cart');
+      expect(linkService.show).toHaveBeenCalledOnceWith(20000, {key: 'adyenCartModification.' + context + '.subscriptionAlreadyOwned'});
+    });
+
+    ['subscriptionLimitPerCart', 'subscriptionQuantityLimit', 'noStock', undefined].forEach((statusCode) => {
+      it('shows no link for ' + statusCode + ' in the ' + context + ' context', () => {
+        service.notify({statusCode, quantityAdded: 0}, context as 'add' | 'cart');
+        expect(linkService.show).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  it('keeps the message texts plain (no markup) and ships the link label', () => {
     expect(texts.add.subscriptionAlreadyOwned).not.toMatch(/<a |href|\/my-account/);
+    expect(texts.link.mySubscriptions).toBe('Manage your subscriptions');
   });
 
   it('does not auto-provide a cart bundle (would stop i18next loading cart.json) and registers its own chunk', () => {
