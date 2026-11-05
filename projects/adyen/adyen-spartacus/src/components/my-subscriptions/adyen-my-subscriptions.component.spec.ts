@@ -276,6 +276,29 @@ describe('AdyenMySubscriptionsComponent', () => {
       expect(service.changePaymentMethod).toHaveBeenCalledWith('S-1', 'RECURLY', 'v1', true);
     });
 
+    it('picks nothing when no option is current, and does not submit', () => {
+      create(withRow({ paymentMethodOptions: [opt('a'), opt('b')], adyenVaultOptions: [opt('v1')] }));
+      const sec = component.sections$.value[0];
+      const ent = sec.subscriptions![0];
+      const key = component.rowKey(sec, ent);
+      expect(component.selectedId(key, ent.paymentMethodOptions, ent.adyenVaultOptions)).toBe('');
+      expect(component.hasCurrentMethod(ent.paymentMethodOptions, ent.adyenVaultOptions)).toBeFalse();
+      service.changePaymentMethod.calls.reset();
+      component.changeEntry(sec, ent);
+      expect(service.changePaymentMethod).not.toHaveBeenCalled();
+    });
+
+    it('returns the current option, and an explicit pick over it', () => {
+      create(withRow());
+      const sec = component.sections$.value[0];
+      const ent = sec.subscriptions![0];
+      const key = component.rowKey(sec, ent);
+      expect(component.hasCurrentMethod(ent.paymentMethodOptions, ent.adyenVaultOptions)).toBeTrue();
+      expect(component.selectedId(key, ent.paymentMethodOptions, ent.adyenVaultOptions)).toBe('a');
+      component.selectMethod(key, 'v1');
+      expect(component.selectedId(key, ent.paymentMethodOptions, ent.adyenVaultOptions)).toBe('v1');
+    });
+
     it('ignores applyToAll when the row is not shareable', () => {
       create(withRow({ paymentMethodShareable: false }));
       const sec = component.sections$.value[0];

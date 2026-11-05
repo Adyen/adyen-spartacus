@@ -179,6 +179,9 @@
 
 <!-- <option> list of a picker: what the provider holds, then the Adyen vault; grouped only when both are present. -->
 <ng-template #optionsTpl let-platform="platform" let-vault="vault" let-key="key">
+  @if (!hasCurrentMethod(platform, vault)) {
+  <option value="" disabled [selected]="!selectedId(key, platform, vault)">{{ 'adyenMySubscriptions.paymentMethodPlaceholder' | cxTranslate }}</option>
+  }
   @if (platform?.length && vault?.length) {
   <optgroup [label]="'adyenMySubscriptions.paymentMethodGroupPlatform' | cxTranslate">
     @for (o of platform; track o.id) {

@@ -21,12 +21,14 @@ import {HttpErrorResponse} from "@angular/common/http";
 import {AdditionalDetailsConnector} from "../connectors/additional-details.connector";
 import {errorCodePrefix} from "../../assets/translations/translations";
 import {STOREFRONT_VERSION, STOREFRONT_TYPE} from '../../package.const';
+import {AdyenPlacedOrderState} from './adyen-placed-order.state';
 
 @Injectable()
 export class AdyenOrderService extends OrderService {
   protected placeOrderErrorService: AdyenPlaceOrderErrorService = inject(AdyenPlaceOrderErrorService);
   protected messageTimeout: number = 20000;
-  protected placedOrderNumber$ = new BehaviorSubject<string | undefined>(undefined);
+  protected placedOrderState: AdyenPlacedOrderState = inject(AdyenPlacedOrderState);
+  protected placedOrderNumber$: BehaviorSubject<string | undefined> = this.placedOrderState.placedOrderNumber$;
   protected placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
 
   constructor(protected placeOrderConnector: AdyenOrderConnector,
@@ -43,7 +45,8 @@ export class AdyenOrderService extends OrderService {
     super(activeCartFacade, userIdService, commandService, orderConnector, eventService);
   }
 
-  protected override placedOrder$ = new BehaviorSubject<Order | undefined>(undefined);
+  // replaces the subject created by the Spartacus OrderService so that all Adyen order services share one placed order
+  protected override placedOrder$: BehaviorSubject<Order | undefined> = this.placedOrderState.placedOrder$;
 
   protected adyenPlaceOrderCommand: Command<any, PlaceOrderResponse> =
     this.commandService.create<any, PlaceOrderResponse>(

@@ -1,24 +1,27 @@
-# AdyenPayments
+# @adyen/adyen-spartacus
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.0.
+Adyen payments for SAP Composable Storefront (Spartacus). The library replaces the payment step of the checkout with the Adyen Web Drop-in and adds express checkout (Google Pay, Apple Pay, PayPal), gift cards and partial payments, stored cards in My Account and My Subscriptions. It calls the OCC endpoints of the [Adyen plugin for SAP Commerce Cloud](https://github.com/Adyen/adyen-sapcommercecloud).
 
-## Code scaffolding
+## Compatibility
 
-Run `ng generate component component-name --project adyen-payments` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project adyen-payments`.
-> Note: Don't forget to add `--project adyen-payments` or else it will be added to the default project in your `angular.json` file. 
+| Component | Version |
+|---|---|
+| `@adyen/adyen-spartacus` | 1.6.0 |
+| Adyen plugin for SAP Commerce Cloud | 13.6.0 |
+| Angular | `^21.1.0` |
+| SAP Composable Storefront (Spartacus) | 221121.7.0 |
+| `@adyen/adyen-web` (peer dependency) | `^6.46.0` |
 
-## Build
+## Installation
 
-Run `ng build adyen-payments` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+npm install @adyen/adyen-spartacus@1.6.0 @adyen/adyen-web@^6.46.0 @google-pay/button-angular@^3.2.1
+```
 
-## Publishing
+Then import the library modules in your storefront and import the CMS content into SAP Commerce. The procedure, the required backend settings and the customization options are described in the wiki page [Composable Storefront](https://github.com/Adyen/adyen-sapcommercecloud/wiki/Composable-Storefront).
 
-After building your library with `ng build adyen-payments`, go to the dist folder `cd dist/adyen-payments` and run `npm publish`.
+## Links
 
-## Running unit tests
-
-Run `ng test adyen-payments` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+- [Source code and build instructions](https://github.com/Adyen/adyen-spartacus)
+- [Releases](https://github.com/Adyen/adyen-spartacus/releases)
+- [MIT License](https://github.com/Adyen/adyen-spartacus/blob/HEAD/LICENSE)
