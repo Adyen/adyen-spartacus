@@ -12,8 +12,8 @@ import {
   UserIdService,
   UserPaymentService,
 } from '@spartacus/core';
-import {BehaviorSubject, combineLatest, Subscription} from 'rxjs';
-import {filter, map, switchMap, take, tap,} from 'rxjs/operators';
+import {BehaviorSubject, combineLatest, Observable, Subscription} from 'rxjs';
+import {filter, map, shareReplay, switchMap, take, tap,} from 'rxjs/operators';
 import {CheckoutStepService} from "@spartacus/checkout/base/components";
 import {CheckoutAdyenConfigurationService} from "../../core/services/checkout-adyen-configuration.service";
 import {AdyenConfigData} from "../../core/models/occ.config.models";
@@ -44,6 +44,7 @@ import {AdyenLoggerService} from "../../core/services/adyen-logger.service";
 export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   protected subscriptions = new Subscription();
   protected deliveryAddress: Address | undefined;
+  protected deliveryAddress$: Observable<Address | undefined>;
   protected shopperEmail: string | undefined;
   protected busy$ = new BehaviorSubject<boolean>(false);
 
@@ -128,7 +129,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       this.isGuestCheckout = true;
     }
 
-    const deliveryAddress$ = this.checkoutDeliveryAddressFacade
+    // Shared by the initial mount and every reload, so each one waits for the same (single) address load
+    this.deliveryAddress$ = this.checkoutDeliveryAddressFacade
       .getDeliveryAddressState()
       .pipe(
         filter(state => !state.loading),
@@ -137,7 +139,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         tap((address: Address | undefined) => {
           this.deliveryAddress = address;
           this.configurationCountryCode ??= address?.country?.isocode;
-        })
+        }),
+        shareReplay(1)
       );
 
     const checkoutConfiguration$ =
@@ -154,7 +157,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     // The Drop-in is mounted only once the delivery address is known, so eContext can be prefilled from it
     this.subscriptions.add(
       combineLatest([
-        deliveryAddress$,
+        this.deliveryAddress$,
         checkoutConfiguration$
       ])
         .pipe(take(1))
@@ -208,8 +211,11 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     this.dropIn?.unmount();
     this.dropIn = undefined;
     this.changeDetectorRef.markForCheck();
-    const requestSubscription = this.activeCartFacade.getActiveCartId().pipe(
+    // Wait for the delivery address so eContext gets prefilled and the country fallback below is known
+    const requestSubscription = this.deliveryAddress$.pipe(
+      switchMap(() => this.activeCartFacade.getActiveCartId()),
       filter(cartId => !!cartId),
+      take(1),
       switchMap(cartId => this.userIdService.takeUserId().pipe(
         switchMap(userId => this.checkoutAdyenConfigurationService.fetchCheckoutConfiguration(
           userId, cartId as string, countryCode || this.deliveryAddress?.country?.isocode
