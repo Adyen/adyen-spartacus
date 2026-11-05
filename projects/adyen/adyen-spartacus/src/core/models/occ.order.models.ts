@@ -68,6 +68,8 @@ export interface PlaceOrderResponse {
   paymentDetailsResponse?: PaymentResponseData,
   error?: string,
   errorFieldCodes?: string[]
+  /** Optional app-relative path the backend attaches to a refusal (e.g. `/my-account/subscriptions`); only a signal that a link to My Subscriptions is wanted (the target is the semantic route `mySubscriptions`). */
+  linkPath?: string,
   orderNumber?: string,
   orderData?: Order
 
@@ -137,6 +139,7 @@ export interface PartialPaymentOrderResponse {
 export interface PaymentState {
   errorCode: string;
   errorFieldCodes: string[];
+  linkPath?: string;
   orderNumber: string;
   partialPaymentId?: string;
   redirectToNextStep: boolean;

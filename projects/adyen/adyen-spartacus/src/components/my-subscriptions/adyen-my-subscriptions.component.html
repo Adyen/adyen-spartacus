@@ -1,0 +1,201 @@
+<div class="cx-adyen-subs">
+  <h2 class="cx-adyen-subs__heading">{{ 'adyenMySubscriptions.title' | cxTranslate }}</h2>
+
+  @if (loading$ | async) {
+  <div class="cx-adyen-subs__spinner"><cx-spinner></cx-spinner></div>
+  } @else {
+  @if (loadFailed$ | async) {
+  <p class="cx-adyen-subs__empty text-danger" role="alert">{{ 'adyenMySubscriptions.loadError' | cxTranslate }}</p>
+  } @else if ((sections$ | async)?.length === 0) {
+  <p class="cx-adyen-subs__empty">{{ 'adyenMySubscriptions.empty' | cxTranslate }}</p>
+  }
+
+  @for (section of sections$ | async; track section.platformCode) {
+  <section class="cx-adyen-subs__section" [attr.aria-labelledby]="'subx-' + section.platformCode + '-title'">
+    <h3 class="cx-adyen-subs__section-title" [id]="'subx-' + section.platformCode + '-title'">{{ section.platformName }}</h3>
+
+    @if (section.ordersAwaitingSetup?.length) {
+    <div class="cx-adyen-subs__notice" role="alert">
+      <p class="cx-adyen-subs__notice-title">{{ 'adyenMySubscriptions.awaitingSetupTitle' | cxTranslate }}</p>
+      <ul>
+        @for (orderCode of section.ordersAwaitingSetup; track orderCode) {
+        <li>{{ 'adyenMySubscriptions.awaitingSetup' | cxTranslate: { order: orderCode } }}</li>
+        }
+      </ul>
+    </div>
+    }
+
+    <!-- Account-wide change: one control per account rather than one per row. -->
+    @for (offer of section.paymentMethodChangeOffers; track offer.subscriptionCode) {
+    <div class="cx-adyen-subs__panel" [attr.data-test]="'account-change-' + offer.subscriptionCode">
+      <div class="cx-adyen-subs__panel-title">{{ 'adyenMySubscriptions.paymentMethodTitle' | cxTranslate }}</div>
+      @if (nameAccounts(section) && offer.accountName) {
+      <p class="cx-adyen-subs__note">{{ 'adyenMySubscriptions.paymentMethodAccount' | cxTranslate: { account: offer.accountName } }}</p>
+      }
+      <div class="cx-adyen-subs__fields">
+        <div class="cx-adyen-subs__field">
+          <label class="cx-adyen-subs__label" [for]="offerKey(section, offer)">
+            {{ 'adyenMySubscriptions.paymentMethodChoose' | cxTranslate }}
+          </label>
+          <select class="form-control cx-adyen-subs__select" [id]="offerKey(section, offer)"
+                  [disabled]="busy$ | async"
+                  (change)="selectMethod(offerKey(section, offer), $any($event.target).value)">
+            <ng-container *ngTemplateOutlet="optionsTpl; context: { platform: offer.paymentMethodOptions, vault: offer.adyenVaultOptions, key: offerKey(section, offer) }"></ng-container>
+          </select>
+        </div>
+        <button type="button" class="btn btn-secondary cx-adyen-subs__btn" [disabled]="busy$ | async"
+                (click)="changeOffer(section, offer)">
+          {{ 'adyenMySubscriptions.paymentMethodSubmit' | cxTranslate }}
+        </button>
+      </div>
+      <p class="cx-adyen-subs__note">{{ 'adyenMySubscriptions.paymentMethodNoteAccount' | cxTranslate }}</p>
+    </div>
+    }
+
+    <!-- The provider's own page for taking a new card. -->
+    @for (enrollment of section.paymentMethodEnrollmentOffers; track enrollment.subscriptionCode) {
+    <div class="cx-adyen-subs__panel cx-adyen-subs__panel--quiet" [attr.data-test]="'enrollment-' + enrollment.subscriptionCode">
+      <div class="cx-adyen-subs__panel-title">{{ 'adyenMySubscriptions.paymentMethodAdd' | cxTranslate }}</div>
+      @if (nameAccounts(section) && enrollment.accountName) {
+      <p class="cx-adyen-subs__note">{{ 'adyenMySubscriptions.paymentMethodAccount' | cxTranslate: { account: enrollment.accountName } }}</p>
+      }
+      <p class="cx-adyen-subs__note">
+        @if (enrollment.notice === 'REPLACES_METHOD_ON_FILE') {
+        {{ 'adyenMySubscriptions.paymentMethodAddEffectReplacesMethodOnFile' | cxTranslate }}
+        } @else {
+        {{ 'adyenMySubscriptions.paymentMethodAddEffectAddsMethod' | cxTranslate }}
+        }
+      </p>
+      <button type="button" class="btn btn-secondary cx-adyen-subs__btn" [disabled]="busy$ | async"
+              (click)="enroll(section, enrollment)">
+        {{ 'adyenMySubscriptions.paymentMethodAddSubmit' | cxTranslate }}
+      </button>
+    </div>
+    }
+
+    @if (!section.paymentMethodChangeSupported && section.subscriptions?.length) {
+    <p class="cx-adyen-subs__note cx-adyen-subs__note--standalone">{{ 'adyenMySubscriptions.paymentMethodUnsupported' | cxTranslate }}</p>
+    }
+
+    <div class="cx-adyen-subs__list">
+      @for (entry of section.subscriptions; track entry.code ?? $index) {
+      <div class="cx-adyen-subs__row cx-adyen-subs__row--{{ tone(entry) }}"
+           [class.cx-adyen-subs__row--noactions]="!hasActions(section, entry)">
+        <div class="cx-adyen-subs__row-body">
+          <div class="cx-adyen-subs__name">
+            {{ entry.productName || ('adyenMySubscriptions.unnamed' | cxTranslate) }}
+            @if (entry.quantity > 1) {
+            <span class="cx-adyen-subs__qty">&times;&nbsp;{{ entry.quantity }}</span>
+            }
+          </div>
+          <p class="cx-adyen-subs__state">
+            @if (stateGlyph(entry)) {
+            <span class="cx-adyen-subs__glyph" aria-hidden="true">{{ stateGlyph(entry) }}</span>
+            }
+            {{ stateKey(entry) | cxTranslate: { date: (entry.effectiveDate | date: 'longDate') } }}
+          </p>
+          <p class="cx-adyen-subs__meta">
+            @if (entry.orderDate) {
+            <span>{{ 'adyenMySubscriptions.ordered' | cxTranslate: { date: (entry.orderDate | date: 'longDate') } }}</span>
+            }
+            @if (entry.orderCode) {
+            <span>{{ 'adyenMySubscriptions.orderNumber' | cxTranslate }}
+              <a class="cx-adyen-subs__order-link" [routerLink]="{ cxRoute: 'orderDetails', params: { code: entry.orderCode } } | cxUrl">{{ entry.orderCode }}</a></span>
+            }
+            @if (entry.paymentMethodSummary) {
+            <span>{{ 'adyenMySubscriptions.paidWith' | cxTranslate: { method: entry.paymentMethodSummary } }}</span>
+            }
+          </p>
+        </div>
+
+        @if (hasActions(section, entry)) {
+        <div class="cx-adyen-subs__row-actions">
+          @if (showRowControl(section, entry)) {
+          <details class="cx-adyen-subs__disclosure" [open]="entry.tone === 'attention'">
+            <summary class="cx-adyen-subs__summary">{{ 'adyenMySubscriptions.paymentMethodRow' | cxTranslate }}</summary>
+            <div class="cx-adyen-subs__disclosure-body">
+              <label class="cx-adyen-subs__label" [for]="rowKey(section, entry, $index)">
+                {{ 'adyenMySubscriptions.paymentMethodChooseRow' | cxTranslate }}
+              </label>
+              <select class="form-control cx-adyen-subs__select" [id]="rowKey(section, entry, $index)"
+                      [disabled]="busy$ | async"
+                      (change)="selectMethod(rowKey(section, entry, $index), $any($event.target).value)">
+                <ng-container *ngTemplateOutlet="optionsTpl; context: { platform: entry.paymentMethodOptions, vault: entry.adyenVaultOptions, key: rowKey(section, entry, $index) }"></ng-container>
+              </select>
+              <p class="cx-adyen-subs__note">{{ 'adyenMySubscriptions.paymentMethodNoteSubscription' | cxTranslate }}</p>
+              @if (entry.paymentMethodShareable) {
+              <label class="cx-adyen-subs__check">
+                <input type="checkbox" [checked]="isApplyToAll(rowKey(section, entry, $index))"
+                       (change)="setApplyToAll(rowKey(section, entry, $index), $any($event.target).checked)" />
+                {{ 'adyenMySubscriptions.paymentMethodApplyToAll' | cxTranslate }}
+              </label>
+              }
+              <button type="button" class="btn btn-secondary cx-adyen-subs__btn" [disabled]="busy$ | async"
+                      (click)="changeEntry(section, entry, $index)">
+                {{ 'adyenMySubscriptions.paymentMethodRowSubmit' | cxTranslate }}
+              </button>
+            </div>
+          </details>
+          }
+
+          @if (showRowUnavailable(section, entry)) {
+          <p class="cx-adyen-subs__note">{{ 'adyenMySubscriptions.paymentMethodRowUnavailable' | cxTranslate }}</p>
+          }
+
+          @if (entry.cancellable) {
+          @if (isCancelConfirming(section, entry)) {
+          <div class="cx-adyen-subs__confirm" role="alertdialog" aria-live="polite">
+            <p class="cx-adyen-subs__note cx-adyen-subs__note--first">
+              {{ 'adyenMySubscriptions.cancelNote' | cxTranslate }}
+              @if (entry.effectiveDate) {
+              {{ 'adyenMySubscriptions.cancelAccessUntil' | cxTranslate: { date: (entry.effectiveDate | date: 'longDate') } }}
+              }
+            </p>
+            <button type="button" class="btn btn-danger cx-adyen-subs__btn" [disabled]="busy$ | async"
+                    (click)="cancel(section, entry)">
+              {{ 'adyenMySubscriptions.cancel' | cxTranslate }}
+            </button>
+            <button type="button" class="btn btn-secondary cx-adyen-subs__btn" [disabled]="busy$ | async"
+                    (click)="dismissCancel()">
+              {{ 'adyenMySubscriptions.cancelKeep' | cxTranslate }}
+            </button>
+          </div>
+          } @else {
+          <button type="button" class="btn btn-tertiary cx-adyen-subs__btn cx-adyen-subs__btn--quiet"
+                  [disabled]="busy$ | async" (click)="askCancel(section, entry)">
+            {{ 'adyenMySubscriptions.cancel' | cxTranslate }}
+          </button>
+          }
+          }
+        </div>
+        }
+      </div>
+      }
+    </div>
+  </section>
+  }
+  }
+</div>
+
+<!-- <option> list of a picker: what the provider holds, then the Adyen vault; grouped only when both are present. -->
+<ng-template #optionsTpl let-platform="platform" let-vault="vault" let-key="key">
+  @if (platform?.length && vault?.length) {
+  <optgroup [label]="'adyenMySubscriptions.paymentMethodGroupPlatform' | cxTranslate">
+    @for (o of platform; track o.id) {
+    <option [value]="o.id" [selected]="o.id === selectedId(key, platform, vault)">{{ o.displayLabel }}@if (o.current) { {{ 'adyenMySubscriptions.paymentMethodCurrent' | cxTranslate }}}</option>
+    }
+  </optgroup>
+  <optgroup [label]="'adyenMySubscriptions.paymentMethodGroupVault' | cxTranslate">
+    @for (o of vault; track o.id) {
+    <option [value]="o.id" [selected]="o.id === selectedId(key, platform, vault)">{{ o.displayLabel }}</option>
+    }
+  </optgroup>
+  } @else {
+  @for (o of platform; track o.id) {
+  <option [value]="o.id" [selected]="o.id === selectedId(key, platform, vault)">{{ o.displayLabel }}@if (o.current) { {{ 'adyenMySubscriptions.paymentMethodCurrent' | cxTranslate }}}</option>
+  }
+  @for (o of vault; track o.id) {
+  <option [value]="o.id" [selected]="o.id === selectedId(key, platform, vault)">{{ o.displayLabel }}</option>
+  }
+  }
+</ng-template>

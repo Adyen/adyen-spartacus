@@ -12,9 +12,9 @@ import {
   UserIdService,
   UserPaymentService,
 } from '@spartacus/core';
-import {BehaviorSubject, Subscription,} from 'rxjs';
-import {filter, map, switchMap, take,} from 'rxjs/operators';
-import { CheckoutStepService } from "@spartacus/checkout/base/components";
+import {BehaviorSubject, combineLatest, Subscription} from 'rxjs';
+import {filter, map, switchMap, take, tap,} from 'rxjs/operators';
+import {CheckoutStepService} from "@spartacus/checkout/base/components";
 import {CheckoutAdyenConfigurationService} from "../../core/services/checkout-adyen-configuration.service";
 import {AdyenConfigData} from "../../core/models/occ.config.models";
 import {
@@ -22,14 +22,17 @@ import {
   AdditionalDetailsActions,
   CoreConfiguration,
   DropinConfiguration,
+  EcontextConfiguration,
+  EcontextInputSchema,
   SubmitActions,
   UIElement
-} from "@adyen/adyen-web";
-import {BillingAddress, PlaceOrderResponse, PaymentState} from "../../core/models/occ.order.models";
+} from '@adyen/adyen-web';
+import {BillingAddress, PaymentState, PlaceOrderResponse} from "../../core/models/occ.order.models";
 import {CheckoutAdyenConfigurationReloadEvent} from "../../core/events/checkout-adyen.events";
 import {AdyenCheckout, AdyenCheckoutError, Dropin} from '@adyen/adyen-web/auto'
 import {AdyenExpressOrderService} from "../../core/services/adyen-express-order.service";
 import {AdyenPartialPaymentService} from "../../core/services/adyen-partial-payment.service";
+import {AdyenLoggerService} from "../../core/services/adyen-logger.service";
 
 @Component({
   selector: 'cx-payment-method',
@@ -41,6 +44,7 @@ import {AdyenPartialPaymentService} from "../../core/services/adyen-partial-paym
 export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   protected subscriptions = new Subscription();
   protected deliveryAddress: Address | undefined;
+  protected shopperEmail: string | undefined;
   protected busy$ = new BehaviorSubject<boolean>(false);
 
   //Adyen properties
@@ -107,6 +111,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     protected multiCartFacade: MultiCartFacade,
     protected partialPaymentService: AdyenPartialPaymentService,
     protected changeDetectorRef: ChangeDetectorRef,
+    protected logger: AdyenLoggerService,
   ) {
   }
 
@@ -123,37 +128,52 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       this.isGuestCheckout = true;
     }
 
-    this.checkoutDeliveryAddressFacade
+    const deliveryAddress$ = this.checkoutDeliveryAddressFacade
       .getDeliveryAddressState()
       .pipe(
-        filter((state: any) => !state.loading),
+        filter(state => !state.loading),
         take(1),
-        map((state: any) => state.data)
-      )
-      .subscribe((address: Address | undefined) => {
-        this.deliveryAddress = address;
-        this.configurationCountryCode ??= address?.country?.isocode;
-      });
+        map(state => state.data),
+        tap((address: Address | undefined) => {
+          this.deliveryAddress = address;
+          this.configurationCountryCode ??= address?.country?.isocode;
+        })
+      );
+
+    const checkoutConfiguration$ =
+      this.checkoutAdyenConfigurationService
+        .getCheckoutConfigurationState()
+        .pipe(
+          filter(state => !state.loading),
+          map(state => state.data),
+          filter(
+            (config): config is AdyenConfigData => !!config
+          )
+        );
+
+    // The Drop-in is mounted only once the delivery address is known, so eContext can be prefilled from it
+    this.subscriptions.add(
+      combineLatest([
+        deliveryAddress$,
+        checkoutConfiguration$
+      ])
+        .pipe(take(1))
+        .subscribe(([, config]) => {
+          const requestId = this.configurationRequestId;
+          if (requestId === 0) {
+            this.shopperEmail = config.shopperEmail;
+            this.checkoutConfig = config;
+            this.changeDetectorRef.markForCheck();
+            this.mountDropIn(config, requestId);
+          }
+        })
+    );
 
     this.subscriptions.add(
       this.eventService.get(CheckoutAdyenConfigurationReloadEvent).subscribe(event => {
         this.handleConfigurationReload(event);
       })
     );
-
-    this.checkoutAdyenConfigurationService.getCheckoutConfigurationState()
-      .pipe(
-        filter((state) => !state.loading),
-        take(1),
-        map((state) => state.data)
-      ).subscribe(config => {
-        const requestId = this.configurationRequestId;
-        if (config && requestId === 0) {
-          this.checkoutConfig = config;
-          this.changeDetectorRef.markForCheck();
-          this.mountDropIn(config, requestId);
-        }
-      });
 
     // Subscribe to partial payment state changes
     this.subscriptions.add(
@@ -197,6 +217,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
       ))
     ).subscribe((config: AdyenConfigData) => {
       if (config && requestId === this.configurationRequestId) {
+        this.shopperEmail = config.shopperEmail;
         this.checkoutConfig = config;
         this.changeDetectorRef.markForCheck();
         this.mountDropIn(config, requestId);
@@ -255,6 +276,8 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private getDropinConfiguration(adyenConfig: AdyenConfigData): DropinConfiguration {
+    const econtextConfiguration =
+      this.getEcontextConfiguration(adyenConfig);
     const paymentMethodsConfiguration: Record<string, any> = {
         card: {
           type: 'card',
@@ -270,6 +293,21 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         },
         paypal: {
           intent: "authorize"
+        },
+        econtext: {
+          ...econtextConfiguration
+        },
+        econtext_atm: {
+          ...econtextConfiguration
+        },
+        econtext_online: {
+          ...econtextConfiguration
+        },
+        econtext_seven_eleven: {
+          ...econtextConfiguration
+        },
+        econtext_stores: {
+          ...econtextConfiguration
         }
       };
 
@@ -324,11 +362,33 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
   }
 
   private handlePayment(paymentData: any, actions: SubmitActions) {
-    this.adyenOrderService.adyenPlaceOrder(paymentData, this.billingAddress, this.paymentState.partialPaymentId).subscribe(
+    const preparedPaymentData = this.preparePaymentData(paymentData);
+
+    this.adyenOrderService.adyenPlaceOrder(preparedPaymentData, this.billingAddress, this.paymentState.partialPaymentId).subscribe(
       result => {
         this.handleResponse(result, actions);
       }
     );
+  }
+
+  private preparePaymentData(paymentData: any): any {
+    const paymentMethodType = paymentData?.paymentMethod?.type;
+
+    if (typeof paymentMethodType !== 'string' || !paymentMethodType.startsWith('econtext')) {
+      return paymentData;
+    }
+
+    const shopperAddress = this.billingAddress ?? this.deliveryAddress;
+
+    return {
+      ...paymentData,
+      shopperName: {
+        firstName: paymentData.shopperName?.firstName || paymentData.firstName || shopperAddress?.firstName,
+        lastName: paymentData.shopperName?.lastName || paymentData.lastName || shopperAddress?.lastName
+      },
+      shopperEmail: paymentData.shopperEmail || shopperAddress?.email || this.shopperEmail,
+      telephoneNumber: paymentData.telephoneNumber || shopperAddress?.phone || shopperAddress?.cellphone
+    };
   }
 
   private handleAdditionalDetails(details: any, actions: AdditionalDetailsActions) {
@@ -391,6 +451,7 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
     // no-ops when there is no order number, so we never POST payment-canceled/undefined),
     // refresh the cart, then remount the Drop-in so the shopper can retry. Tracked in
     // this.subscriptions to avoid the nested-subscribe leak/race this used to have.
+    this.logger.error('Adyen Drop-in error:', error);
     this.busy$.next(false);
     this.subscriptions.add(
       this.adyenOrderService.sendPaymentCancelled().pipe(
@@ -403,6 +464,31 @@ export class CheckoutAdyenPaymentMethodComponent implements OnInit, OnDestroy {
         );
       })
     );
+  }
+
+  private getEcontextConfiguration(
+    adyenConfig: AdyenConfigData
+  ): EcontextConfiguration {
+    const address = this.deliveryAddress;
+
+    const data: EcontextInputSchema = {
+      firstName: address?.firstName,
+      lastName: address?.lastName,
+      shopperEmail: address?.email || adyenConfig.shopperEmail,
+      telephoneNumber: address?.phone || address?.cellphone
+    };
+
+    const personalDetailsRequired = [
+      data.firstName,
+      data.lastName,
+      data.shopperEmail,
+      data.telephoneNumber
+    ].some(value => !value?.trim());
+
+    return {
+      personalDetailsRequired,
+      data
+    };
   }
 
   private resetDropInComponent() {

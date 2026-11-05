@@ -1,0 +1,12 @@
+// Stays visible together with the sticky `cx-global-message` (position: sticky; top: 0; z-index: 2).
+// `--adyen-subscription-link-top` is the offset below that message (default: roughly one message height).
+:host {
+  display: block;
+  position: sticky;
+  top: var(--adyen-subscription-link-top, 3.5rem);
+  z-index: 2;
+}
+
+.cx-adyen-subscription-link {
+  margin-bottom: 0;
+}

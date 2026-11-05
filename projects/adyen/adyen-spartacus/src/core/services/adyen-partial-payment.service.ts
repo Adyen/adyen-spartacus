@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import {AdyenPlaceOrderErrorService} from '../subscription/adyen-place-order-error.service';
 import {
   Command,
   CommandService,
@@ -25,6 +26,7 @@ import { errorCodePrefix } from '../../assets/translations/translations';
 
 @Injectable()
 export class AdyenPartialPaymentService {
+  protected placeOrderErrorService: AdyenPlaceOrderErrorService = inject(AdyenPlaceOrderErrorService);
   protected messageTimeout: number = 20000;
   protected placeOrderErrorCodePrefix: string = errorCodePrefix + '.';
 
@@ -237,7 +239,8 @@ export class AdyenPartialPaymentService {
       // Handle error
       this.updatePaymentState({
         errorCode: response.error || 'UNKNOWN_ERROR',
-        errorFieldCodes: response.errorFieldCodes || []
+        errorFieldCodes: response.errorFieldCodes || [],
+        linkPath: response.linkPath
       });
     }
   }
@@ -283,19 +286,14 @@ export class AdyenPartialPaymentService {
    * Handle API errors
    */
   protected handleError(error: HttpErrorResponse): Observable<any> {
-    this.translationService.translate(this.placeOrderErrorCodePrefix + error.error.errorCode).subscribe((message) => {
-      this.globalMessageService.add(message, GlobalMessageType.MSG_TYPE_ERROR, this.messageTimeout);
-    });
+    this.placeOrderErrorService.showMessage(error, {messageTimeout: this.messageTimeout, errorCodePrefix: this.placeOrderErrorCodePrefix});
 
     this.updatePaymentState({
       errorCode: error.error.errorCode,
-      errorFieldCodes: error.error.invalidFields || []
+      errorFieldCodes: error.error.invalidFields || [],
+      linkPath: error.error.linkPath
     });
 
-    return of({
-      success: false,
-      error: error.error.errorCode,
-      errorFieldCodes: error.error.invalidFields
-    });
+    return of(this.placeOrderErrorService.toResponse(error));
   }
 }
