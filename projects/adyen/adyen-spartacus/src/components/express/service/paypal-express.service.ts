@@ -1,4 +1,6 @@
-import {Injectable} from "@angular/core";
+import {inject, Injectable} from "@angular/core";
+import {AdyenPlaceOrderErrorService} from "../../../core/subscription/adyen-place-order-error.service";
+import {isSubscriptionErrorCode} from "../../../core/subscription/subscription-guard.const";
 import {
   PayPalExpressRequest, PaypalUpdateOrderRequest,
   PlaceOrderResponse, PaypalUpdateOrderResponse
@@ -38,6 +40,8 @@ type PayPalUpdateOrderCommand = {
 
 @Injectable()
 export class PaypalExpressService extends AdyenBaseService{
+
+  protected placeOrderErrorService: AdyenPlaceOrderErrorService = inject(AdyenPlaceOrderErrorService);
 
   constructor(
     protected placeOrderConnector: AdyenOrderConnector,
@@ -122,16 +126,28 @@ export class PaypalExpressService extends AdyenBaseService{
   }
 
   private handlePlaceOrderError(error: HttpErrorResponse): Observable<PaymentResponseData> {
+    this.showSubscriptionRefusal(error);
     return of({
       resultCode: 'Error'
     } as PaymentResponseData);
   }
 
   private handlePayPalUpdateError(error: HttpErrorResponse): Observable<PaypalUpdateOrderResponse> {
+    this.showSubscriptionRefusal(error);
     return of({
       paymentData: null,
       status: 'ERROR'
     });
+  }
+
+  /**
+   * PayPal express swallows endpoint errors (the Drop-in shows its own failure), so only the duplicate-subscription
+   * refusals, which the shopper can act on, get a translated message here.
+   */
+  protected showSubscriptionRefusal(error: HttpErrorResponse): void {
+    if (isSubscriptionErrorCode(error?.error?.errorCode)) {
+      this.placeOrderErrorService.showMessage(error);
+    }
   }
 
 }
