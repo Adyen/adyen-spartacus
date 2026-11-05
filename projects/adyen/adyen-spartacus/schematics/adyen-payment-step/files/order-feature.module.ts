@@ -25,6 +25,7 @@ import {AdyenOrderService, OrderConfirmationPaymentStatusModule} from "@adyen/ad
       },
     }),
     {
+      // either AdyenOrderService or AdyenExpressOrderService may be bound here; the placed order is shared between them
       provide: OrderFacade,
       useExisting: AdyenOrderService,
     }

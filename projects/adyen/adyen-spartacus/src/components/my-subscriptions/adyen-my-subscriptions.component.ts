@@ -139,14 +139,23 @@ export class AdyenMySubscriptionsComponent implements OnInit, OnDestroy {
 
   // ---- payment-method picker state --------------------------------------------------------------------------
 
-  /** What is billing now when the shopper has not picked, else the first option. */
+  /**
+   * What the shopper picked, else what is billing now. Empty when neither: the picker then shows a placeholder
+   * rather than a first card the shopper never chose, and submitting does nothing.
+   */
   selectedId(key: string, platformOptions?: AdyenSubscriptionPaymentMethodOption[],
              vaultOptions?: AdyenSubscriptionPaymentMethodOption[]): string {
     if (this.selectedMethod[key]) {
       return this.selectedMethod[key];
     }
     const all = [...(platformOptions ?? []), ...(vaultOptions ?? [])];
-    return (all.find((o) => o.current) ?? all[0])?.id ?? '';
+    return all.find((o) => o.current)?.id ?? '';
+  }
+
+  /** Whether one of the options is what is billing now; without one the picker leads with a placeholder. */
+  hasCurrentMethod(platformOptions?: AdyenSubscriptionPaymentMethodOption[],
+                   vaultOptions?: AdyenSubscriptionPaymentMethodOption[]): boolean {
+    return [...(platformOptions ?? []), ...(vaultOptions ?? [])].some((o) => o.current);
   }
 
   selectMethod(key: string, id: string): void {

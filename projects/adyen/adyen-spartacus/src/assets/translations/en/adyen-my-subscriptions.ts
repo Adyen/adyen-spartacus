@@ -38,6 +38,7 @@ export const adyenMySubscriptions = {
     "paymentMethodNoteSubscription": "This will be used for this subscription only; your other subscriptions are not affected. You can choose from the payment methods your billing provider already holds - which may be fewer than the cards saved in your account.",
     "paymentMethodAccount": "For your subscriptions bought in {{account}}",
     "paymentMethodChoose": "Choose a saved card",
+    "paymentMethodPlaceholder": "Select a payment method",
     "paymentMethodSubmit": "Use this card",
     "paymentMethodSuccessCustomer": "Every subscription this provider bills to your account will now be charged to the payment method you chose.",
     "paymentMethodSuccessSubscription": "This subscription will now be billed to the payment method you chose. Your other subscriptions are unchanged.",

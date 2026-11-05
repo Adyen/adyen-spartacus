@@ -16,6 +16,7 @@ export * from './components/order/components/order-confirmation/order-confirmati
 export * from './components/order/components/order-confirmation/order-confirmation-payment-status/order-confirmation-payment-status.component';
 export * from './core/services/adyen-logger.service';
 export * from './core/services/adyen-order.service';
+export * from './core/services/adyen-placed-order.state';
 export * from './core/services/adyen-express-order.service';
 export * from './core/services/adyen-partial-payment.service';
 export * from './core/connectors/adyen-partial-payment.connector';
